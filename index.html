@@ -733,8 +733,57 @@
     
     function manageRateMenus(rateId) {
       if(Object.keys(gMenus).length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาไปเพิ่มรายการอาหารทั้งหมดในคลังก่อน', 'warning');
-      const rateData = gRates[rateId]; const selectedMenus = rateData.menus || {}; let html = `<div class="text-start mb-2 fw-bold text-muted small px-2">ติ๊กเลือกเมนูที่สามารถสั่งได้ในเรทราคานี้:</div><div class="text-start px-2 border p-2 rounded bg-white shadow-sm" style="max-height: 300px; overflow-y: auto;">`; Object.entries(gMenus).forEach(([mId, m]) => { const isChecked = selectedMenus[mId] ? 'checked' : ''; const priceTag = m.price > 0 ? `<span class="text-danger small">(+${m.price}฿)</span>` : '<span class="text-success small">(ฟรี)</span>'; html += `<div class="form-check mb-2 pb-2 border-bottom"><input class="form-check-input swal-manage-rate-menu" type="checkbox" value="${mId}" id="rm_${mId}" style="transform: scale(1.3); margin-top: 6px;" ${isChecked}><label class="form-check-label ms-2" for="rm_${mId}"><strong>${m.name}</strong> ${priceTag}</label></div>`; }); html += `</div>`;
-      Swal.fire({ title: 'จัดเมนู: ' + rateData.name, html: html, showCancelButton: true, confirmButtonText: 'บันทึกรายการ' }).then(res => { if(res.isConfirmed) { let updatedMenus = {}; document.querySelectorAll('.swal-manage-rate-menu:checked').forEach(cb => updatedMenus[cb.value] = true); window.dbUpdate(window.dbRef(window.db, 'settings/rates/' + rateId), { menus: updatedMenus }).then(() => openAdminModal('rates')); } });
+      
+      const rateData = gRates[rateId]; 
+      const selectedMenus = rateData.menus || {}; 
+      
+      // ปรับปรุง HTML ให้เป็นโครงสร้าง 2 คอลัมน์ (row g-2)
+      let html = `
+        <div class="text-start mb-3 fw-bold text-muted px-1">ติ๊กเลือกเมนูที่สามารถสั่งได้ในเรทราคานี้:</div>
+        <div class="text-start p-1" style="max-height: 450px; overflow-y: auto; overflow-x: hidden;">
+          <div class="row g-2">`; 
+          
+      Object.entries(gMenus).forEach(([mId, m]) => { 
+        const isChecked = selectedMenus[mId] ? 'checked' : ''; 
+        const priceTag = m.price > 0 ? `<span class="text-danger small fw-bold">(+${m.price}฿)</span>` : '<span class="text-success small fw-bold">(ฟรี)</span>'; 
+        
+        // ดึงรูปภาพมาแสดง ถ้าไม่มีให้ใช้ไอคอนแทน
+        const imgHtml = (m.image && m.image.trim() !== '') 
+          ? `<img src="${m.image}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px; flex-shrink: 0;" class="me-2 border shadow-sm">` 
+          : `<div class="bg-light border shadow-sm text-muted d-flex align-items-center justify-content-center me-2" style="width: 45px; height: 45px; border-radius: 8px; flex-shrink: 0;"><i class="fa-solid fa-utensils"></i></div>`;
+          
+        // สร้างการ์ดปุ่มกด (คลิกที่รูปหรือกรอบก็เป็นการติ๊กถูก)
+        html += `
+          <div class="col-6">
+            <label class="d-flex align-items-center p-2 border rounded bg-white shadow-sm h-100 position-relative" for="rm_${mId}" style="cursor: pointer; transition: 0.2s;" onmouseover="this.classList.add('border-danger')" onmouseout="this.classList.remove('border-danger')">
+              <input class="form-check-input swal-manage-rate-menu me-2" type="checkbox" value="${mId}" id="rm_${mId}" style="transform: scale(1.3); flex-shrink: 0;" ${isChecked}>
+              ${imgHtml}
+              <div class="flex-grow-1" style="min-width: 0;">
+                <div class="fw-bold text-dark text-truncate" style="font-size: 0.95rem;">${m.name}</div>
+                <div>${priceTag}</div>
+              </div>
+            </label>
+          </div>`; 
+      }); 
+      
+      html += `  </div>
+               </div>`;
+      
+      Swal.fire({ 
+        title: 'จัดเมนู: ' + rateData.name, 
+        html: html, 
+        width: '600px', // ขยายหน้าต่างให้กว้างขึ้นเพื่อรองรับ 2 คอลัมน์
+        showCancelButton: true, 
+        confirmButtonText: '<i class="fa-solid fa-save me-1"></i> บันทึกรายการ',
+        cancelButtonText: 'ยกเลิก',
+        customClass: { popup: 'rounded-4' }
+      }).then(res => { 
+        if(res.isConfirmed) { 
+          let updatedMenus = {}; 
+          document.querySelectorAll('.swal-manage-rate-menu:checked').forEach(cb => updatedMenus[cb.value] = true); 
+          window.dbUpdate(window.dbRef(window.db, 'settings/rates/' + rateId), { menus: updatedMenus }).then(() => openAdminModal('rates')); 
+        } 
+      });
     }
     
     function addExtraMenuAdmin() {
