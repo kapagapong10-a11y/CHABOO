@@ -770,13 +770,9 @@
     }
     
     function openMoveTable() {
-      const tId = document.getElementById('mt-table-id').value; 
-      const t = gTables[tId]; if (!t) return;
+      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if (!t) return;
       let emptyTables = []; 
-      
-      Object.entries(gTables).forEach(([id, table]) => { 
-        if (table.status === 'empty' && id !== tId) { emptyTables.push({ id, name: table.name }); } 
-      });
+      Object.entries(gTables).forEach(([id, table]) => { if (table.status === 'empty' && id !== tId) { emptyTables.push({ id, name: table.name }); } });
       if (emptyTables.length === 0) { return Swal.fire('แจ้งเตือน', 'ไม่มีโต๊ะว่างให้ย้ายในขณะนี้', 'warning'); }
       
       emptyTables.sort((a, b) => a.name.localeCompare(b.name, 'th', {numeric: true})); 
@@ -795,32 +791,43 @@
       }).then(res => {
         if (res.isConfirmed) {
           const destId = res.value; const destName = gTables[destId].name; const updates = {};
+          
+          // 1. คัดลอกข้อมูลไปโต๊ะใหม่ (เพิ่มค่าปรับ และรายการพิเศษ)
           updates['tables/' + destId + '/status'] = 'eating'; 
           updates['tables/' + destId + '/checkInTime'] = t.checkInTime || null; 
           updates['tables/' + destId + '/rateName'] = t.rateName || null; 
           updates['tables/' + destId + '/customers'] = t.customers || null; 
           updates['tables/' + destId + '/soups'] = t.soups || null; 
           updates['tables/' + destId + '/currentTotal'] = t.currentTotal || 0;
+          updates['tables/' + destId + '/extraOrders'] = t.extraOrders || null;
+          updates['tables/' + destId + '/fines'] = t.fines || null;
           
+          // 2. ล้างข้อมูลโต๊ะเดิมให้กลายเป็นโต๊ะว่าง
           updates['tables/' + tId + '/status'] = 'empty'; 
           updates['tables/' + tId + '/checkInTime'] = null; 
           updates['tables/' + tId + '/rateName'] = null; 
           updates['tables/' + tId + '/customers'] = null; 
           updates['tables/' + tId + '/soups'] = null; 
           updates['tables/' + tId + '/currentTotal'] = 0;
+          updates['tables/' + tId + '/extraOrders'] = null;
+          updates['tables/' + tId + '/fines'] = null;
           
           Swal.fire({ title: 'กำลังย้ายโต๊ะ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
           
-          const ordersRef = window.dbRef(window.db, 'orders');
-          const unsubscribe = window.dbOnValue(ordersRef, (snap) => {
-            unsubscribe(); 
-            const orders = snap.val() || {}; 
-            Object.entries(orders).forEach(([oId, order]) => { 
-              if (order.tableId === tId) { updates['orders/' + oId + '/tableId'] = destId; updates['orders/' + oId + '/tableName'] = destName; } 
-            });
-            window.dbUpdate(window.dbRef(window.db), updates).then(() => { 
-              modals.manage.hide(); Swal.fire('สำเร็จ', 'ย้ายข้อมูลไปยังโต๊ะ ' + destName + ' เรียบร้อย', 'success'); 
-            }).catch(err => { Swal.fire('ผิดพลาด', err.message, 'error'); });
+          // 3. เปลี่ยนชื่อโต๊ะในออเดอร์ครัว (ใช้ข้อมูลจาก gOrders แทนการโหลดใหม่ ป้องกันระบบค้าง)
+          Object.entries(gOrders).forEach(([oId, order]) => { 
+            if (order.tableId === tId) { 
+              updates['orders/' + oId + '/tableId'] = destId; 
+              updates['orders/' + oId + '/tableName'] = destName; 
+            } 
+          });
+          
+          // อัปเดตข้อมูลทั้งหมดขึ้นฐานข้อมูล
+          window.dbUpdate(window.dbRef(window.db), updates).then(() => { 
+            if (modals.manage) modals.manage.hide(); 
+            Swal.fire('สำเร็จ', 'ย้ายข้อมูลไปยังโต๊ะ ' + destName + ' เรียบร้อย', 'success'); 
+          }).catch(err => { 
+            Swal.fire('ผิดพลาด', err.message, 'error'); 
           });
         }
       });
