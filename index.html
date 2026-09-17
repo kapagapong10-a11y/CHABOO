@@ -204,6 +204,16 @@
               <i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5>
             </div>
           </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('promotions')">
+              <i class="fa-solid fa-bullhorn admin-icon"></i><h5 class="fw-bold">จัดการโปรโมชัน</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('payment')">
+              <i class="fa-solid fa-qrcode admin-icon"></i><h5 class="fw-bold">ตั้งค่ารับเงิน</h5>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -289,11 +299,77 @@
             <button class="btn btn-secondary fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="openMoveTable()"><i class="fa-solid fa-arrow-right-arrow-left"></i> ย้ายโต๊ะ</button>
             <button class="btn btn-success fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="viewOrderHistory()"><i class="fa-solid fa-clock-rotate-left"></i> ดูประวัติการสั่งอาหาร</button>
             <button class="btn btn-warning fw-bold text-dark py-2 rounded-3 shadow-sm fs-5" onclick="openExtraOrderModal()"><i class="fa-solid fa-bell-concierge"></i> สั่งอาหารเพิ่ม (พิเศษ)</button>
-            <button class="btn btn-primary fw-bold py-2 rounded-3 shadow-sm fs-5"><i class="fa-solid fa-file-invoice-dollar"></i> เช็คบิล</button>
+            <button class="btn btn-primary fw-bold py-2 rounded-3 shadow-sm fs-5" onclick="openCheckoutModal()"><i class="fa-solid fa-file-invoice-dollar"></i> เช็คบิล (ชำระเงิน)</button>
           </div>
         </div>
         <div class="modal-footer bg-white border-top-0 pt-0 px-4 pb-4">
           <button class="btn btn-outline-danger fw-bold w-100 rounded-3 py-2" onclick="clearTable()"><i class="fa-solid fa-broom"></i> เครียโต๊ะ (คืนโต๊ะว่าง)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal (หน้าต่างคิดเงินใหม่) -->
+  <div class="modal fade" id="checkoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg" style="background-color: #f8f9fa;">
+        <div class="modal-header bg-primary text-white border-bottom-0 pb-3">
+          <h4 class="modal-title fw-bold"><i class="fa-solid fa-file-invoice-dollar"></i> สรุปบิลชำระเงิน: <span id="co-table-name"></span></h4>
+          <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" onclick="modals.manage.show()"></button>
+        </div>
+        <div class="modal-body p-3 p-md-4">
+          <input type="hidden" id="co-table-id">
+          
+          <div class="row g-4">
+            <!-- ซ้าย: รายการอาหารสำหรับรีวิวและแก้ไข -->
+            <div class="col-12 col-lg-7">
+              <div class="bg-white rounded-4 shadow-sm border p-3 h-100">
+                <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-list-check"></i> รายการสั่งทั้งหมด</h5>
+                <div id="co-items-list" class="pe-2" style="max-height: 45vh; overflow-y: auto;">
+                  <!-- รายการจะถูกสร้างด้วย JS -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- ขวา: สรุปยอดและรับชำระ -->
+            <div class="col-12 col-lg-5">
+              <div class="bg-white rounded-4 shadow-sm border p-3 mb-3">
+                <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-tags"></i> เลือกโปรโมชัน / โครงการรัฐ</h6>
+                <div id="co-promotions-list" class="mb-2" style="max-height: 150px; overflow-y: auto;"></div>
+              </div>
+              
+              <div class="bg-white rounded-4 shadow-sm border p-3 p-md-4 text-end">
+                <div class="d-flex justify-content-between mb-2 text-muted fs-5">
+                  <span>ยอดรวมบิล (Subtotal):</span>
+                  <span id="co-subtotal" class="fw-bold text-dark">0 ฿</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 text-danger fs-5">
+                  <span>ส่วนลด (Discount):</span>
+                  <span id="co-discount" class="fw-bold">-0 ฿</span>
+                </div>
+                <hr class="border-2 opacity-50">
+                <div class="text-center mt-3">
+                  <span class="text-muted fw-bold d-block mb-1 fs-5">ยอดสุทธิที่ต้องชำระ (Net Total)</span>
+                  <h1 class="text-primary fw-bold mb-3" style="font-size: 3.5rem;" id="co-nettotal">0 ฿</h1>
+                  
+                  <!-- พื้นที่แสดง QR โค้ด (ซ่อนไว้ก่อน) -->
+                  <div id="co-payment-area" class="mt-3 mb-3 p-3 bg-light rounded-4 border text-center d-none">
+                    <h5 class="fw-bold text-success mb-2"><i class="fa-solid fa-mobile-screen"></i> สแกนพร้อมเพย์เพื่อชำระเงิน</h5>
+                    <div id="co-qrcode" class="d-flex justify-content-center mb-2 p-2 bg-white rounded-3 d-inline-block mx-auto border shadow-sm"></div>
+                    <div class="text-start bg-white p-2 rounded-3 mt-2 border">
+                      <div class="small fw-bold text-primary mb-1 border-bottom pb-1"><i class="fa-solid fa-building-columns"></i> โอนผ่านเลขบัญชี</div>
+                      <div class="d-flex justify-content-between" style="font-size: 0.85rem;"><span>ธนาคาร:</span> <strong id="co-bank-name">-</strong></div>
+                      <div class="d-flex justify-content-between" style="font-size: 0.85rem;"><span>ชื่อบัญชี:</span> <strong id="co-bank-account">-</strong></div>
+                      <div class="d-flex justify-content-between mt-1"><span>เลขบัญชี:</span> <strong id="co-bank-number" class="text-danger fs-5">-</strong></div>
+                    </div>
+                  </div>
+                  
+                  <button class="btn btn-info text-white fw-bold w-100 py-3 fs-5 shadow-sm rounded-pill mb-2" onclick="showPaymentQR()"><i class="fa-solid fa-qrcode"></i> สร้าง QR รับเงิน (พร้อมเพย์)</button>
+                  <button class="btn btn-success fw-bold w-100 py-3 fs-5 rounded-pill shadow-sm" onclick="finalizeCheckout()"><i class="fa-solid fa-check-double"></i> ยืนยันรับเงิน & เคลียร์โต๊ะ</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -340,14 +416,16 @@
   
   <script>
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
+    let gPromotions = {}, gPayment = {};
     let currentKitchenId = ""; 
     let kitchenPingInterval = null;
-    const modals = { checkIn: null, manage: null, admin: null };
+    const modals = { checkIn: null, manage: null, admin: null, checkout: null };
     
     document.addEventListener("DOMContentLoaded", () => {
       modals.checkIn = new bootstrap.Modal(document.getElementById('checkInModal'));
       modals.manage = new bootstrap.Modal(document.getElementById('manageTableModal'));
       modals.admin = new bootstrap.Modal(document.getElementById('adminModal'));
+      modals.checkout = new bootstrap.Modal(document.getElementById('checkoutModal'));
     });
     
     function initData() {
@@ -356,6 +434,8 @@
       window.dbOnValue(window.dbRef(window.db, 'settings/menus'), s => { gMenus = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/categories'), s => { gCategories = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/extraMenus'), s => { gExtraMenus = s.val() || {}; });
+      window.dbOnValue(window.dbRef(window.db, 'settings/promotions'), s => { gPromotions = s.val() || {}; });
+      window.dbOnValue(window.dbRef(window.db, 'settings/payment'), s => { gPayment = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'kitchenPings'), s => { gPings = s.val() || {}; rescueOrphanedOrders(); });
       
       window.dbOnValue(window.dbRef(window.db, 'settings/kitchens'), s => { 
@@ -364,20 +444,14 @@
         const currentVal = sel.value;
         sel.innerHTML = '<option value="">-- เลือกสถานีครัว --</option>';
         Object.entries(gKitchens).forEach(([id, k]) => sel.innerHTML += `<option value="${id}">${k.name}</option>`);
-        if(currentVal) { 
-          sel.value = currentVal; 
-          selectKitchenStation(currentVal); 
-        }
+        if(currentVal) { sel.value = currentVal; selectKitchenStation(currentVal); }
       });
       
       window.dbOnValue(window.dbRef(window.db, 'orders'), s => { 
         gOrders = s.val() || {}; 
-        renderKDS(); 
-        rescueOrphanedOrders(); 
+        renderKDS(); rescueOrphanedOrders(); 
         let hasUnassigned = false;
-        Object.values(gOrders).forEach(o => { 
-          if(o.status === 'pending' && o.kitchenId === 'unassigned') hasUnassigned = true; 
-        });
+        Object.values(gOrders).forEach(o => { if(o.status === 'pending' && o.kitchenId === 'unassigned') hasUnassigned = true; });
         if(hasUnassigned && (!currentKitchenId || gKitchens[currentKitchenId]?.status !== 'open')) {
            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'ด่วน! มีออเดอร์ตกค้าง (ไม่มีจอครัวเปิดรับงาน)', showConfirmButton: false, timer: 7000 });
         }
@@ -691,23 +765,101 @@
         .then(res => { if(res.isConfirmed) { window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0 }); modals.manage.hide(); } });
     }
 
+    // ==========================================
+    // ระบบแอดมิน CRUD
+    // ==========================================
     let currentAdminMode = '';
+    
     function openAdminModal(mode) {
       currentAdminMode = mode; 
-      const titleEl = document.getElementById('adminModalTitle'); const listEl = document.getElementById('adminListContent'); const btnEl = document.getElementById('adminBtnAdd'); listEl.innerHTML = '';
+      const titleEl = document.getElementById('adminModalTitle'); 
+      const listEl = document.getElementById('adminListContent'); 
+      const btnEl = document.getElementById('adminBtnAdd'); 
+      listEl.innerHTML = '';
+      btnEl.style.display = 'inline-block'; // แสดงปุ่มเพิ่มเป็นค่าเริ่มต้น
       
-      if(mode === 'tables') { titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); } 
-      else if(mode === 'custTypes') { titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); }
-      else if(mode === 'soups') { titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); }
-      else if(mode === 'categories') { titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); }
-      else if(mode === 'menus') { titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; btnEl.onclick = () => addMenuAdmin(); Object.entries(gMenus).forEach(([id, item]) => { let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
-      else if(mode === 'kitchens') { titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); }
-      else if(mode === 'extraMenus') { titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; btnEl.onclick = () => addExtraMenuAdmin(); Object.entries(gExtraMenus).forEach(([id, item]) => { listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}<div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
-      else if(mode === 'rates') { titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; btnEl.onclick = () => addRateAdmin(); Object.entries(gRates).forEach(([id, item]) => { let priceText = ''; if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } let menuCount = item.menus ? Object.keys(item.menus).length : 0; listEl.innerHTML += `<li class="list-group-item"><div class="d-flex justify-content-between align-items-center mb-2"><div><strong>${item.name}</strong><br>${priceText}</div><div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="d-grid"><button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button></div></li>`; }); }
+      if(mode === 'tables') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; 
+        btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); 
+        Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); 
+      } 
+      else if(mode === 'custTypes') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; 
+        btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); 
+        Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); 
+      }
+      else if(mode === 'soups') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; 
+        btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); 
+        Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); 
+      }
+      else if(mode === 'categories') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; 
+        btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); 
+        Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); 
+      }
+      else if(mode === 'menus') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; 
+        btnEl.onclick = () => addMenuAdmin(); 
+        Object.entries(gMenus).forEach(([id, item]) => { 
+          let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; 
+          listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
+        }); 
+      }
+      else if(mode === 'kitchens') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; 
+        btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); 
+        Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); 
+      }
+      else if(mode === 'extraMenus') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; 
+        btnEl.onclick = () => addExtraMenuAdmin(); 
+        Object.entries(gExtraMenus).forEach(([id, item]) => { 
+          listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}<div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
+        }); 
+      }
+      else if(mode === 'rates') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; 
+        btnEl.onclick = () => addRateAdmin(); 
+        Object.entries(gRates).forEach(([id, item]) => { 
+          let priceText = ''; 
+          if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } 
+          let menuCount = item.menus ? Object.keys(item.menus).length : 0; 
+          listEl.innerHTML += `<li class="list-group-item"><div class="d-flex justify-content-between align-items-center mb-2"><div><strong>${item.name}</strong><br>${priceText}</div><div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="d-grid"><button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button></div></li>`; 
+        }); 
+      }
+      // โหมดใหม่: โปรโมชัน
+      else if(mode === 'promotions') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-bullhorn"></i> จัดการโปรโมชัน'; 
+        btnEl.onclick = () => addPromotionAdmin(); 
+        Object.entries(gPromotions).forEach(([id, item]) => { 
+          let typeStr = item.type === 'percent' ? `ลด ${item.value}%` : item.type === 'fixed' ? `ลดเงินสด ${item.value} ฿` : `กรอกยอดลดเอง (โครงการรัฐ)`;
+          let timeStr = item.startDate ? `<i class="fa-regular fa-clock"></i> ${item.startDate} ถึง ${item.endDate} (${item.startTime} - ${item.endTime})` : '<i class="fa-regular fa-clock"></i> ไม่จำกัดเวลา';
+          listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${item.name}</strong> <span class="badge bg-danger ms-1">${typeStr}</span><br><small class="text-muted">${timeStr}</small></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/promotions', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
+        }); 
+      }
+      // โหมดใหม่: ตั้งค่ารับเงิน
+      else if(mode === 'payment') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-qrcode"></i> ตั้งค่าบัญชีรับเงิน'; 
+        btnEl.onclick = () => editPaymentSettings();
+        btnEl.innerHTML = '<i class="fa-solid fa-pen"></i> แก้ไขข้อมูล';
+        let p = gPayment || {};
+        listEl.innerHTML = `
+          <div class="p-3 bg-white border rounded text-center shadow-sm">
+            <h5 class="text-primary fw-bold mb-3">ข้อมูลพร้อมเพย์สำหรับสแกนจ่าย</h5>
+            <p class="mb-1"><strong>เบอร์โทร/บัตรประชาชน (PromptPay):</strong> <span class="text-danger fs-5">${p.promptpay || 'ยังไม่ตั้งค่า'}</span></p>
+            <hr>
+            <h6 class="text-secondary fw-bold mb-2">บัญชีธนาคาร (สำหรับโอน)</h6>
+            <p class="mb-1"><strong>ธนาคาร:</strong> ${p.bankName || '-'}</p>
+            <p class="mb-1"><strong>ชื่อบัญชี:</strong> ${p.accountName || '-'}</p>
+            <p class="mb-0"><strong>เลขบัญชี:</strong> <span class="fs-5 text-dark fw-bold">${p.accountNumber || '-'}</span></p>
+          </div>`; 
+      }
       modals.admin.show();
     }
     
     function renderListItem(id, name, path) { return `<li class="list-group-item d-flex justify-content-between align-items-center"><span>${name}</span><button class="btn btn-sm btn-outline-danger" onclick="deleteData('${path}', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }
+    
     function addSimpleData(path, title, placeholder) { Swal.fire({ title: title, input: 'text', inputPlaceholder: placeholder, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { if(res.isConfirmed && res.value) { const data = path === 'tables' ? {name: res.value, status: 'empty', currentTotal: 0} : {name: res.value}; window.dbSet(window.dbPush(window.dbRef(window.db, path)), data).then(() => openAdminModal(currentAdminMode)); } }); }
     
     let tempCompressedImage = "";
@@ -722,7 +874,6 @@
       let html = `<input id="swal-menu-name" class="swal2-input mb-2" placeholder="ชื่อเมนู (เช่น หมูสไลด์)"><select id="swal-menu-category" class="swal2-select mb-2" style="display: flex; width: 75%; font-size: 1.125em;">${catOptions}</select><input id="swal-menu-price" type="number" class="swal2-input mb-2" placeholder="ราคาจ่ายเพิ่ม (ถ้าฟรีใส่ 0)"><input id="swal-menu-img" type="file" accept="image/*" class="form-control mt-3 mx-auto" style="width: 80%;" onchange="compressMenuImage(event)"><small class="text-muted d-block mt-1">ระบบจะย่อรูปอัตโนมัติเพื่อให้ลูกค้าโหลดเร็วที่สุด</small>`;
       Swal.fire({ title: 'เพิ่มรายการอาหารใหม่', html: html, showCancelButton: true, confirmButtonText: 'บันทึกและอัปโหลด', preConfirm: () => { const name = document.getElementById('swal-menu-name').value; const category = document.getElementById('swal-menu-category').value || 'ทั่วไป'; const price = parseFloat(document.getElementById('swal-menu-price').value) || 0; if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเมนู'); return false; } return { name: name, category: category, price: price }; } }).then(res => { if(res.isConfirmed) { const data = res.value; Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); saveMenuToFirebase(data.name, data.category, data.price, tempCompressedImage || ""); } });
     }
-    
     function saveMenuToFirebase(name, category, price, imageUrl) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/menus')), { name: name, category: category, price: price, image: imageUrl, status: 'active' }).then(() => { Swal.fire('สำเร็จ', 'เพิ่มรายการอาหารเรียบร้อย', 'success'); openAdminModal('menus'); }); }
     
     function addRateAdmin() {
@@ -733,71 +884,21 @@
     
     function manageRateMenus(rateId) {
       if(Object.keys(gMenus).length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาไปเพิ่มรายการอาหารทั้งหมดในคลังก่อน', 'warning');
-      
-      const rateData = gRates[rateId]; 
-      const selectedMenus = rateData.menus || {}; 
-      
-      // จัดกลุ่มเมนูตามหมวดหมู่
-      let groupedMenus = {};
-      Object.entries(gMenus).forEach(([mId, m]) => {
-        let catName = m.category || 'ทั่วไป';
-        if(!groupedMenus[catName]) groupedMenus[catName] = [];
-        groupedMenus[catName].push({ id: mId, ...m });
-      });
-      
-      // ปรับปรุง HTML ให้แสดงตามหมวดหมู่และขยายพื้นที่ (max-height เป็น 60vh ให้รองรับจอใหญ่)
-      let html = `
-        <div class="text-start mb-3 fw-bold text-muted px-1">ติ๊กเลือกเมนูที่สามารถสั่งได้ในเรทราคานี้:</div>
-        <div class="text-start p-2" style="max-height: 60vh; overflow-y: auto; overflow-x: hidden;">`; 
-          
-      // วนลูปสร้าง HTML ตามหมวดหมู่
+      const rateData = gRates[rateId]; const selectedMenus = rateData.menus || {}; 
+      let groupedMenus = {}; Object.entries(gMenus).forEach(([mId, m]) => { let catName = m.category || 'ทั่วไป'; if(!groupedMenus[catName]) groupedMenus[catName] = []; groupedMenus[catName].push({ id: mId, ...m }); });
+      let html = `<div class="text-start mb-3 fw-bold text-muted px-1">ติ๊กเลือกเมนูที่สามารถสั่งได้ในเรทราคานี้:</div><div class="text-start p-2" style="max-height: 60vh; overflow-y: auto; overflow-x: hidden;">`; 
       for(let cat in groupedMenus) {
-        html += `
-          <h5 class="fw-bold mt-4 mb-3 text-danger border-bottom pb-2"><i class="fa-solid fa-tags me-2"></i>หมวดหมู่: ${cat}</h5>
-          <div class="row g-3 mb-2">`;
-          
+        html += `<h5 class="fw-bold mt-4 mb-3 text-danger border-bottom pb-2"><i class="fa-solid fa-tags me-2"></i>หมวดหมู่: ${cat}</h5><div class="row g-3 mb-2">`;
         groupedMenus[cat].forEach(m => {
-          const isChecked = selectedMenus[m.id] ? 'checked' : ''; 
-          const priceTag = m.price > 0 ? `<span class="text-danger small fw-bold">(+${m.price}฿)</span>` : '<span class="text-success small fw-bold">(ฟรี)</span>'; 
-          
-          // ดึงรูปภาพมาแสดง ถ้าไม่มีให้ใช้ไอคอนแทน
-          const imgHtml = (m.image && m.image.trim() !== '') 
-            ? `<img src="${m.image}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 8px; flex-shrink: 0;" class="me-3 border shadow-sm">` 
-            : `<div class="bg-light border shadow-sm text-muted d-flex align-items-center justify-content-center me-3" style="width: 55px; height: 55px; border-radius: 8px; flex-shrink: 0;"><i class="fa-solid fa-utensils fs-4"></i></div>`;
-            
-          // สร้างการ์ดปุ่มกด 2 คอลัมน์ (บนมือถือจะเป็น 1 คอลัมน์อัตโนมัติ)
-          html += `
-            <div class="col-12 col-md-6">
-              <label class="d-flex align-items-center p-2 border rounded bg-white shadow-sm h-100 position-relative" for="rm_${m.id}" style="cursor: pointer; transition: 0.2s;" onmouseover="this.classList.add('border-danger', 'shadow')" onmouseout="this.classList.remove('border-danger', 'shadow')">
-                <input class="form-check-input swal-manage-rate-menu ms-1 me-3" type="checkbox" value="${m.id}" id="rm_${m.id}" style="transform: scale(1.4); flex-shrink: 0;" ${isChecked}>
-                ${imgHtml}
-                <div class="flex-grow-1" style="min-width: 0;">
-                  <div class="fw-bold text-dark text-truncate" style="font-size: 1.05rem;">${m.name}</div>
-                  <div>${priceTag}</div>
-                </div>
-              </label>
-            </div>`; 
+          const isChecked = selectedMenus[m.id] ? 'checked' : ''; const priceTag = m.price > 0 ? `<span class="text-danger small fw-bold">(+${m.price}฿)</span>` : '<span class="text-success small fw-bold">(ฟรี)</span>'; 
+          const imgHtml = (m.image && m.image.trim() !== '') ? `<img src="${m.image}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 8px; flex-shrink: 0;" class="me-3 border shadow-sm">` : `<div class="bg-light border shadow-sm text-muted d-flex align-items-center justify-content-center me-3" style="width: 55px; height: 55px; border-radius: 8px; flex-shrink: 0;"><i class="fa-solid fa-utensils fs-4"></i></div>`;
+          html += `<div class="col-12 col-md-6"><label class="d-flex align-items-center p-2 border rounded bg-white shadow-sm h-100 position-relative" for="rm_${m.id}" style="cursor: pointer; transition: 0.2s;" onmouseover="this.classList.add('border-danger', 'shadow')" onmouseout="this.classList.remove('border-danger', 'shadow')"><input class="form-check-input swal-manage-rate-menu ms-1 me-3" type="checkbox" value="${m.id}" id="rm_${m.id}" style="transform: scale(1.4); flex-shrink: 0;" ${isChecked}>${imgHtml}<div class="flex-grow-1" style="min-width: 0;"><div class="fw-bold text-dark text-truncate" style="font-size: 1.05rem;">${m.name}</div><div>${priceTag}</div></div></label></div>`; 
         });
-        
-        html += `</div>`; // ปิด row ของหมวดหมู่นั้นๆ
+        html += `</div>`; 
       }
-      
-      html += `</div>`; // ปิด container หลัก
-      
-      Swal.fire({ 
-        title: 'จัดเมนู: ' + rateData.name, 
-        html: html, 
-        width: '800px', // ขยายความกว้างหน้าต่างให้ใหญ่ขึ้น
-        showCancelButton: true, 
-        confirmButtonText: '<i class="fa-solid fa-save me-1"></i> บันทึกรายการ',
-        cancelButtonText: 'ยกเลิก',
-        customClass: { popup: 'rounded-4' }
-      }).then(res => { 
-        if(res.isConfirmed) { 
-          let updatedMenus = {}; 
-          document.querySelectorAll('.swal-manage-rate-menu:checked').forEach(cb => updatedMenus[cb.value] = true); 
-          window.dbUpdate(window.dbRef(window.db, 'settings/rates/' + rateId), { menus: updatedMenus }).then(() => openAdminModal('rates')); 
-        } 
+      html += `</div>`;
+      Swal.fire({ title: 'จัดเมนู: ' + rateData.name, html: html, width: '800px', showCancelButton: true, confirmButtonText: '<i class="fa-solid fa-save me-1"></i> บันทึกรายการ', cancelButtonText: 'ยกเลิก', customClass: { popup: 'rounded-4' } }).then(res => { 
+        if(res.isConfirmed) { let updatedMenus = {}; document.querySelectorAll('.swal-manage-rate-menu:checked').forEach(cb => updatedMenus[cb.value] = true); window.dbUpdate(window.dbRef(window.db, 'settings/rates/' + rateId), { menus: updatedMenus }).then(() => openAdminModal('rates')); } 
       });
     }
     
@@ -806,28 +907,243 @@
       Swal.fire({ title: 'เพิ่มรายการสั่งเพิ่ม', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', preConfirm: () => { const name = document.getElementById('swal-em-name').value; const price = parseFloat(document.getElementById('swal-em-price').value) || 0; if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อรายการ'); return false; } return { name: name, price: price, image: tempCompressedImage || "" }; } }).then(res => { if(res.isConfirmed) { Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/extraMenus')), res.value).then(() => { Swal.close(); openAdminModal('extraMenus'); }); } });
     }
     
-    let historyModalInstance = null;
-    function viewOrderHistory() {
-      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if (!t) return; let html = ''; let hasOrders = false;
-      const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === tId).sort((a, b) => b[1].timestamp - a[1].timestamp);
-      if (tableOrders.length > 0) { html += `<h6 class="fw-bold mt-2 text-primary"><i class="fa-solid fa-fire-burner"></i> รายการสั่งเข้าครัว</h6>`; tableOrders.forEach(([oId, o]) => { const timeStr = new Date(o.timestamp).toLocaleTimeString('th-TH'); html += `<div class="mb-3 p-2 border rounded shadow-sm bg-light"><div class="text-muted small mb-2 border-bottom pb-1"><i class="fa-regular fa-clock"></i> สั่งเมื่อ: ${timeStr} น.</div>`; Object.entries(o.items).forEach(([itemId, item]) => { hasOrders = true; const priceText = item.price > 0 ? `<span class="text-danger small">(+${item.price}฿)</span>` : `<span class="text-success small">(ฟรี)</span>`; if (item.status === 'canceled') { html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-white opacity-50"><div class="fw-bold text-decoration-line-through">${item.name} <span class="text-danger mx-1">x${item.qty}</span> ${priceText}</div><div><span class="badge bg-danger">ยกเลิกแล้ว</span></div></div>`; } else { const statusBadge = (item.served || o.status === 'served') ? `<span class="badge bg-success"><i class="fa-solid fa-check"></i> เสิร์ฟแล้ว</span>` : `<span class="badge bg-warning text-dark"><i class="fa-solid fa-spinner fa-spin"></i> กำลังเตรียม</span>`; html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-white"><div class="fw-bold">${item.name} <span class="text-danger mx-1">x${item.qty}</span> ${priceText}</div><div class="d-flex gap-2 align-items-center">${statusBadge}<button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="cancelOrderItem('${tId}', '${oId}', '${itemId}', ${item.price}, ${item.qty})" title="ยกเลิกรายการนี้"><i class="fa-solid fa-xmark"></i></button></div></div>`; } }); html += `</div>`; }); }
-      if (t.extraOrders) { html += `<h6 class="fw-bold mt-4 text-warning text-dark"><i class="fa-solid fa-wine-glass"></i> รายการสั่งเพิ่ม (พิเศษ)</h6><div class="p-2 border rounded shadow-sm bg-white mb-3">`; Object.entries(t.extraOrders).sort((a, b) => b[1].timestamp - a[1].timestamp).forEach(([extId, ext]) => { hasOrders = true; if (ext.status === 'canceled') { html += `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 opacity-50"><div class="fw-bold text-decoration-line-through">${ext.name} <span class="text-danger mx-1">x${ext.qty}</span> <span class="text-danger small">(+${ext.total}฿)</span></div><div><span class="badge bg-danger">ยกเลิกแล้ว</span></div></div>`; } else { html += `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2"><div class="fw-bold">${ext.name} <span class="text-danger mx-1">x${ext.qty}</span> <span class="text-danger small">(+${ext.total}฿)</span></div><div class="d-flex gap-2 align-items-center"><span class="badge bg-success"><i class="fa-solid fa-check"></i> ลงบิลแล้ว</span><button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="cancelExtraItem('${tId}', '${extId}', ${ext.total})" title="ยกเลิกรายการนี้"><i class="fa-solid fa-xmark"></i></button></div></div>`; } }); html += `</div>`; }
-      if (!hasOrders) { html += `<div class="text-center text-muted py-4"><i class="fa-solid fa-receipt fs-1 mb-2"></i><br>ยังไม่มีประวัติการสั่งอาหาร</div>`; }
-      let modalEl = document.getElementById('historyModal'); if (!modalEl) { const modalHtml = `<div class="modal fade" id="historyModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg" style="border-radius: 16px;"><div class="modal-header bg-light border-bottom-0 pb-3"><h5 class="modal-title fw-bold text-primary" id="historyModalTitle">ประวัติการสั่ง</h5><button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" onclick="openManageTable(document.getElementById('mt-table-id').value)"></button></div><div class="modal-body pt-2 px-3" id="historyModalBody"></div><div class="modal-footer border-top-0 pt-0"><button type="button" class="btn btn-primary w-100 fw-bold rounded-3 py-2" data-bs-dismiss="modal" onclick="openManageTable(document.getElementById('mt-table-id').value)">กลับไปหน้าจัดการโต๊ะ</button></div></div></div></div>`; document.body.insertAdjacentHTML('beforeend', modalHtml); modalEl = document.getElementById('historyModal'); historyModalInstance = new bootstrap.Modal(modalEl, { backdrop: 'static' }); }
-      document.getElementById('historyModalTitle').innerText = 'ประวัติการสั่ง: โต๊ะ ' + t.name; document.getElementById('historyModalBody').innerHTML = html; if(modals.manage) modals.manage.hide(); if (!modalEl.classList.contains('show')) { historyModalInstance.show(); }
+    // Admin: เพิ่มโปรโมชัน
+    function addPromotionAdmin() {
+      let html = `
+        <input id="swal-promo-name" class="swal2-input mb-2" placeholder="ชื่อโปรโมชัน (เช่น ฉลองเปิดร้าน / ไทยช่วยไทย)">
+        <select id="swal-promo-type" class="swal2-select mb-2" style="display:flex; width:75%;">
+          <option value="percent">ลดเป็นเปอร์เซ็นต์ (%)</option>
+          <option value="fixed">ลดเงินสด (บาท)</option>
+          <option value="manual">พิมพ์ยอดลดเองตอนคิดเงิน (โครงการรัฐ)</option>
+        </select>
+        <input id="swal-promo-val" type="number" class="swal2-input mb-2" placeholder="ระบุมูลค่า (เปอร์เซ็นต์ หรือ บาท)">
+        <hr class="my-3">
+        <div class="text-start small fw-bold text-muted px-4 mb-1">ระยะเวลาโปรโมชัน (ปล่อยว่าง = ใช้ได้ตลอด):</div>
+        <div class="d-flex gap-2 px-4 mb-2">
+          <input id="swal-promo-start-date" type="date" class="form-control" title="เริ่มวันที่">
+          <input id="swal-promo-end-date" type="date" class="form-control" title="ถึงวันที่">
+        </div>
+        <div class="d-flex gap-2 px-4">
+          <input id="swal-promo-start-time" type="time" class="form-control" title="ตั้งแต่เวลา">
+          <input id="swal-promo-end-time" type="time" class="form-control" title="ถึงเวลา">
+        </div>`;
+      Swal.fire({ title: 'สร้างโปรโมชัน', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', preConfirm: () => { 
+        const name = document.getElementById('swal-promo-name').value; const type = document.getElementById('swal-promo-type').value; const val = parseFloat(document.getElementById('swal-promo-val').value) || 0; 
+        if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อโปรโมชัน'); return false; } 
+        return { name: name, type: type, value: val, startDate: document.getElementById('swal-promo-start-date').value, endDate: document.getElementById('swal-promo-end-date').value, startTime: document.getElementById('swal-promo-start-time').value, endTime: document.getElementById('swal-promo-end-time').value }; 
+      } }).then(res => { if(res.isConfirmed) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/promotions')), res.value).then(() => openAdminModal('promotions')); } });
     }
     
-    function cancelOrderItem(tableId, orderId, itemId, price, qty) { Swal.fire({ title: 'ยืนยันยกเลิกรายการ?', text: 'ยอดเงินจะถูกหักออกจากบิลอัตโนมัติ (ถ้ามีราคา)', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ยกเลิก' }).then((res) => { if(res.isConfirmed) { Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const updates = {}; updates[`orders/${orderId}/items/${itemId}/status`] = 'canceled'; if(price > 0) { const currentTotal = gTables[tableId].currentTotal || 0; updates[`tables/${tableId}/currentTotal`] = Math.max(0, currentTotal - (price * qty)); } window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.close(); viewOrderHistory(); }); } }); }
-    function cancelExtraItem(tableId, extId, totalDeduct) { Swal.fire({ title: 'ยืนยันยกเลิกรายการ?', text: 'ยอดเงินจะถูกหักออกจากบิลอัตโนมัติ', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ยกเลิก' }).then((res) => { if(res.isConfirmed) { Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const updates = {}; updates[`tables/${tableId}/extraOrders/${extId}/status`] = 'canceled'; const currentTotal = gTables[tableId].currentTotal || 0; updates[`tables/${tableId}/currentTotal`] = Math.max(0, currentTotal - totalDeduct); window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.close(); viewOrderHistory(); }); } }); }
-    
-    function openExtraOrderModal() {
-      const tId = document.getElementById('mt-table-id').value; if (Object.keys(gExtraMenus).length === 0) return Swal.fire('แจ้งเตือน', 'แอดมินยังไม่ได้ตั้งค่ารายการสั่งเพิ่มในระบบ', 'warning');
-      let html = `<div class="text-start" style="max-height: 350px; overflow-y: auto; overflow-x: hidden;">`; Object.entries(gExtraMenus).forEach(([id, item]) => { const img = item.image ? `<img src="${item.image}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">` : `<div style="width:50px;height:50px;background:#eee;border-radius:8px;"></div>`; html += `<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom"><div class="d-flex align-items-center gap-3">${img}<div><strong>${item.name}</strong><br><small class="text-danger">${item.price} ฿</small></div></div><div class="d-flex align-items-center"><button class="btn btn-sm btn-light border fw-bold px-2" onclick="const i=document.getElementById('eo_${id}'); i.value=Math.max(0, (parseInt(i.value)||0)-1)">-</button><input type="number" id="eo_${id}" class="form-control text-center mx-1 extra-order-qty" data-name="${item.name}" data-price="${item.price}" value="0" min="0" style="width: 50px;" readonly><button class="btn btn-sm btn-light border fw-bold px-2" onclick="const i=document.getElementById('eo_${id}'); i.value=(parseInt(i.value)||0)+1">+</button></div></div>`; }); html += `</div>`;
-      Swal.fire({ title: 'สั่งรายการพิเศษเพิ่มเติม', html: html, showCancelButton: true, confirmButtonText: 'ยืนยันและคิดเงินลงบิล', preConfirm: () => { let orders = []; let totalAdded = 0; document.querySelectorAll('.extra-order-qty').forEach(inp => { const qty = parseInt(inp.value) || 0; if (qty > 0) { const price = parseFloat(inp.dataset.price); orders.push({ name: inp.dataset.name, qty: qty, price: price, total: qty * price }); totalAdded += qty * price; } }); return { orders, totalAdded }; } }).then(res => { if (res.isConfirmed && res.value.orders.length > 0) { const t = gTables[tId]; const currentTotal = t.currentTotal || 0; Swal.fire({ title: 'กำลังบันทึกบิล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const extraOrdersRef = window.dbRef(window.db, 'tables/' + tId + '/extraOrders'); res.value.orders.forEach(order => { window.dbPush(extraOrdersRef, { ...order, timestamp: Date.now() }); }); window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { currentTotal: currentTotal + res.value.totalAdded }).then(() => { Swal.fire('สำเร็จ', 'สั่งอาหารเพิ่มและอัปเดตบิลเรียบร้อยแล้ว', 'success'); modals.manage.hide(); }); } });
+    // Admin: ตั้งค่าบัญชีรับเงิน
+    function editPaymentSettings() {
+      let p = gPayment || {};
+      let html = `
+        <div class="text-start small text-muted px-2 mb-1">เบอร์โทรศัพท์ หรือ บัตรประชาชน ที่ผูกพร้อมเพย์:</div>
+        <input id="swal-pay-pp" class="swal2-input mt-0 mb-3" placeholder="08xxxxxxxx" value="${p.promptpay || ''}">
+        <div class="text-start small text-muted px-2 mb-1">ข้อมูลบัญชีธนาคาร (ทางเลือก):</div>
+        <input id="swal-pay-bank" class="swal2-input mt-0 mb-2" placeholder="ชื่อธนาคาร (เช่น กสิกรไทย)" value="${p.bankName || ''}">
+        <input id="swal-pay-name" class="swal2-input mt-0 mb-2" placeholder="ชื่อบัญชี" value="${p.accountName || ''}">
+        <input id="swal-pay-num" class="swal2-input mt-0 mb-2" placeholder="เลขบัญชี" value="${p.accountNumber || ''}">`;
+      Swal.fire({ title: 'ตั้งค่าการรับเงิน', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล' }).then(res => {
+        if(res.isConfirmed) {
+          let data = { promptpay: document.getElementById('swal-pay-pp').value, bankName: document.getElementById('swal-pay-bank').value, accountName: document.getElementById('swal-pay-name').value, accountNumber: document.getElementById('swal-pay-num').value };
+          window.dbSet(window.dbRef(window.db, 'settings/payment'), data).then(() => openAdminModal('payment'));
+        }
+      });
     }
     
     function deleteData(path, id) { if(confirm('ยืนยันการลบข้อมูลนี้?')) { window.dbRemove(window.dbRef(window.db, `${path}/${id}`)).then(() => openAdminModal(currentAdminMode)); } }
     
+    // ==========================================
+    // ระบบเช็คบิล (Checkout & Edit Bill)
+    // ==========================================
+    let checkoutState = { tableId: null, subtotal: 0, discount: 0, netTotal: 0 };
+    
+    function openCheckoutModal() {
+      const tId = document.getElementById('mt-table-id').value; 
+      const t = gTables[tId]; if (!t) return;
+      checkoutState.tableId = tId;
+      document.getElementById('co-table-id').value = tId;
+      document.getElementById('co-table-name').innerText = t.name;
+      
+      // ดึงโปรโมชันที่กำลังเปิดอยู่ (เช็คเวลา)
+      let promoHtml = '';
+      const now = new Date(); const todayDateStr = now.toISOString().split('T')[0]; const nowTimeStr = now.toTimeString().substring(0, 5);
+      
+      Object.entries(gPromotions).forEach(([pId, p]) => {
+        let isTimeValid = true; let warnText = '';
+        if(p.startDate && todayDateStr < p.startDate) { isTimeValid = false; warnText = '(ยังไม่ถึงวันโปรโมชัน)'; }
+        if(p.endDate && todayDateStr > p.endDate) { isTimeValid = false; warnText = '(หมดเขตแล้ว)'; }
+        if(p.startTime && nowTimeStr < p.startTime) { isTimeValid = false; warnText = '(ยังไม่ถึงเวลา)'; }
+        if(p.endTime && nowTimeStr > p.endTime) { isTimeValid = false; warnText = '(หมดเวลาโปรของวันนี้)'; }
+        
+        let typeStr = p.type === 'percent' ? `ลด ${p.value}%` : p.type === 'fixed' ? `ลด ${p.value} ฿` : `โครงการรัฐ/กรอกยอดลดเอง`;
+        let inputManual = p.type === 'manual' ? `<input type="number" id="promo_manual_${pId}" class="form-control form-control-sm ms-2 mt-1 d-none promo-manual-input" placeholder="พิมพ์ยอดที่ต้องการหัก" onchange="calculateCheckout()">` : '';
+        
+        promoHtml += `
+          <div class="form-check mb-2 p-2 border rounded ${isTimeValid ? 'bg-white' : 'bg-light opacity-50'}">
+            <input class="form-check-input checkout-promo-cb ms-1" type="checkbox" value="${pId}" data-type="${p.type}" data-val="${p.value}" id="promo_${pId}" onchange="togglePromoManual(this, '${pId}'); calculateCheckout();" ${!isTimeValid ? 'disabled' : ''}>
+            <label class="form-check-label ms-2 w-100" for="promo_${pId}">
+              <strong>${p.name}</strong> <span class="badge ${isTimeValid ? 'bg-danger' : 'bg-secondary'} ms-1">${typeStr}</span>
+              ${!isTimeValid ? `<small class="text-danger d-block">${warnText}</small>` : ''}
+              ${inputManual}
+            </label>
+          </div>`;
+      });
+      document.getElementById('co-promotions-list').innerHTML = promoHtml || '<div class="text-muted small">ไม่มีโปรโมชันในระบบ</div>';
+      
+      // ซ่อนหน้าต่างเดิม และแสดง Checkout Modal
+      modals.manage.hide(); 
+      document.getElementById('co-payment-area').classList.add('d-none');
+      renderCheckoutItems();
+      modals.checkout.show();
+    }
+    
+    function togglePromoManual(cb, pId) {
+      let manualInput = document.getElementById(`promo_manual_${pId}`);
+      if(manualInput) {
+        if(cb.checked) { manualInput.classList.remove('d-none'); manualInput.focus(); } 
+        else { manualInput.classList.add('d-none'); manualInput.value = ''; }
+      }
+    }
+    
+    // ดึงรายการอาหารทั้งหมดมาแสดงให้ลบ/แก้ไขได้
+    function renderCheckoutItems() {
+      const t = gTables[checkoutState.tableId]; if(!t) return;
+      let html = ''; let calcSubtotal = 0;
+      
+      // 1. ค่าหัวบุฟเฟ่ต์ (แก้ไขจำนวนคนต้องไปแก้ที่หน้าข้อมูลโต๊ะ)
+      if(t.customers) {
+        const rate = Object.values(gRates).find(r => r.name === t.rateName);
+        Object.entries(t.customers).forEach(([name, qty]) => {
+          let price = 0;
+          if(rate && rate.prices) {
+            let cId = Object.keys(gCustTypes).find(k => gCustTypes[k].name === name);
+            if(cId) price = rate.prices[cId] || 0;
+          }
+          let rowTotal = price * qty; calcSubtotal += rowTotal;
+          html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong class="text-primary"><i class="fa-solid fa-user"></i> บุฟเฟ่ต์ (${name})</strong><br><small class="text-muted">${price} ฿</small></div><div class="fw-bold">x${qty}</div><div class="fw-bold text-end" style="width:70px;">${rowTotal} ฿</div></div>`;
+        });
+      }
+      
+      // 2. ออเดอร์ครัว (ลบทิ้งได้)
+      const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === checkoutState.tableId);
+      tableOrders.forEach(([oId, o]) => {
+        Object.entries(o.items).forEach(([itemId, item]) => {
+          if (item.status !== 'canceled' && item.price > 0) {
+            let rowTotal = item.price * item.qty; calcSubtotal += rowTotal;
+            html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong>${item.name}</strong><br><small class="text-danger">+${item.price} ฿</small></div><div class="fw-bold">x${item.qty}</div><div class="fw-bold text-end" style="width:70px;">${rowTotal} ฿</div><button class="btn btn-sm btn-outline-danger ms-2" onclick="removeCheckoutItem('kitchen', '${oId}', '${itemId}', ${rowTotal})" title="ลบรายการนี้"><i class="fa-solid fa-xmark"></i></button></div>`;
+          }
+        });
+      });
+      
+      // 3. รายการสั่งเพิ่ม (ลบทิ้งได้)
+      if (t.extraOrders) {
+        Object.entries(t.extraOrders).forEach(([extId, ext]) => {
+          if (ext.status !== 'canceled') {
+            calcSubtotal += ext.total;
+            html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong class="text-warning text-dark"><i class="fa-solid fa-star"></i> ${ext.name}</strong><br><small class="text-danger">+${ext.price} ฿</small></div><div class="fw-bold">x${ext.qty}</div><div class="fw-bold text-end" style="width:70px;">${ext.total} ฿</div><button class="btn btn-sm btn-outline-danger ms-2" onclick="removeCheckoutItem('extra', null, '${extId}', ${ext.total})" title="ลบรายการนี้"><i class="fa-solid fa-xmark"></i></button></div>`;
+          }
+        });
+      }
+      
+      document.getElementById('co-items-list').innerHTML = html;
+      checkoutState.subtotal = calcSubtotal;
+      
+      // บังคับเซฟยอดรวมที่คำนวณใหม่ลงฐานข้อมูล (เผื่อมีการลบ)
+      if(t.currentTotal !== calcSubtotal) { window.dbUpdate(window.dbRef(window.db, 'tables/' + checkoutState.tableId), { currentTotal: calcSubtotal }); }
+      calculateCheckout();
+    }
+    
+    // ฟังก์ชันลบรายการทิ้งจากหน้า Checkout ทันที
+    function removeCheckoutItem(type, orderId, itemId, amountToDeduct) {
+      Swal.fire({ title: 'ลบรายการนี้ออกจากบิล?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ' }).then((res) => {
+        if(res.isConfirmed) {
+          const updates = {};
+          if(type === 'kitchen') updates[`orders/${orderId}/items/${itemId}/status`] = 'canceled';
+          else if(type === 'extra') updates[`tables/${checkoutState.tableId}/extraOrders/${itemId}/status`] = 'canceled';
+          
+          window.dbUpdate(window.dbRef(window.db), updates).then(() => { renderCheckoutItems(); });
+        }
+      });
+    }
+    
+    // คำนวณโปรโมชัน
+    function calculateCheckout() {
+      let sub = checkoutState.subtotal; let totalDisc = 0; let net = sub;
+      // หักเปอร์เซ็นต์ก่อน
+      document.querySelectorAll('.checkout-promo-cb:checked').forEach(cb => {
+        if(cb.dataset.type === 'percent') { let d = sub * (parseFloat(cb.dataset.val)/100); totalDisc += d; net -= d; }
+      });
+      // หักเงินสด/โครงการรัฐ
+      document.querySelectorAll('.checkout-promo-cb:checked').forEach(cb => {
+        if(cb.dataset.type === 'fixed') { totalDisc += parseFloat(cb.dataset.val); net -= parseFloat(cb.dataset.val); }
+        else if(cb.dataset.type === 'manual') { let mVal = parseFloat(document.getElementById(`promo_manual_${cb.value}`).value) || 0; totalDisc += mVal; net -= mVal; }
+      });
+      
+      if(net < 0) net = 0;
+      checkoutState.discount = totalDisc; checkoutState.netTotal = net;
+      
+      document.getElementById('co-subtotal').innerText = sub.toLocaleString() + ' ฿';
+      document.getElementById('co-discount').innerText = '-' + totalDisc.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' ฿';
+      document.getElementById('co-nettotal').innerText = net.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' ฿';
+      
+      // อัปเดต QR หากกำลังเปิดอยู่
+      if(!document.getElementById('co-payment-area').classList.contains('d-none')) showPaymentQR();
+    }
+    
+    // ==========================================
+    // ระบบสร้าง QR Code พร้อมเพย์
+    // ==========================================
+    function CRC16(data) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < data.length; i++) {
+        crc ^= data.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) { if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021; else crc = crc << 1; }
+      }
+      return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+    
+    function generatePromptPayPayload(promptpayID, amount) {
+      if(!promptpayID) return "";
+      let id = promptpayID.replace(/[^0-9]/g, '');
+      let target = id.length >= 13 ? '0213' + id : '011300' + (id.startsWith('0') ? '66'+id.slice(1) : id);
+      let amt = parseFloat(amount).toFixed(2); let amtLen = amt.length.toString().padStart(2, '0');
+      let payload = `00020101021129370016A000000677010111${target}5802TH530376454${amtLen}${amt}6304`;
+      return payload + CRC16(payload);
+    }
+    
+    function showPaymentQR() {
+      if(checkoutState.netTotal <= 0) return Swal.fire('แจ้งเตือน', 'ยอดชำระเป็น 0 บาท ไม่สามารถสร้าง QR ได้', 'warning');
+      const p = gPayment || {};
+      if(!p.promptpay) return Swal.fire('แจ้งเตือน', 'แอดมินยังไม่ได้ตั้งค่าเบอร์พร้อมเพย์ กรุณาไปตั้งค่าที่เมนูแอดมิน', 'error');
+      
+      document.getElementById('co-payment-area').classList.remove('d-none');
+      document.getElementById('co-bank-name').innerText = p.bankName || '-';
+      document.getElementById('co-bank-account').innerText = p.accountName || '-';
+      document.getElementById('co-bank-number').innerText = p.accountNumber || '-';
+      
+      const payload = generatePromptPayPayload(p.promptpay, checkoutState.netTotal);
+      const qrContainer = document.getElementById('co-qrcode'); qrContainer.innerHTML = '';
+      new QRCode(qrContainer, { text: payload, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
+      
+      // เลื่อนหน้าจอลงมาหา QR โค้ด
+      setTimeout(() => document.getElementById('co-payment-area').scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+    
+    // จบการทำงาน เคลียร์โต๊ะ
+    function finalizeCheckout() {
+      Swal.fire({ title: 'ยืนยันรับเงินเสร็จสิ้น?', text: `ยอดรับเงิน ${checkoutState.netTotal.toLocaleString()} บาท (โต๊ะจะถูกเคลียร์เป็นโต๊ะว่าง)`, icon: 'success', showCancelButton: true, confirmButtonText: 'ใช่, รับเงินแล้ว' }).then((res) => {
+        if(res.isConfirmed) {
+          window.dbUpdate(window.dbRef(window.db, 'tables/' + checkoutState.tableId), { status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0 });
+          modals.checkout.hide(); Swal.fire({icon: 'success', title: 'เคลียร์โต๊ะเรียบร้อย', timer: 1500, showConfirmButton: false});
+        }
+      });
+    }
+
+    // ==========================================
+    // ปริ้น QR Code โต๊ะสำหรับลูกค้า
+    // ==========================================
     function printTableQR() {
       const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if(!t) return;
       let timeLimitStr = "ไม่จำกัดเวลา"; let rateData = null; Object.values(gRates).forEach(r => { if(r.name === t.rateName) rateData = r; });
@@ -841,7 +1157,8 @@
       modals.manage.hide(); setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); }, 500);
     }
     
-    window.initData = initData; window.renderTablesFront = renderTablesFront; window.handleTableClick = handleTableClick; window.openCheckIn = openCheckIn; window.renderCheckInCustomers = renderCheckInCustomers; window.calcCheckIn = calcCheckIn; window.checkSoupLimit = checkSoupLimit; window.selectKitchenStation = selectKitchenStation; window.toggleKitchenStatus = toggleKitchenStatus; window.renderKDS = renderKDS; window.serveItem = serveItem; window.serveAll = serveAll; window.confirmCheckIn = confirmCheckIn; window.openManageTable = openManageTable; window.openEditTable = openEditTable; window.openMoveTable = openMoveTable; window.clearTable = clearTable; window.openAdminModal = openAdminModal; window.renderListItem = renderListItem; window.addSimpleData = addSimpleData; window.compressMenuImage = compressMenuImage; window.addMenuAdmin = addMenuAdmin; window.saveMenuToFirebase = saveMenuToFirebase; window.addRateAdmin = addRateAdmin; window.manageRateMenus = manageRateMenus; window.addExtraMenuAdmin = addExtraMenuAdmin; window.viewOrderHistory = viewOrderHistory; window.cancelOrderItem = cancelOrderItem; window.cancelExtraItem = cancelExtraItem; window.openExtraOrderModal = openExtraOrderModal; window.deleteData = deleteData; window.printTableQR = printTableQR;
+    // บังคับผูกฟังก์ชันกับ Global Window
+    window.initData = initData; window.renderTablesFront = renderTablesFront; window.handleTableClick = handleTableClick; window.openCheckIn = openCheckIn; window.renderCheckInCustomers = renderCheckInCustomers; window.calcCheckIn = calcCheckIn; window.checkSoupLimit = checkSoupLimit; window.selectKitchenStation = selectKitchenStation; window.toggleKitchenStatus = toggleKitchenStatus; window.renderKDS = renderKDS; window.serveItem = serveItem; window.serveAll = serveAll; window.confirmCheckIn = confirmCheckIn; window.openManageTable = openManageTable; window.openEditTable = openEditTable; window.openMoveTable = openMoveTable; window.clearTable = clearTable; window.openAdminModal = openAdminModal; window.renderListItem = renderListItem; window.addSimpleData = addSimpleData; window.compressMenuImage = compressMenuImage; window.addMenuAdmin = addMenuAdmin; window.saveMenuToFirebase = saveMenuToFirebase; window.addRateAdmin = addRateAdmin; window.manageRateMenus = manageRateMenus; window.addExtraMenuAdmin = addExtraMenuAdmin; window.addPromotionAdmin = addPromotionAdmin; window.editPaymentSettings = editPaymentSettings; window.openCheckoutModal = openCheckoutModal; window.togglePromoManual = togglePromoManual; window.renderCheckoutItems = renderCheckoutItems; window.removeCheckoutItem = removeCheckoutItem; window.calculateCheckout = calculateCheckout; window.showPaymentQR = showPaymentQR; window.finalizeCheckout = finalizeCheckout; window.viewOrderHistory = viewOrderHistory; window.cancelOrderItem = cancelOrderItem; window.cancelExtraItem = cancelExtraItem; window.openExtraOrderModal = openExtraOrderModal; window.deleteData = deleteData; window.printTableQR = printTableQR;
   </script>
 </body>
 </html>
