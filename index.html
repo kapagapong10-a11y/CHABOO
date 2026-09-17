@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <style>
     body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; color: #333; }
     .navbar { background: linear-gradient(135deg, #d32f2f, #f44336); box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2); }
@@ -20,6 +21,7 @@
     .nav-pills .nav-link { color: #555 !important; font-weight: 500; border-radius: 12px; padding: 14px 20px; transition: all 0.3s ease; font-size: 1.1rem; }
     .nav-pills .nav-link:hover { background-color: #f8f9fa; transform: translateX(5px); }
     .nav-pills .nav-link.active { background: linear-gradient(135deg, #d32f2f, #f44336); color: white !important; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.25); transform: translateX(5px); }
+    
     .table-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer; border-radius: 16px; border: none; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; overflow: hidden; }
     .table-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.09); }
     .table-card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; border-radius: 16px 0 0 16px; }
@@ -27,13 +29,16 @@
     .status-empty::before { background-color: #dee2e6; }
     .status-eating { background-color: #f8fdf9; }
     .status-eating::before { background-color: #2e7d32; }
+    
     .badge { padding: 6px 12px; border-radius: 8px; font-weight: 500; }
     .badge.bg-success { background-color: #2e7d32 !important; box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3); }
     .table-name { font-size: 1.4rem; font-weight: 700; color: #2b2b2b; }
     .text-danger { color: #d32f2f !important; }
+    
     .admin-menu-card { cursor: pointer; transition: all 0.3s; text-align: center; padding: 24px 20px; border-radius: 16px; background-color: #ffffff; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
     .admin-menu-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.09); }
     .admin-icon { font-size: 2.8rem; background: -webkit-linear-gradient(135deg, #d32f2f, #f44336); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+    
     .modal-content { border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15); overflow: hidden; }
     .modal-header { border-bottom: none; }
     .btn { border-radius: 8px; font-weight: 500; transition: all 0.2s; }
@@ -42,12 +47,14 @@
     .btn-danger { background: linear-gradient(135deg, #d32f2f, #b71c1c); border: none; }
     .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
     .btn-close:focus { box-shadow: none; }
+    
     @media print {
       body * { visibility: hidden; }
       #print-section, #print-section * { visibility: visible; }
       #print-section { position: absolute; left: 0; top: 0; width: 100%; text-align: center; font-family: sans-serif; color: black; }
       .no-print { display: none !important; }
     }
+    
     .kds-item { transition: all 0.4s ease-in-out; overflow: hidden; }
     .kds-item.removing { opacity: 0; transform: translateX(-50px); padding: 0 !important; margin: 0 !important; max-height: 0; border: none !important; }
     .kds-card-container { transition: all 0.5s ease; }
@@ -57,6 +64,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
+
+  <!-- Navbar -->
   <nav class="navbar sticky-top mb-4 shadow-sm">
     <div class="container-fluid px-3 px-md-4">
       <div class="d-flex align-items-center">
@@ -68,6 +77,7 @@
     </div>
   </nav>
 
+  <!-- Sidebar Menu -->
   <div class="offcanvas offcanvas-start shadow" tabindex="-1" id="sidebarMenu">
     <div class="offcanvas-header border-bottom">
       <h5 class="offcanvas-title fw-bold text-danger"><i class="fa-solid fa-fire-burner"></i> Shabu POS</h5>
@@ -94,6 +104,7 @@
     </div>
   </div>
 
+  <!-- Print Section -->
   <div id="print-section" class="d-none">
     <h2 style="margin-bottom: 5px; font-weight: bold;">Shabu POS</h2>
     <h3 style="margin-top: 0; margin-bottom: 10px;" id="print-table">โต๊ะ: </h3>
@@ -109,8 +120,11 @@
     <hr style="border-top: 1px dashed black;">
   </div>
 
+  <!-- Main Content -->
   <div class="container-fluid px-3 px-md-4">
     <div class="tab-content">
+      
+      <!-- Tables Tab -->
       <div class="tab-pane fade show active" id="tab-tables">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h4 class="fw-bold mb-0">สถานะโต๊ะทั้งหมด</h4>
@@ -120,12 +134,16 @@
           <div class="text-center py-5"><div class="spinner-border text-danger"></div></div>
         </div>
       </div>
+      
+      <!-- Kitchen Tab -->
       <div class="tab-pane fade" id="tab-kitchen">
         <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded shadow-sm">
           <h4 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-fire-burner"></i> ออเดอร์ห้องครัว</h4>
           <div class="d-flex gap-2 align-items-center">
             <span id="kds-status-badge" class="badge bg-secondary fs-6">ยังไม่เลือกสถานี</span>
-            <button id="btn-toggle-kds" class="btn btn-success fw-bold d-none" onclick="toggleKitchenStatus()"><i class="fa-solid fa-power-off"></i> เปิดรับออเดอร์</button>
+            <button id="btn-toggle-kds" class="btn btn-success fw-bold d-none" onclick="toggleKitchenStatus()">
+              <i class="fa-solid fa-power-off"></i> เปิดรับออเดอร์
+            </button>
             <select id="kds-station-select" class="form-select w-auto fw-bold fs-5" onchange="selectKitchenStation(this.value)">
               <option value="">-- เลือกสถานีครัว --</option>
             </select>
@@ -141,227 +159,633 @@
           <div class="col-12 text-center py-5"><h5 class="text-muted">กรุณาเลือกสถานีครัวเพื่อรับออเดอร์</h5></div>
         </div>
       </div>
+      
+      <!-- Admin Tab -->
       <div class="tab-pane fade" id="tab-admin">
         <h4 class="fw-bold mb-4 text-center">เมนูจัดการระบบ</h4>
         <div class="row g-4 justify-content-center">
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('tables')"><i class="fa-solid fa-chair admin-icon"></i><h5 class="fw-bold">จัดการโต๊ะ</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('custTypes')"><i class="fa-solid fa-users admin-icon"></i><h5 class="fw-bold">ประเภทลูกค้า</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('soups')"><i class="fa-solid fa-mug-hot admin-icon"></i><h5 class="fw-bold">ประเภทน้ำซุป</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('categories')"><i class="fa-solid fa-list admin-icon"></i><h5 class="fw-bold">หมวดหมู่อาหาร</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('menus')"><i class="fa-solid fa-burger admin-icon"></i><h5 class="fw-bold">จัดการเมนู</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('kitchens')"><i class="fa-solid fa-display admin-icon"></i><h5 class="fw-bold">จัดการจอครัว</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('extraMenus')"><i class="fa-solid fa-wine-glass admin-icon"></i><h5 class="fw-bold">รายการสั่งเพิ่ม</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('rates')"><i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5></div></div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('tables')">
+              <i class="fa-solid fa-chair admin-icon"></i><h5 class="fw-bold">จัดการโต๊ะ</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('custTypes')">
+              <i class="fa-solid fa-users admin-icon"></i><h5 class="fw-bold">ประเภทลูกค้า</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('soups')">
+              <i class="fa-solid fa-mug-hot admin-icon"></i><h5 class="fw-bold">ประเภทน้ำซุป</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('categories')">
+              <i class="fa-solid fa-list admin-icon"></i><h5 class="fw-bold">หมวดหมู่อาหาร</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('menus')">
+              <i class="fa-solid fa-burger admin-icon"></i><h5 class="fw-bold">จัดการเมนู</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('kitchens')">
+              <i class="fa-solid fa-display admin-icon"></i><h5 class="fw-bold">จัดการจอครัว</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('extraMenus')">
+              <i class="fa-solid fa-wine-glass admin-icon"></i><h5 class="fw-bold">รายการสั่งเพิ่ม</h5>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('rates')">
+              <i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Check-in Modal -->
+  <div class="modal fade" id="checkInModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title fw-bold" id="ci-title">เปิดโต๊ะ: </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="ci-table-id">
+          <div class="mb-3">
+            <label class="form-label fw-bold">1. เลือกเรทราคา</label>
+            <select class="form-select" id="ci-rate" onchange="renderCheckInCustomers()"></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">2. จำนวนลูกค้า (ตามเรทราคา)</label>
+            <div id="ci-customer-inputs" class="bg-light p-2 rounded border">
+              <span class="text-muted small">กรุณาเลือกเรทราคาก่อน</span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">3. เลือกน้ำซุป (สูงสุด 2 อย่าง)</label>
+            <div id="ci-soups-container" class="row g-2"></div>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center text-danger fw-bold fs-5">
+            <span>ยอดเริ่มต้น:</span><span id="ci-total">0.00 ฿</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-success w-100 fw-bold" onclick="confirmCheckIn()">ยืนยันเปิดโต๊ะ</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal fade" id="checkInModal" tabindex="-1">
-    <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title fw-bold" id="ci-title">เปิดโต๊ะ: </h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="ci-table-id"><div class="mb-3"><label class="form-label fw-bold">1. เลือกเรทราคา</label><select class="form-select" id="ci-rate" onchange="renderCheckInCustomers()"></select></div><div class="mb-3"><label class="form-label fw-bold">2. จำนวนลูกค้า (ตามเรทราคา)</label><div id="ci-customer-inputs" class="bg-light p-2 rounded border"><span class="text-muted small">กรุณาเลือกเรทราคาก่อน</span></div></div><div class="mb-3"><label class="form-label fw-bold">3. เลือกน้ำซุป (สูงสุด 2 อย่าง)</label><div id="ci-soups-container" class="row g-2"></div></div><hr><div class="d-flex justify-content-between align-items-center text-danger fw-bold fs-5"><span>ยอดเริ่มต้น:</span><span id="ci-total">0.00 ฿</span></div></div><div class="modal-footer"><button class="btn btn-success w-100 fw-bold" onclick="confirmCheckIn()">ยืนยันเปิดโต๊ะ</button></div></div></div>
-  </div>
-
+  <!-- Manage Table Modal -->
   <div class="modal fade" id="manageTableModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header bg-white border-bottom-0 pb-0 mt-2 mx-2"><h4 class="modal-title fw-bold text-success" id="mt-title"><i class="fa-solid fa-utensils"></i> โต๊ะ: </h4><button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button></div><div class="modal-body pt-2 px-4"><input type="hidden" id="mt-table-id"><div class="bg-light rounded-4 p-3 mb-4 position-relative border"><button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 shadow-sm rounded-circle" onclick="openEditTable()" title="แก้ไขข้อมูลโต๊ะ" style="width: 32px; height: 32px; padding: 0;"><i class="fa-solid fa-pen text-secondary"></i></button><div class="d-flex justify-content-between mb-2"><span class="text-muted small">เวลาเข้า:</span><span id="mt-time" class="fw-bold text-dark"></span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted small">เรทราคา:</span><span id="mt-rate" class="fw-bold text-primary"></span></div><div class="mb-2"><span class="text-muted small d-block mb-1">จำนวนลูกค้า:</span><div id="mt-customers-list" class="d-flex flex-wrap gap-1"></div></div><div><span class="text-muted small d-block mb-1">น้ำซุป:</span><span id="mt-soups" class="fw-bold text-dark"></span></div></div><div class="text-center mb-4"><p class="text-muted mb-0 small">ยอดรวมปัจจุบัน</p><h1 class="text-danger fw-bold mb-0" style="font-size: 2.8rem;" id="mt-total">0 ฿</h1></div><div class="d-grid gap-2"><button class="btn btn-info fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="printTableQR()"><i class="fa-solid fa-qrcode"></i> ปริ้น QR สั่งอาหาร</button><button class="btn btn-secondary fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="openMoveTable()"><i class="fa-solid fa-arrow-right-arrow-left"></i> ย้ายโต๊ะ</button><button class="btn btn-success fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="viewOrderHistory()"><i class="fa-solid fa-clock-rotate-left"></i> ดูประวัติการสั่งอาหาร</button><button class="btn btn-warning fw-bold text-dark py-2 rounded-3 shadow-sm fs-5" onclick="openExtraOrderModal()"><i class="fa-solid fa-bell-concierge"></i> สั่งอาหารเพิ่ม (พิเศษ)</button><button class="btn btn-primary fw-bold py-2 rounded-3 shadow-sm fs-5"><i class="fa-solid fa-file-invoice-dollar"></i> เช็คบิล</button></div></div><div class="modal-footer bg-white border-top-0 pt-0 px-4 pb-4"><button class="btn btn-outline-danger fw-bold w-100 rounded-3 py-2" onclick="clearTable()"><i class="fa-solid fa-broom"></i> เครียโต๊ะ (คืนโต๊ะว่าง)</button></div></div></div>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-white border-bottom-0 pb-0 mt-2 mx-2">
+          <h4 class="modal-title fw-bold text-success" id="mt-title"><i class="fa-solid fa-utensils"></i> โต๊ะ: </h4>
+          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-2 px-4">
+          <input type="hidden" id="mt-table-id">
+          
+          <!-- Info Box -->
+          <div class="bg-light rounded-4 p-3 mb-4 position-relative border">
+            <button class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 shadow-sm rounded-circle" onclick="openEditTable()" title="แก้ไขข้อมูลโต๊ะ" style="width: 32px; height: 32px; padding: 0;">
+              <i class="fa-solid fa-pen text-secondary"></i>
+            </button>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted small">เวลาเข้า:</span><span id="mt-time" class="fw-bold text-dark"></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted small">เรทราคา:</span><span id="mt-rate" class="fw-bold text-primary"></span>
+            </div>
+            <div class="mb-2">
+              <span class="text-muted small d-block mb-1">จำนวนลูกค้า:</span>
+              <div id="mt-customers-list" class="d-flex flex-wrap gap-1"></div>
+            </div>
+            <div>
+              <span class="text-muted small d-block mb-1">น้ำซุป:</span><span id="mt-soups" class="fw-bold text-dark"></span>
+            </div>
+          </div>
+          
+          <!-- Total Price -->
+          <div class="text-center mb-4">
+            <p class="text-muted mb-0 small">ยอดรวมปัจจุบัน</p>
+            <h1 class="text-danger fw-bold mb-0" style="font-size: 2.8rem;" id="mt-total">0 ฿</h1>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="d-grid gap-2">
+            <button class="btn btn-info fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="printTableQR()"><i class="fa-solid fa-qrcode"></i> ปริ้น QR สั่งอาหาร</button>
+            <button class="btn btn-secondary fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="openMoveTable()"><i class="fa-solid fa-arrow-right-arrow-left"></i> ย้ายโต๊ะ</button>
+            <button class="btn btn-success fw-bold py-2 rounded-3 shadow-sm fs-5 text-white" onclick="viewOrderHistory()"><i class="fa-solid fa-clock-rotate-left"></i> ดูประวัติการสั่งอาหาร</button>
+            <button class="btn btn-warning fw-bold text-dark py-2 rounded-3 shadow-sm fs-5" onclick="openExtraOrderModal()"><i class="fa-solid fa-bell-concierge"></i> สั่งอาหารเพิ่ม (พิเศษ)</button>
+            <button class="btn btn-primary fw-bold py-2 rounded-3 shadow-sm fs-5"><i class="fa-solid fa-file-invoice-dollar"></i> เช็คบิล</button>
+          </div>
+        </div>
+        <div class="modal-footer bg-white border-top-0 pt-0 px-4 pb-4">
+          <button class="btn btn-outline-danger fw-bold w-100 rounded-3 py-2" onclick="clearTable()"><i class="fa-solid fa-broom"></i> เครียโต๊ะ (คืนโต๊ะว่าง)</button>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Admin CRUD Modal -->
   <div class="modal fade" id="adminModal" data-bs-focus="false">
-    <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title fw-bold" id="adminModalTitle">จัดการ...</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light"><div class="d-flex justify-content-between mb-3"><h5 id="adminListTitle" class="fw-bold mb-0">รายการ</h5><button class="btn btn-sm btn-primary" id="adminBtnAdd">เพิ่มข้อมูล</button></div><ul class="list-group" id="adminListContent"></ul></div></div></div>
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title fw-bold" id="adminModalTitle">จัดการ...</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <div class="d-flex justify-content-between mb-3">
+            <h5 id="adminListTitle" class="fw-bold mb-0">รายการ</h5>
+            <button class="btn btn-sm btn-primary" id="adminBtnAdd">เพิ่มข้อมูล</button>
+          </div>
+          <ul class="list-group" id="adminListContent"></ul>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    
     const firebaseConfig = {
       apiKey: "AIzaSyDlt_nDOBUZrsFEoc-bKXotwrcfRiaCtZY",
       authDomain: "chaboo-75e53.firebaseapp.com",
       databaseURL: "https://chaboo-75e53-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "chaboo-75e53"
     };
+    
     const app = initializeApp(firebaseConfig);
     window.db = getDatabase(app);
     window.dbRef = ref; window.dbSet = set; window.dbPush = push; window.dbOnValue = onValue; window.dbUpdate = update; window.dbRemove = remove;
     
-    // โหลดข้อมูลหลังจาก Firebase พร้อม
-    setTimeout(initData, 500);
+    setTimeout(initData, 500); // รอเชื่อมต่อ Firebase ให้เสร็จ
   </script>
+  
   <script>
+    // ประกาศตัวแปร Global
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
-    let currentKitchenId = ""; let kitchenPingInterval = null;
+    let currentKitchenId = ""; 
+    let kitchenPingInterval = null;
     const modals = { checkIn: null, manage: null, admin: null };
+    
     document.addEventListener("DOMContentLoaded", () => {
       modals.checkIn = new bootstrap.Modal(document.getElementById('checkInModal'));
       modals.manage = new bootstrap.Modal(document.getElementById('manageTableModal'));
       modals.admin = new bootstrap.Modal(document.getElementById('adminModal'));
     });
     
+    // ฟังก์ชันเริ่มต้นดึงข้อมูลจาก Firebase
     function initData() {
-      if(!window.db) return setTimeout(initData, 500); // รอจนกว่า Firebase จะพร้อม
+      if(!window.db) return setTimeout(initData, 500);
+      
       window.dbOnValue(window.dbRef(window.db, 'settings/menus'), s => { gMenus = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/categories'), s => { gCategories = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/extraMenus'), s => { gExtraMenus = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'kitchenPings'), s => { gPings = s.val() || {}; rescueOrphanedOrders(); });
+      
       window.dbOnValue(window.dbRef(window.db, 'settings/kitchens'), s => { 
         gKitchens = s.val() || {}; 
-        const sel = document.getElementById('kds-station-select'); const currentVal = sel.value;
+        const sel = document.getElementById('kds-station-select'); 
+        const currentVal = sel.value;
         sel.innerHTML = '<option value="">-- เลือกสถานีครัว --</option>';
         Object.entries(gKitchens).forEach(([id, k]) => sel.innerHTML += `<option value="${id}">${k.name}</option>`);
-        if(currentVal) { sel.value = currentVal; selectKitchenStation(currentVal); }
+        if(currentVal) { 
+          sel.value = currentVal; 
+          selectKitchenStation(currentVal); 
+        }
       });
+      
       window.dbOnValue(window.dbRef(window.db, 'orders'), s => { 
-        gOrders = s.val() || {}; renderKDS(); rescueOrphanedOrders(); 
+        gOrders = s.val() || {}; 
+        renderKDS(); 
+        rescueOrphanedOrders(); 
         let hasUnassigned = false;
-        Object.values(gOrders).forEach(o => { if(o.status === 'pending' && o.kitchenId === 'unassigned') hasUnassigned = true; });
+        Object.values(gOrders).forEach(o => { 
+          if(o.status === 'pending' && o.kitchenId === 'unassigned') hasUnassigned = true; 
+        });
         if(hasUnassigned && (!currentKitchenId || gKitchens[currentKitchenId]?.status !== 'open')) {
            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'ด่วน! มีออเดอร์ตกค้าง (ไม่มีจอครัวเปิดรับงาน)', showConfirmButton: false, timer: 7000 });
         }
       });
+      
       window.dbOnValue(window.dbRef(window.db, 'settings/customerTypes'), s => { gCustTypes = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/soups'), s => { gSoups = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/rates'), s => { gRates = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'tables'), s => { gTables = s.val() || {}; renderTablesFront(); });
     }
     
+    // แสดงผลโต๊ะ
     function renderTablesFront() {
-      const container = document.getElementById('tables-container'); container.innerHTML = '';
+      const container = document.getElementById('tables-container'); 
+      container.innerHTML = '';
+      
       Object.keys(gTables).map(id => ({ id, ...gTables[id] })).sort((a,b) => a.name.localeCompare(b.name, 'th', {numeric:true})).forEach(t => {
-          const isEating = t.status === 'eating';
-          let html = `<div class="col-12 col-md-6 col-lg-4 col-xl-3">
+        const isEating = t.status === 'eating';
+        let html = `
+          <div class="col-12 col-md-6 col-lg-4 col-xl-3">
             <div class="card table-card h-100 p-3 d-flex flex-column ${isEating ? 'status-eating' : 'status-empty'}" onclick="handleTableClick('${t.id}')">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="fs-5 fw-bold">${t.name} ${isEating ? '<i class="fa-solid fa-utensils text-success ms-1 small"></i>' : ''}</span>
                 ${isEating ? '<span class="badge bg-success">กำลังทาน</span>' : '<span class="badge bg-secondary">ว่าง</span>'}
               </div>`;
-          if(isEating) {
-            let custDetails = ''; let totalPeople = 0;
-            if(t.customers) { Object.entries(t.customers).forEach(([n, q]) => { custDetails += `${n}:${q}, `; totalPeople += q; }); custDetails = custDetails.slice(0, -2); }
-            html += `<div class="flex-grow-1" style="font-size: 0.85rem;"><div class="text-primary fw-bold mb-1 text-truncate"><i class="fa-solid fa-tag"></i> ${t.rateName || '-'}</div><div class="text-muted mb-1 text-truncate" title="${custDetails}"><i class="fa-solid fa-users"></i> ${totalPeople} คน <span class="text-black-50">(${custDetails})</span></div><div class="text-muted mb-1 text-truncate" title="${t.soups}"><i class="fa-solid fa-mug-hot"></i> ${t.soups || '-'}</div><div class="text-muted mb-2"><i class="fa-regular fa-clock"></i> เข้า: ${new Date(t.checkInTime).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} น.</div></div><div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center"><span class="text-muted small">ยอดรวม</span><span class="text-danger fw-bold fs-5">${(t.currentTotal||0).toLocaleString()} ฿</span></div>`;
-          } else { html += `<div class="mt-auto text-muted small py-3">คลิกเพื่อเปิดโต๊ะ</div>`; }
-          container.insertAdjacentHTML('beforeend', html + `</div></div>`);
+              
+        if(isEating) {
+          let custDetails = ''; 
+          let totalPeople = 0;
+          if(t.customers) { 
+            Object.entries(t.customers).forEach(([n, q]) => { custDetails += `${n}:${q}, `; totalPeople += q; }); 
+            custDetails = custDetails.slice(0, -2); 
+          }
+          html += `
+              <div class="flex-grow-1" style="font-size: 0.85rem;">
+                <div class="text-primary fw-bold mb-1 text-truncate"><i class="fa-solid fa-tag"></i> ${t.rateName || '-'}</div>
+                <div class="text-muted mb-1 text-truncate" title="${custDetails}"><i class="fa-solid fa-users"></i> ${totalPeople} คน <span class="text-black-50">(${custDetails})</span></div>
+                <div class="text-muted mb-1 text-truncate" title="${t.soups}"><i class="fa-solid fa-mug-hot"></i> ${t.soups || '-'}</div>
+                <div class="text-muted mb-2"><i class="fa-regular fa-clock"></i> เข้า: ${new Date(t.checkInTime).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} น.</div>
+              </div>
+              <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                <span class="text-muted small">ยอดรวม</span>
+                <span class="text-danger fw-bold fs-5">${(t.currentTotal||0).toLocaleString()} ฿</span>
+              </div>`;
+        } else { 
+          html += `<div class="mt-auto text-muted small py-3">คลิกเพื่อเปิดโต๊ะ</div>`; 
+        }
+        
+        container.insertAdjacentHTML('beforeend', html + `</div></div>`);
       });
     }
 
-    function handleTableClick(id) { if (gTables[id].status === 'empty') openCheckIn(id); else openManageTable(id); }
+    function handleTableClick(id) { 
+      if (gTables[id].status === 'empty') openCheckIn(id); 
+      else openManageTable(id); 
+    }
     
+    // ฟังก์ชันเปิดโต๊ะและจัดการตัวเลข
     function openCheckIn(id) {
-      const t = gTables[id]; document.getElementById('ci-table-id').value = id; document.getElementById('ci-title').innerText = 'เปิดโต๊ะ: ' + t.name; document.getElementById('ci-total').innerText = '0.00 ฿';
-      const rateSel = document.getElementById('ci-rate'); rateSel.innerHTML = '<option value="">-- เลือกเรทราคา --</option>'; Object.entries(gRates).forEach(([rId, r]) => { rateSel.innerHTML += `<option value="${rId}">${r.name}</option>`; });
+      const t = gTables[id]; 
+      document.getElementById('ci-table-id').value = id; 
+      document.getElementById('ci-title').innerText = 'เปิดโต๊ะ: ' + t.name; 
+      document.getElementById('ci-total').innerText = '0.00 ฿';
+      
+      const rateSel = document.getElementById('ci-rate'); 
+      rateSel.innerHTML = '<option value="">-- เลือกเรทราคา --</option>'; 
+      Object.entries(gRates).forEach(([rId, r]) => { rateSel.innerHTML += `<option value="${rId}">${r.name}</option>`; });
+      
       document.getElementById('ci-customer-inputs').innerHTML = '<span class="text-muted small">กรุณาเลือกเรทราคาก่อน</span>';
-      const soupDiv = document.getElementById('ci-soups-container'); soupDiv.innerHTML = ''; Object.entries(gSoups).forEach(([sId, s]) => { soupDiv.innerHTML += `<div class="col-6"><div class="form-check"><input class="form-check-input ci-soup-cb" type="checkbox" value="${s.name}" onchange="checkSoupLimit(this)"><label class="form-check-label">${s.name}</label></div></div>`; });
+      
+      const soupDiv = document.getElementById('ci-soups-container'); 
+      soupDiv.innerHTML = ''; 
+      Object.entries(gSoups).forEach(([sId, s]) => { 
+        soupDiv.innerHTML += `
+          <div class="col-6">
+            <div class="form-check">
+              <input class="form-check-input ci-soup-cb" type="checkbox" value="${s.name}" onchange="checkSoupLimit(this)">
+              <label class="form-check-label">${s.name}</label>
+            </div>
+          </div>`; 
+      });
       modals.checkIn.show();
     }
     
     function renderCheckInCustomers() {
-      const rId = document.getElementById('ci-rate').value; const div = document.getElementById('ci-customer-inputs');
+      const rId = document.getElementById('ci-rate').value; 
+      const div = document.getElementById('ci-customer-inputs');
       if(!rId) { div.innerHTML = '<span class="text-muted small">กรุณาเลือกเรทราคาก่อน</span>'; return; }
-      const rate = gRates[rId]; div.innerHTML = '';
-      Object.entries(gCustTypes).forEach(([cId, cType]) => { const price = rate.prices ? (rate.prices[cId] || 0) : 0; div.innerHTML += `<div class="row g-2 align-items-center mb-2"><div class="col-6">${cType.name} <small class="text-danger">(${price}฿)</small></div><div class="col-6"><input type="number" class="form-control text-center ci-cust-input" data-cid="${cId}" data-name="${cType.name}" data-price="${price}" value="0" min="0" onchange="calcCheckIn()"></div></div>`; });
+      
+      const rate = gRates[rId]; 
+      div.innerHTML = '';
+      Object.entries(gCustTypes).forEach(([cId, cType]) => { 
+        const price = rate.prices ? (rate.prices[cId] || 0) : 0; 
+        div.innerHTML += `
+          <div class="row g-2 align-items-center mb-2">
+            <div class="col-6">${cType.name} <small class="text-danger">(${price}฿)</small></div>
+            <div class="col-6"><input type="number" class="form-control text-center ci-cust-input" data-cid="${cId}" data-name="${cType.name}" data-price="${price}" value="0" min="0" onchange="calcCheckIn()"></div>
+          </div>`; 
+      });
       calcCheckIn();
     }
     
-    function calcCheckIn() { let total = 0; document.querySelectorAll('.ci-cust-input').forEach(input => { total += (parseInt(input.value) || 0) * parseFloat(input.dataset.price); }); document.getElementById('ci-total').innerText = total.toLocaleString() + ' ฿'; }
-    function checkSoupLimit(cb) { const checked = document.querySelectorAll('.ci-soup-cb:checked'); if(checked.length > 2) { cb.checked = false; Swal.fire({icon: 'warning', title: 'เลือกซุปได้สูงสุด 2 อย่าง'}); } }
+    function calcCheckIn() { 
+      let total = 0; 
+      document.querySelectorAll('.ci-cust-input').forEach(input => { total += (parseInt(input.value) || 0) * parseFloat(input.dataset.price); }); 
+      document.getElementById('ci-total').innerText = total.toLocaleString() + ' ฿'; 
+    }
     
+    function checkSoupLimit(cb) { 
+      const checked = document.querySelectorAll('.ci-soup-cb:checked'); 
+      if(checked.length > 2) { 
+        cb.checked = false; 
+        Swal.fire({icon: 'warning', title: 'เลือกซุปได้สูงสุด 2 อย่าง'}); 
+      } 
+    }
+    
+    // ฟังก์ชันจัดการ KDS (จอครัว)
     function selectKitchenStation(kId) { 
-      currentKitchenId = kId; const k = gKitchens[kId]; const btn = document.getElementById('btn-toggle-kds'); const badge = document.getElementById('kds-status-badge');
+      currentKitchenId = kId; 
+      const k = gKitchens[kId]; 
+      const btn = document.getElementById('btn-toggle-kds'); 
+      const badge = document.getElementById('kds-status-badge');
+      
       if (kitchenPingInterval) { clearInterval(kitchenPingInterval); kitchenPingInterval = null; }
+      
       if(kId && k) {
         btn.classList.remove('d-none');
-        if(k.status === 'open') { btn.className = 'btn btn-danger fw-bold shadow-sm'; btn.innerHTML = '<i class="fa-solid fa-power-off"></i> ปิดรับออเดอร์'; badge.className = 'badge bg-success fs-6'; badge.innerText = 'เปิดรับงาน (ออนไลน์)'; window.dbSet(window.dbRef(window.db, 'kitchenPings/' + kId), Date.now()); kitchenPingInterval = setInterval(() => { window.dbSet(window.dbRef(window.db, 'kitchenPings/' + kId), Date.now()); }, 10000); } 
-        else { btn.className = 'btn btn-success fw-bold shadow-sm'; btn.innerHTML = '<i class="fa-solid fa-power-off"></i> เปิดรับออเดอร์'; badge.className = 'badge bg-secondary fs-6'; badge.innerText = 'ปิดรับงาน'; }
-      } else { btn.classList.add('d-none'); badge.className = 'badge bg-secondary fs-6'; badge.innerText = 'ยังไม่เลือกสถานี'; }
+        if(k.status === 'open') { 
+          btn.className = 'btn btn-danger fw-bold shadow-sm'; 
+          btn.innerHTML = '<i class="fa-solid fa-power-off"></i> ปิดรับออเดอร์'; 
+          badge.className = 'badge bg-success fs-6'; 
+          badge.innerText = 'เปิดรับงาน (ออนไลน์)'; 
+          
+          window.dbSet(window.dbRef(window.db, 'kitchenPings/' + kId), Date.now()); 
+          kitchenPingInterval = setInterval(() => { window.dbSet(window.dbRef(window.db, 'kitchenPings/' + kId), Date.now()); }, 10000); 
+        } 
+        else { 
+          btn.className = 'btn btn-success fw-bold shadow-sm'; 
+          btn.innerHTML = '<i class="fa-solid fa-power-off"></i> เปิดรับออเดอร์'; 
+          badge.className = 'badge bg-secondary fs-6'; 
+          badge.innerText = 'ปิดรับงาน'; 
+        }
+      } else { 
+        btn.classList.add('d-none'); 
+        badge.className = 'badge bg-secondary fs-6'; 
+        badge.innerText = 'ยังไม่เลือกสถานี'; 
+      }
       renderKDS(); 
     }
     
     function toggleKitchenStatus() {
-      if(!currentKitchenId) return; const currentStatus = gKitchens[currentKitchenId].status === 'open' ? 'closed' : 'open'; const updates = {}; updates['settings/kitchens/' + currentKitchenId + '/status'] = currentStatus;
-      if (currentStatus === 'closed') { Object.entries(gOrders).forEach(([oId, o]) => { if (o.status === 'pending' && o.kitchenId === currentKitchenId) { updates[`orders/${oId}/kitchenId`] = 'unassigned'; } }); }
+      if(!currentKitchenId) return; 
+      const currentStatus = gKitchens[currentKitchenId].status === 'open' ? 'closed' : 'open'; 
+      const updates = {}; 
+      updates['settings/kitchens/' + currentKitchenId + '/status'] = currentStatus;
+      
+      if (currentStatus === 'closed') { 
+        Object.entries(gOrders).forEach(([oId, o]) => { 
+          if (o.status === 'pending' && o.kitchenId === currentKitchenId) { 
+            updates[`orders/${oId}/kitchenId`] = 'unassigned'; 
+          } 
+        }); 
+      }
       window.dbUpdate(window.dbRef(window.db), updates);
     }
     
     function rescueOrphanedOrders() {
-      if (!currentKitchenId) return; const myK = gKitchens[currentKitchenId]; if (!myK || myK.status !== 'open') return; const now = Date.now(); const updates = {}; let needsUpdate = false;
+      if (!currentKitchenId) return; 
+      const myK = gKitchens[currentKitchenId]; 
+      if (!myK || myK.status !== 'open') return; 
+      const now = Date.now(); 
+      const updates = {}; 
+      let needsUpdate = false;
+      
       Object.entries(gOrders).forEach(([oId, o]) => {
         if (o.status === 'pending') {
           let isOrphan = false;
           if (o.kitchenId === 'unassigned') { isOrphan = true; } 
-          else if (o.kitchenId !== currentKitchenId) { const ownerK = gKitchens[o.kitchenId]; const ownerPing = gPings[o.kitchenId] || 0; const isOffline = (now - ownerPing > 30000); if (!ownerK || ownerK.status !== 'open' || isOffline) { isOrphan = true; } }
-          if (isOrphan) { updates[`orders/${oId}/kitchenId`] = currentKitchenId; needsUpdate = true; }
+          else if (o.kitchenId !== currentKitchenId) { 
+            const ownerK = gKitchens[o.kitchenId]; 
+            const ownerPing = gPings[o.kitchenId] || 0; 
+            const isOffline = (now - ownerPing > 30000); 
+            if (!ownerK || ownerK.status !== 'open' || isOffline) { isOrphan = true; } 
+          }
+          if (isOrphan) { 
+            updates[`orders/${oId}/kitchenId`] = currentKitchenId; 
+            needsUpdate = true; 
+          }
         }
       });
-      if (needsUpdate) { window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ดึงออเดอร์ที่ตกค้างมาเข้าจอนี้เรียบร้อย!', showConfirmButton: false, timer: 3000 }); }); }
+      if (needsUpdate) { 
+        window.dbUpdate(window.dbRef(window.db), updates).then(() => { 
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ดึงออเดอร์ที่ตกค้างมาเข้าจอนี้เรียบร้อย!', showConfirmButton: false, timer: 3000 }); 
+        }); 
+      }
     }
     
     function renderKDS() {
-      const container = document.getElementById('kds-container'); if(!container) return;
-      if(!currentKitchenId) { container.innerHTML = '<div class="col-12 text-center py-5"><h5 class="text-muted">กรุณาเลือกสถานีครัวด้านบน</h5></div>'; return; }
-      if(gKitchens[currentKitchenId]?.status !== 'open') { container.innerHTML = '<div class="col-12 text-center py-5"><h4 class="text-danger fw-bold"><i class="fa-solid fa-power-off"></i> จอนี้ถูกปิดรับออเดอร์อยู่</h4></div>'; return; }
+      const container = document.getElementById('kds-container'); 
+      if(!container) return;
+      if(!currentKitchenId) { 
+        container.innerHTML = '<div class="col-12 text-center py-5"><h5 class="text-muted">กรุณาเลือกสถานีครัวด้านบน</h5></div>'; 
+        return; 
+      }
+      if(gKitchens[currentKitchenId]?.status !== 'open') { 
+        container.innerHTML = '<div class="col-12 text-center py-5"><h4 class="text-danger fw-bold"><i class="fa-solid fa-power-off"></i> จอนี้ถูกปิดรับออเดอร์อยู่</h4></div>'; 
+        return; 
+      }
+      
       container.innerHTML = '';
       const myOrders = Object.entries(gOrders).filter(([id, o]) => o.status === 'pending' && o.kitchenId === currentKitchenId).sort((a, b) => a[1].timestamp - b[1].timestamp);
-      if(myOrders.length === 0) { container.innerHTML = '<div class="col-12 text-center py-5"><h3 class="text-success fw-bold"><i class="fa-solid fa-check-circle"></i> ไม่มีออเดอร์ค้าง (เคลียร์แล้ว)</h3></div>'; return; }
+      if(myOrders.length === 0) { 
+        container.innerHTML = '<div class="col-12 text-center py-5"><h3 class="text-success fw-bold"><i class="fa-solid fa-check-circle"></i> ไม่มีออเดอร์ค้าง (เคลียร์แล้ว)</h3></div>'; 
+        return; 
+      }
+      
       myOrders.forEach(([oId, o]) => {
-        let itemsHtml = ''; let allServed = true;
+        let itemsHtml = ''; 
+        let allServed = true;
+        
         Object.entries(o.items).forEach(([iId, item]) => {
           if(!item.served && item.status !== 'canceled') {
             allServed = false;
-            itemsHtml += `<div class="kds-item d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom"><div class="d-flex align-items-center gap-3">${item.image ? `<img src="${item.image}" class="kds-img">` : `<div class="kds-img d-flex justify-content-center align-items-center bg-light"><i class="fa-solid fa-utensils text-muted fs-3"></i></div>`}<div class="fw-bold" style="font-size: 1.3rem;">${item.name} <span class="text-danger ms-2 fw-bold" style="font-size: 1.5rem;">x${item.qty}</span></div></div><button class="btn btn-success fw-bold px-4 py-2 shadow-sm fs-5" onclick="serveItem('${oId}', '${iId}', this)"><i class="fa-solid fa-check"></i> จัดส่ง</button></div>`;
+            itemsHtml += `
+              <div class="kds-item d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                  ${item.image ? `<img src="${item.image}" class="kds-img">` : `<div class="kds-img d-flex justify-content-center align-items-center bg-light"><i class="fa-solid fa-utensils text-muted fs-3"></i></div>`}
+                  <div class="fw-bold" style="font-size: 1.3rem;">${item.name} <span class="text-danger ms-2 fw-bold" style="font-size: 1.5rem;">x${item.qty}</span></div>
+                </div>
+                <button class="btn btn-success fw-bold px-4 py-2 shadow-sm fs-5" onclick="serveItem('${oId}', '${iId}', this)"><i class="fa-solid fa-check"></i> จัดส่ง</button>
+              </div>`;
           }
         });
+        
         if(!allServed) {
-          const timeStr = new Date(o.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit', second:'2-digit'}); const colSize = document.getElementById('kds-col-select')?.value || '6';
-          container.innerHTML += `<div class="col-12 col-lg-${colSize} kds-card-container"><div class="card border-0 shadow h-100" style="border-radius: 16px;"><div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3"><h4 class="mb-0 fw-bold text-warning"><i class="fa-solid fa-bell-concierge"></i> โต๊ะ: ${o.tableName}</h4><span class="badge bg-light text-dark fs-5"><i class="fa-regular fa-clock"></i> ${timeStr} น.</span></div><div class="card-body p-4 bg-white">${itemsHtml}</div><div class="card-footer bg-white border-0 pt-0 pb-4 px-4"><button class="btn btn-primary fw-bold w-100 py-3 fs-4 shadow-sm" onclick="serveAll('${oId}', this)"><i class="fa-solid fa-check-double"></i> ส่งครบแล้วทั้งโต๊ะ</button></div></div></div>`;
-        } else { window.dbUpdate(window.dbRef(window.db, 'orders/' + oId), { status: 'served' }); }
+          const timeStr = new Date(o.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit', second:'2-digit'}); 
+          const colSize = document.getElementById('kds-col-select')?.value || '6';
+          
+          container.innerHTML += `
+            <div class="col-12 col-lg-${colSize} kds-card-container">
+              <div class="card border-0 shadow h-100" style="border-radius: 16px;">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                  <h4 class="mb-0 fw-bold text-warning"><i class="fa-solid fa-bell-concierge"></i> โต๊ะ: ${o.tableName}</h4>
+                  <span class="badge bg-light text-dark fs-5"><i class="fa-regular fa-clock"></i> ${timeStr} น.</span>
+                </div>
+                <div class="card-body p-4 bg-white">${itemsHtml}</div>
+                <div class="card-footer bg-white border-0 pt-0 pb-4 px-4">
+                  <button class="btn btn-primary fw-bold w-100 py-3 fs-4 shadow-sm" onclick="serveAll('${oId}', this)"><i class="fa-solid fa-check-double"></i> ส่งครบแล้วทั้งโต๊ะ</button>
+                </div>
+              </div>
+            </div>`;
+        } else { 
+          window.dbUpdate(window.dbRef(window.db, 'orders/' + oId), { status: 'served' }); 
+        }
       });
     }
     
-    function serveItem(orderId, itemId, btnEl) { const itemDiv = btnEl.closest('.kds-item'); itemDiv.classList.add('removing'); setTimeout(() => { window.dbUpdate(window.dbRef(window.db, `orders/${orderId}/items/${itemId}`), { served: true }); }, 400); }
-    function serveAll(orderId, btnEl) { const cardDiv = btnEl.closest('.kds-card-container'); cardDiv.classList.add('removing'); setTimeout(() => { window.dbUpdate(window.dbRef(window.db, `orders/${orderId}`), { status: 'served' }); }, 400); }
+    function serveItem(orderId, itemId, btnEl) { 
+      const itemDiv = btnEl.closest('.kds-item'); 
+      itemDiv.classList.add('removing'); 
+      setTimeout(() => { window.dbUpdate(window.dbRef(window.db, `orders/${orderId}/items/${itemId}`), { served: true }); }, 400); 
+    }
     
+    function serveAll(orderId, btnEl) { 
+      const cardDiv = btnEl.closest('.kds-card-container'); 
+      cardDiv.classList.add('removing'); 
+      setTimeout(() => { window.dbUpdate(window.dbRef(window.db, `orders/${orderId}`), { status: 'served' }); }, 400); 
+    }
+    
+    // ฟังก์ชันจัดการโต๊ะอื่นๆ (เปิดโต๊ะ, ย้ายโต๊ะ, เช็คบิล)
     function confirmCheckIn() {
       try {
-        const tId = document.getElementById('ci-table-id').value; const rId = document.getElementById('ci-rate').value;
+        const tId = document.getElementById('ci-table-id').value; 
+        const rId = document.getElementById('ci-rate').value;
         if(!rId) { alert('กรุณาเลือกเรทราคา'); return; }
-        let customersData = {}; let totalCount = 0; let totalMoney = 0;
-        document.querySelectorAll('.ci-cust-input').forEach(inp => { const qty = parseInt(inp.value) || 0; if(qty > 0) { const safeName = (inp.dataset.name || 'ไม่ระบุ').replace(/[.#$/\[\]]/g, ''); const price = parseFloat(inp.dataset.price) || 0; customersData[safeName] = qty; totalCount += qty; totalMoney += qty * price; } });
+        
+        let customersData = {}; 
+        let totalCount = 0; 
+        let totalMoney = 0;
+        
+        document.querySelectorAll('.ci-cust-input').forEach(inp => { 
+          const qty = parseInt(inp.value) || 0; 
+          if(qty > 0) { 
+            const safeName = (inp.dataset.name || 'ไม่ระบุ').replace(/[.#$/\[\]]/g, ''); 
+            const price = parseFloat(inp.dataset.price) || 0; 
+            customersData[safeName] = qty; 
+            totalCount += qty; 
+            totalMoney += qty * price; 
+          } 
+        });
+        
         if(totalCount === 0) { alert('กรุณาใส่จำนวนลูกค้าอย่างน้อย 1 คน'); return; }
-        let selectedSoups = []; document.querySelectorAll('.ci-soup-cb:checked').forEach(cb => selectedSoups.push(cb.value));
-        const rateName = gRates[rId] ? gRates[rId].name : 'ไม่ระบุ'; const t = gTables[tId]; const checkTime = (t && t.status === 'eating' && t.checkInTime) ? t.checkInTime : Date.now();
-        window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { status: 'eating', checkInTime: checkTime, rateName: rateName, customers: customersData, soups: selectedSoups.join(', ') || 'ไม่ระบุ', currentTotal: totalMoney || 0 }).then(() => { modals.checkIn.hide(); Swal.fire({icon:'success', title:'บันทึกข้อมูลโต๊ะสำเร็จ', timer:1500, showConfirmButton:false}); }).catch(err => alert('Firebase Error: ' + err.message));
+        let selectedSoups = []; 
+        document.querySelectorAll('.ci-soup-cb:checked').forEach(cb => selectedSoups.push(cb.value));
+        
+        const rateName = gRates[rId] ? gRates[rId].name : 'ไม่ระบุ'; 
+        const t = gTables[tId]; 
+        const checkTime = (t && t.status === 'eating' && t.checkInTime) ? t.checkInTime : Date.now();
+        
+        window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { 
+          status: 'eating', checkInTime: checkTime, rateName: rateName, 
+          customers: customersData, soups: selectedSoups.join(', ') || 'ไม่ระบุ', currentTotal: totalMoney || 0 
+        }).then(() => { 
+          modals.checkIn.hide(); 
+          Swal.fire({icon:'success', title:'บันทึกข้อมูลโต๊ะสำเร็จ', timer:1500, showConfirmButton:false}); 
+        }).catch(err => alert('Firebase Error: ' + err.message));
+        
       } catch (error) { alert('ระบบพบข้อผิดพลาด: ' + error.message); }
     }
     
     function openManageTable(id) {
-      const t = gTables[id]; document.getElementById('mt-table-id').value = id; document.getElementById('mt-title').innerHTML = '<i class="fa-solid fa-utensils"></i> โต๊ะ: ' + t.name; document.getElementById('mt-time').innerText = new Date(t.checkInTime).toLocaleTimeString('th-TH') + ' น.';
-      let custHtml = ''; if(t.customers) { Object.entries(t.customers).forEach(([name, qty]) => { custHtml += `<span class="badge bg-secondary px-2 py-1">${name}: ${qty}</span>`; }); }
-      document.getElementById('mt-customers-list').innerHTML = custHtml || '-'; document.getElementById('mt-soups').innerText = t.soups || '-'; document.getElementById('mt-rate').innerText = t.rateName || '-'; document.getElementById('mt-total').innerText = (t.currentTotal || 0).toLocaleString() + ' ฿';
+      const t = gTables[id]; 
+      document.getElementById('mt-table-id').value = id; 
+      document.getElementById('mt-title').innerHTML = '<i class="fa-solid fa-utensils"></i> โต๊ะ: ' + t.name; 
+      document.getElementById('mt-time').innerText = new Date(t.checkInTime).toLocaleTimeString('th-TH') + ' น.';
+      
+      let custHtml = ''; 
+      if(t.customers) { Object.entries(t.customers).forEach(([name, qty]) => { custHtml += `<span class="badge bg-secondary px-2 py-1">${name}: ${qty}</span>`; }); }
+      document.getElementById('mt-customers-list').innerHTML = custHtml || '-'; 
+      document.getElementById('mt-soups').innerText = t.soups || '-'; 
+      document.getElementById('mt-rate').innerText = t.rateName || '-'; 
+      document.getElementById('mt-total').innerText = (t.currentTotal || 0).toLocaleString() + ' ฿';
       modals.manage.show();
     }
     
     function openEditTable() {
-      const id = document.getElementById('mt-table-id').value; const t = gTables[id]; modals.manage.hide(); openCheckIn(id); document.getElementById('ci-title').innerText = 'แก้ไขข้อมูลโต๊ะ: ' + t.name;
-      let selectedRateId = ""; Object.entries(gRates).forEach(([rId, r]) => { if (r.name === t.rateName) selectedRateId = rId; });
+      const id = document.getElementById('mt-table-id').value; 
+      const t = gTables[id]; 
+      modals.manage.hide(); openCheckIn(id); 
+      document.getElementById('ci-title').innerText = 'แก้ไขข้อมูลโต๊ะ: ' + t.name;
+      
+      let selectedRateId = ""; 
+      Object.entries(gRates).forEach(([rId, r]) => { if (r.name === t.rateName) selectedRateId = rId; });
       setTimeout(() => {
-        if (selectedRateId) { document.getElementById('ci-rate').value = selectedRateId; renderCheckInCustomers(); setTimeout(() => { if (t.customers) { document.querySelectorAll('.ci-cust-input').forEach(inp => { const safeName = inp.dataset.name.replace(/[.#$/\[\]]/g, ''); if (t.customers[safeName]) inp.value = t.customers[safeName]; }); calcCheckIn(); } }, 50); }
-        if (t.soups) { const soupArr = t.soups.split(', '); document.querySelectorAll('.ci-soup-cb').forEach(cb => { if (soupArr.includes(cb.value)) cb.checked = true; }); }
+        if (selectedRateId) { 
+          document.getElementById('ci-rate').value = selectedRateId; 
+          renderCheckInCustomers(); 
+          setTimeout(() => { 
+            if (t.customers) { 
+              document.querySelectorAll('.ci-cust-input').forEach(inp => { 
+                const safeName = inp.dataset.name.replace(/[.#$/\[\]]/g, ''); 
+                if (t.customers[safeName]) inp.value = t.customers[safeName]; 
+              }); 
+              calcCheckIn(); 
+            } 
+          }, 50); 
+        }
+        if (t.soups) { 
+          const soupArr = t.soups.split(', '); 
+          document.querySelectorAll('.ci-soup-cb').forEach(cb => { if (soupArr.includes(cb.value)) cb.checked = true; }); 
+        }
       }, 100);
     }
     
     function openMoveTable() {
-      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if (!t) return;
-      let emptyTables = []; Object.entries(gTables).forEach(([id, table]) => { if (table.status === 'empty' && id !== tId) { emptyTables.push({ id, name: table.name }); } });
+      const tId = document.getElementById('mt-table-id').value; 
+      const t = gTables[tId]; if (!t) return;
+      let emptyTables = []; 
+      
+      Object.entries(gTables).forEach(([id, table]) => { 
+        if (table.status === 'empty' && id !== tId) { emptyTables.push({ id, name: table.name }); } 
+      });
       if (emptyTables.length === 0) { return Swal.fire('แจ้งเตือน', 'ไม่มีโต๊ะว่างให้ย้ายในขณะนี้', 'warning'); }
-      emptyTables.sort((a, b) => a.name.localeCompare(b.name, 'th', {numeric: true})); let optionsHtml = '<option value="">-- เลือกโต๊ะปลายทาง --</option>'; emptyTables.forEach(table => { optionsHtml += `<option value="${table.id}">${table.name}</option>`; });
-      Swal.fire({ title: 'ย้ายโต๊ะ: ' + t.name, html: `<div class="mb-2 text-start text-muted small">เลือกโต๊ะที่ต้องการย้ายไป:</div><select id="swal-move-dest" class="form-select fs-5">${optionsHtml}</select>`, showCancelButton: true, confirmButtonText: 'ยืนยันการย้าย', preConfirm: () => { const destId = document.getElementById('swal-move-dest').value; if (!destId) { Swal.showValidationMessage('กรุณาเลือกโต๊ะปลายทาง'); return false; } return destId; } }).then(res => {
+      
+      emptyTables.sort((a, b) => a.name.localeCompare(b.name, 'th', {numeric: true})); 
+      let optionsHtml = '<option value="">-- เลือกโต๊ะปลายทาง --</option>'; 
+      emptyTables.forEach(table => { optionsHtml += `<option value="${table.id}">${table.name}</option>`; });
+      
+      Swal.fire({ 
+        title: 'ย้ายโต๊ะ: ' + t.name, 
+        html: `<div class="mb-2 text-start text-muted small">เลือกโต๊ะที่ต้องการย้ายไป:</div><select id="swal-move-dest" class="form-select fs-5">${optionsHtml}</select>`, 
+        showCancelButton: true, confirmButtonText: 'ยืนยันการย้าย', 
+        preConfirm: () => { 
+          const destId = document.getElementById('swal-move-dest').value; 
+          if (!destId) { Swal.showValidationMessage('กรุณาเลือกโต๊ะปลายทาง'); return false; } 
+          return destId; 
+        } 
+      }).then(res => {
         if (res.isConfirmed) {
           const destId = res.value; const destName = gTables[destId].name; const updates = {};
-          updates['tables/' + destId + '/status'] = 'eating'; updates['tables/' + destId + '/checkInTime'] = t.checkInTime || null; updates['tables/' + destId + '/rateName'] = t.rateName || null; updates['tables/' + destId + '/customers'] = t.customers || null; updates['tables/' + destId + '/soups'] = t.soups || null; updates['tables/' + destId + '/currentTotal'] = t.currentTotal || 0;
-          updates['tables/' + tId + '/status'] = 'empty'; updates['tables/' + tId + '/checkInTime'] = null; updates['tables/' + tId + '/rateName'] = null; updates['tables/' + tId + '/customers'] = null; updates['tables/' + tId + '/soups'] = null; updates['tables/' + tId + '/currentTotal'] = 0;
+          updates['tables/' + destId + '/status'] = 'eating'; 
+          updates['tables/' + destId + '/checkInTime'] = t.checkInTime || null; 
+          updates['tables/' + destId + '/rateName'] = t.rateName || null; 
+          updates['tables/' + destId + '/customers'] = t.customers || null; 
+          updates['tables/' + destId + '/soups'] = t.soups || null; 
+          updates['tables/' + destId + '/currentTotal'] = t.currentTotal || 0;
+          
+          updates['tables/' + tId + '/status'] = 'empty'; 
+          updates['tables/' + tId + '/checkInTime'] = null; 
+          updates['tables/' + tId + '/rateName'] = null; 
+          updates['tables/' + tId + '/customers'] = null; 
+          updates['tables/' + tId + '/soups'] = null; 
+          updates['tables/' + tId + '/currentTotal'] = 0;
+          
           Swal.fire({ title: 'กำลังย้ายโต๊ะ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          
           const ordersRef = window.dbRef(window.db, 'orders');
           const unsubscribe = window.dbOnValue(ordersRef, (snap) => {
-            unsubscribe(); const orders = snap.val() || {}; Object.entries(orders).forEach(([oId, order]) => { if (order.tableId === tId) { updates['orders/' + oId + '/tableId'] = destId; updates['orders/' + oId + '/tableName'] = destName; } });
-            window.dbUpdate(window.dbRef(window.db), updates).then(() => { modals.manage.hide(); Swal.fire('สำเร็จ', 'ย้ายข้อมูลไปยังโต๊ะ ' + destName + ' เรียบร้อย', 'success'); }).catch(err => { Swal.fire('ผิดพลาด', err.message, 'error'); });
+            unsubscribe(); 
+            const orders = snap.val() || {}; 
+            Object.entries(orders).forEach(([oId, order]) => { 
+              if (order.tableId === tId) { updates['orders/' + oId + '/tableId'] = destId; updates['orders/' + oId + '/tableName'] = destName; } 
+            });
+            window.dbUpdate(window.dbRef(window.db), updates).then(() => { 
+              modals.manage.hide(); Swal.fire('สำเร็จ', 'ย้ายข้อมูลไปยังโต๊ะ ' + destName + ' เรียบร้อย', 'success'); 
+            }).catch(err => { Swal.fire('ผิดพลาด', err.message, 'error'); });
           });
         }
       });
@@ -369,106 +793,354 @@
     
     function clearTable() {
       const tId = document.getElementById('mt-table-id').value;
-      Swal.fire({ title: 'เคลียร์โต๊ะ?', text: 'ล้างข้อมูลเพื่อรับลูกค้าใหม่', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ล้างข้อมูล' }).then(res => { if(res.isConfirmed) { window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0 }); modals.manage.hide(); } });
+      Swal.fire({ title: 'เคลียร์โต๊ะ?', text: 'ล้างข้อมูลเพื่อรับลูกค้าใหม่', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ล้างข้อมูล' })
+        .then(res => { 
+          if(res.isConfirmed) { 
+            window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0 }); 
+            modals.manage.hide(); 
+          } 
+        });
     }
 
+    // ฟังก์ชันจัดการระบบแอดมิน CRUD
     let currentAdminMode = '';
+    
     function openAdminModal(mode) {
-      currentAdminMode = mode; const titleEl = document.getElementById('adminModalTitle'); const listEl = document.getElementById('adminListContent'); const btnEl = document.getElementById('adminBtnAdd'); listEl.innerHTML = '';
-      if(mode === 'tables') { titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); } 
-      else if(mode === 'custTypes') { titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); }
-      else if(mode === 'soups') { titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); }
-      else if(mode === 'categories') { titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); }
-      else if(mode === 'menus') { titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; btnEl.onclick = () => addMenuAdmin(); Object.entries(gMenus).forEach(([id, item]) => { let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
-      else if(mode === 'kitchens') { titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); }
-      else if(mode === 'extraMenus') { titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; btnEl.onclick = () => addExtraMenuAdmin(); Object.entries(gExtraMenus).forEach(([id, item]) => { listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}<div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
-      else if(mode === 'rates') { titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; btnEl.onclick = () => addRateAdmin(); Object.entries(gRates).forEach(([id, item]) => { let priceText = ''; if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } let menuCount = item.menus ? Object.keys(item.menus).length : 0; listEl.innerHTML += `<li class="list-group-item"><div class="d-flex justify-content-between align-items-center mb-2"><div><strong>${item.name}</strong><br>${priceText}</div><div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="d-grid"><button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button></div></li>`; }); }
+      currentAdminMode = mode; 
+      const titleEl = document.getElementById('adminModalTitle'); 
+      const listEl = document.getElementById('adminListContent'); 
+      const btnEl = document.getElementById('adminBtnAdd'); 
+      listEl.innerHTML = '';
+      
+      if(mode === 'tables') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; 
+        btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); 
+        Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); 
+      } 
+      else if(mode === 'custTypes') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; 
+        btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); 
+        Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); 
+      }
+      else if(mode === 'soups') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; 
+        btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); 
+        Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); 
+      }
+      else if(mode === 'categories') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; 
+        btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); 
+        Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); 
+      }
+      else if(mode === 'menus') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; 
+        btnEl.onclick = () => addMenuAdmin(); 
+        Object.entries(gMenus).forEach(([id, item]) => { 
+          let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; 
+          listEl.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                ${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}
+                <div><strong>${item.name}</strong><br>${priceText}</div>
+              </div>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button>
+            </li>`; 
+        }); 
+      }
+      else if(mode === 'kitchens') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; 
+        btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); 
+        Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); 
+      }
+      else if(mode === 'extraMenus') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; 
+        btnEl.onclick = () => addExtraMenuAdmin(); 
+        Object.entries(gExtraMenus).forEach(([id, item]) => { 
+          listEl.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                ${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}
+                <div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div>
+              </div>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button>
+            </li>`; 
+        }); 
+      }
+      else if(mode === 'rates') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; 
+        btnEl.onclick = () => addRateAdmin(); 
+        Object.entries(gRates).forEach(([id, item]) => { 
+          let priceText = ''; 
+          if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } 
+          let menuCount = item.menus ? Object.keys(item.menus).length : 0; 
+          listEl.innerHTML += `
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div><strong>${item.name}</strong><br>${priceText}</div>
+                <div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div>
+              </div>
+              <div class="d-grid">
+                <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button>
+              </div>
+            </li>`; 
+        }); 
+      }
       modals.admin.show();
     }
     
-    function renderListItem(id, name, path) { return `<li class="list-group-item d-flex justify-content-between align-items-center"><span>${name}</span><button class="btn btn-sm btn-outline-danger" onclick="deleteData('${path}', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }
-    function addSimpleData(path, title, placeholder) { Swal.fire({ title: title, input: 'text', inputPlaceholder: placeholder, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { if(res.isConfirmed && res.value) { const data = path === 'tables' ? {name: res.value, status: 'empty', currentTotal: 0} : {name: res.value}; window.dbSet(window.dbPush(window.dbRef(window.db, path)), data).then(() => openAdminModal(currentAdminMode)); } }); }
+    function renderListItem(id, name, path) { 
+      return `<li class="list-group-item d-flex justify-content-between align-items-center"><span>${name}</span><button class="btn btn-sm btn-outline-danger" onclick="deleteData('${path}', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
+    }
+    
+    function addSimpleData(path, title, placeholder) { 
+      Swal.fire({ title: title, input: 'text', inputPlaceholder: placeholder, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { 
+        if(res.isConfirmed && res.value) { 
+          const data = path === 'tables' ? {name: res.value, status: 'empty', currentTotal: 0} : {name: res.value}; 
+          window.dbSet(window.dbPush(window.dbRef(window.db, path)), data).then(() => openAdminModal(currentAdminMode)); 
+        } 
+      }); 
+    }
     
     let tempCompressedImage = "";
     function compressMenuImage(event) {
-      const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.src = e.target.result; img.onload = function() { const canvas = document.createElement('canvas'); const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); tempCompressedImage = canvas.toDataURL('image/jpeg', 0.6); } }; reader.readAsDataURL(file);
+      const file = event.target.files[0]; if (!file) return; 
+      const reader = new FileReader(); 
+      reader.onload = function(e) { 
+        const img = new Image(); img.src = e.target.result; 
+        img.onload = function() { 
+          const canvas = document.createElement('canvas'); const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width; 
+          canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; 
+          const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+          tempCompressedImage = canvas.toDataURL('image/jpeg', 0.6); 
+        } 
+      }; 
+      reader.readAsDataURL(file);
     }
     
     function addMenuAdmin() {
-      tempCompressedImage = ""; let catOptions = ''; if (Object.keys(gCategories).length === 0) { catOptions = '<option value="ทั่วไป">ทั่วไป (กรุณาไปเพิ่มหมวดหมู่ก่อน)</option>'; } else { Object.entries(gCategories).forEach(([id, c]) => { catOptions += `<option value="${c.name}">${c.name}</option>`; }); }
-      let html = `<input id="swal-menu-name" class="swal2-input mb-2" placeholder="ชื่อเมนู (เช่น หมูสไลด์)"><select id="swal-menu-category" class="swal2-select mb-2" style="display: flex; width: 75%; font-size: 1.125em;">${catOptions}</select><input id="swal-menu-price" type="number" class="swal2-input mb-2" placeholder="ราคาจ่ายเพิ่ม (ถ้าฟรีใส่ 0)"><input id="swal-menu-img" type="file" accept="image/*" class="form-control mt-3 mx-auto" style="width: 80%;" onchange="compressMenuImage(event)"><small class="text-muted d-block mt-1">ระบบจะย่อรูปอัตโนมัติเพื่อให้ลูกค้าโหลดเร็วที่สุด</small>`;
-      Swal.fire({ title: 'เพิ่มรายการอาหารใหม่', html: html, showCancelButton: true, confirmButtonText: 'บันทึกและอัปโหลด', preConfirm: () => { const name = document.getElementById('swal-menu-name').value; const category = document.getElementById('swal-menu-category').value || 'ทั่วไป'; const price = parseFloat(document.getElementById('swal-menu-price').value) || 0; if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเมนู'); return false; } return { name: name, category: category, price: price }; } }).then(res => { if(res.isConfirmed) { const data = res.value; Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); saveMenuToFirebase(data.name, data.category, data.price, tempCompressedImage || ""); } });
+      tempCompressedImage = ""; 
+      let catOptions = ''; 
+      if (Object.keys(gCategories).length === 0) { 
+        catOptions = '<option value="ทั่วไป">ทั่วไป (กรุณาไปเพิ่มหมวดหมู่ก่อน)</option>'; 
+      } else { 
+        Object.entries(gCategories).forEach(([id, c]) => { catOptions += `<option value="${c.name}">${c.name}</option>`; }); 
+      }
+      
+      let html = `
+        <input id="swal-menu-name" class="swal2-input mb-2" placeholder="ชื่อเมนู (เช่น หมูสไลด์)">
+        <select id="swal-menu-category" class="swal2-select mb-2" style="display: flex; width: 75%; font-size: 1.125em;">${catOptions}</select>
+        <input id="swal-menu-price" type="number" class="swal2-input mb-2" placeholder="ราคาจ่ายเพิ่ม (ถ้าฟรีใส่ 0)">
+        <input id="swal-menu-img" type="file" accept="image/*" class="form-control mt-3 mx-auto" style="width: 80%;" onchange="compressMenuImage(event)">
+        <small class="text-muted d-block mt-1">ระบบจะย่อรูปอัตโนมัติเพื่อให้ลูกค้าโหลดเร็วที่สุด</small>`;
+        
+      Swal.fire({ 
+        title: 'เพิ่มรายการอาหารใหม่', html: html, showCancelButton: true, confirmButtonText: 'บันทึกและอัปโหลด', 
+        preConfirm: () => { 
+          const name = document.getElementById('swal-menu-name').value; 
+          const category = document.getElementById('swal-menu-category').value || 'ทั่วไป'; 
+          const price = parseFloat(document.getElementById('swal-menu-price').value) || 0; 
+          if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเมนู'); return false; } 
+          return { name: name, category: category, price: price }; 
+        } 
+      }).then(res => { 
+        if(res.isConfirmed) { 
+          const data = res.value; 
+          Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); 
+          saveMenuToFirebase(data.name, data.category, data.price, tempCompressedImage || ""); 
+        } 
+      });
     }
     
-    function saveMenuToFirebase(name, category, price, imageUrl) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/menus')), { name: name, category: category, price: price, image: imageUrl, status: 'active' }).then(() => { Swal.fire('สำเร็จ', 'เพิ่มรายการอาหารเรียบร้อย', 'success'); openAdminModal('menus'); }); }
+    function saveMenuToFirebase(name, category, price, imageUrl) { 
+      window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/menus')), { name: name, category: category, price: price, image: imageUrl, status: 'active' }).then(() => { 
+        Swal.fire('สำเร็จ', 'เพิ่มรายการอาหารเรียบร้อย', 'success'); openAdminModal('menus'); 
+      }); 
+    }
     
     function addRateAdmin() {
       if(Object.keys(gCustTypes).length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาไปเพิ่ม "ประเภทลูกค้า" ก่อนสร้างเรทราคา', 'warning');
-      let html = `<input id="swal-rate-name" class="swal2-input mb-2" placeholder="ชื่อเรท (เช่น บุฟเฟ่ต์ 299)"><input id="swal-rate-time" type="number" class="swal2-input mt-0" placeholder="เวลาทาน (นาที) เช่น 90 (0=ไม่จำกัด)"><hr>`; Object.entries(gCustTypes).forEach(([cid, cType]) => { html += `<div class="d-flex align-items-center justify-content-between mb-2"><span>ราคา ${cType.name}</span><input type="number" id="price_${cid}" class="form-control w-50" placeholder="0"></div>`; });
-      Swal.fire({ title: 'เพิ่มเรทราคา', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', preConfirm: () => { const name = document.getElementById('swal-rate-name').value; if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเรท'); return false; } let prices = {}; Object.keys(gCustTypes).forEach(cid => { prices[cid] = parseFloat(document.getElementById(`price_${cid}`).value) || 0; }); const timeLimit = parseInt(document.getElementById('swal-rate-time').value) || 0; return { name: name, prices: prices, timeLimit: timeLimit }; } }).then(res => { if(res.isConfirmed) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/rates')), res.value).then(() => openAdminModal('rates')); } });
+      
+      let html = `<input id="swal-rate-name" class="swal2-input mb-2" placeholder="ชื่อเรท (เช่น บุฟเฟ่ต์ 299)"><input id="swal-rate-time" type="number" class="swal2-input mt-0" placeholder="เวลาทาน (นาที) เช่น 90 (0=ไม่จำกัด)"><hr>`; 
+      Object.entries(gCustTypes).forEach(([cid, cType]) => { html += `<div class="d-flex align-items-center justify-content-between mb-2"><span>ราคา ${cType.name}</span><input type="number" id="price_${cid}" class="form-control w-50" placeholder="0"></div>`; });
+      
+      Swal.fire({ 
+        title: 'เพิ่มเรทราคา', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', 
+        preConfirm: () => { 
+          const name = document.getElementById('swal-rate-name').value; if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเรท'); return false; } 
+          let prices = {}; Object.keys(gCustTypes).forEach(cid => { prices[cid] = parseFloat(document.getElementById(`price_${cid}`).value) || 0; }); 
+          const timeLimit = parseInt(document.getElementById('swal-rate-time').value) || 0; 
+          return { name: name, prices: prices, timeLimit: timeLimit }; 
+        } 
+      }).then(res => { if(res.isConfirmed) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/rates')), res.value).then(() => openAdminModal('rates')); } });
     }
     
     function manageRateMenus(rateId) {
       if(Object.keys(gMenus).length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาไปเพิ่มรายการอาหารทั้งหมดในคลังก่อน', 'warning');
-      const rateData = gRates[rateId]; const selectedMenus = rateData.menus || {}; let html = `<div class="text-start mb-2 fw-bold text-muted small px-2">ติ๊กเลือกเมนูที่สามารถสั่งได้ในเรทราคานี้:</div><div class="text-start px-2 border p-2 rounded bg-white shadow-sm" style="max-height: 300px; overflow-y: auto;">`; Object.entries(gMenus).forEach(([mId, m]) => { const isChecked = selectedMenus[mId] ? 'checked' : ''; const priceTag = m.price > 0 ? `<span class="text-danger small">(+${m.price}฿)</span>` : '<span class="text-success small">(ฟรี)</span>'; html += `<div class="form-check mb-2 pb-2 border-bottom"><input class="form-check-input swal-manage-rate-menu" type="checkbox" value="${mId}" id="rm_${mId}" style="transform: scale(1.3); margin-top: 6px;" ${isChecked}><label class="form-check-label ms-2" for="rm_${mId}"><strong>${m.name}</strong> ${priceTag}</label></div>`; }); html += `</div>`;
-      Swal.fire({ title: 'จัดเมนู: ' + rateData.name, html: html, showCancelButton: true, confirmButtonText: 'บันทึกรายการ', }).then(res => { if(res.isConfirmed) { let updatedMenus = {}; document.querySelectorAll('.swal-manage-rate-menu:checked').forEach(cb => updatedMenus[cb.value] = true); window.dbUpdate(window.dbRef(window.db, 'settings/rates/' + rateId), { menus: updatedMenus }).then(() => openAdminModal('rates')); } });
+      
+      const rateData = gRates[rateId]; const selectedMenus = rateData.menus || {}; 
+      let html = `<div class="text-start mb-2 fw-bold text-muted small px-2">ติ๊กเลือกเมนูที่สามารถสั่งได้ในเรทราคานี้:</div><div class="text-start px-2 border p-2 rounded bg-white shadow-sm" style="max-height: 300px; overflow-y: auto;">`; 
+      Object.entries(gMenus).forEach(([mId, m]) => { 
+        const isChecked = selectedMenus[mId] ? 'checked' : ''; 
+        const priceTag = m.price > 0 ? `<span class="text-danger small">(+${m.price}฿)</span>` : '<span class="text-success small">(ฟรี)</span>'; 
+        html += `<div class="form-check mb-2 pb-2 border-bottom"><input class="form-check-input swal-manage-rate-menu" type="checkbox" value="${mId}" id="rm_${mId}" style="transform: scale(1.3); margin-top: 6px;" ${isChecked}><label class="form-check-label ms-2" for="rm_${mId}"><strong>${m.name}</strong> ${priceTag}</label></div>`; 
+      }); 
+      html += `</div>`;
+      
+      Swal.fire({ title: 'จัดเมนู: ' + rateData.name, html: html, showCancelButton: true, confirmButtonText: 'บันทึกรายการ' }).then(res => { 
+        if(res.isConfirmed) { 
+          let updatedMenus = {}; document.querySelectorAll('.swal-manage-rate-menu:checked').forEach(cb => updatedMenus[cb.value] = true); 
+          window.dbUpdate(window.dbRef(window.db, 'settings/rates/' + rateId), { menus: updatedMenus }).then(() => openAdminModal('rates')); 
+        } 
+      });
     }
     
     function addExtraMenuAdmin() {
-      tempCompressedImage = ""; let html = `<input id="swal-em-name" class="swal2-input mb-2" placeholder="ชื่อรายการ (เช่น น้ำเปล่า, น้ำแข็ง)"><input id="swal-em-price" type="number" class="swal2-input mb-2" placeholder="ราคา (บาท)"><input type="file" accept="image/*" class="form-control mt-3 mx-auto" style="width: 80%;" onchange="compressMenuImage(event)">`;
+      tempCompressedImage = ""; 
+      let html = `<input id="swal-em-name" class="swal2-input mb-2" placeholder="ชื่อรายการ (เช่น น้ำเปล่า, น้ำแข็ง)"><input id="swal-em-price" type="number" class="swal2-input mb-2" placeholder="ราคา (บาท)"><input type="file" accept="image/*" class="form-control mt-3 mx-auto" style="width: 80%;" onchange="compressMenuImage(event)">`;
       Swal.fire({ title: 'เพิ่มรายการสั่งเพิ่ม', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', preConfirm: () => { const name = document.getElementById('swal-em-name').value; const price = parseFloat(document.getElementById('swal-em-price').value) || 0; if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อรายการ'); return false; } return { name: name, price: price, image: tempCompressedImage || "" }; } }).then(res => { if(res.isConfirmed) { Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/extraMenus')), res.value).then(() => { Swal.close(); openAdminModal('extraMenus'); }); } });
     }
     
+    // ฟังก์ชันจัดการประวัติบิล
     let historyModalInstance = null;
+    
     function viewOrderHistory() {
-      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if (!t) return; let html = ''; let hasOrders = false;
+      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if (!t) return; 
+      let html = ''; let hasOrders = false;
       const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === tId).sort((a, b) => b[1].timestamp - a[1].timestamp);
+      
       if (tableOrders.length > 0) {
         html += `<h6 class="fw-bold mt-2 text-primary"><i class="fa-solid fa-fire-burner"></i> รายการสั่งเข้าครัว</h6>`;
         tableOrders.forEach(([oId, o]) => {
-          const timeStr = new Date(o.timestamp).toLocaleTimeString('th-TH'); html += `<div class="mb-3 p-2 border rounded shadow-sm bg-light"><div class="text-muted small mb-2 border-bottom pb-1"><i class="fa-regular fa-clock"></i> สั่งเมื่อ: ${timeStr} น.</div>`;
-          Object.entries(o.items).forEach(([itemId, item]) => { hasOrders = true; const priceText = item.price > 0 ? `<span class="text-danger small">(+${item.price}฿)</span>` : `<span class="text-success small">(ฟรี)</span>`; if (item.status === 'canceled') { html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-white opacity-50"><div class="fw-bold text-decoration-line-through">${item.name} <span class="text-danger mx-1">x${item.qty}</span> ${priceText}</div><div><span class="badge bg-danger">ยกเลิกแล้ว</span></div></div>`; } else { const statusBadge = (item.served || o.status === 'served') ? `<span class="badge bg-success"><i class="fa-solid fa-check"></i> เสิร์ฟแล้ว</span>` : `<span class="badge bg-warning text-dark"><i class="fa-solid fa-spinner fa-spin"></i> กำลังเตรียม</span>`; html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-white"><div class="fw-bold">${item.name} <span class="text-danger mx-1">x${item.qty}</span> ${priceText}</div><div class="d-flex gap-2 align-items-center">${statusBadge}<button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="cancelOrderItem('${tId}', '${oId}', '${itemId}', ${item.price}, ${item.qty})" title="ยกเลิกรายการนี้"><i class="fa-solid fa-xmark"></i></button></div></div>`; } }); html += `</div>`;
+          const timeStr = new Date(o.timestamp).toLocaleTimeString('th-TH'); 
+          html += `<div class="mb-3 p-2 border rounded shadow-sm bg-light"><div class="text-muted small mb-2 border-bottom pb-1"><i class="fa-regular fa-clock"></i> สั่งเมื่อ: ${timeStr} น.</div>`;
+          Object.entries(o.items).forEach(([itemId, item]) => { 
+            hasOrders = true; 
+            const priceText = item.price > 0 ? `<span class="text-danger small">(+${item.price}฿)</span>` : `<span class="text-success small">(ฟรี)</span>`; 
+            if (item.status === 'canceled') { 
+              html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-white opacity-50"><div class="fw-bold text-decoration-line-through">${item.name} <span class="text-danger mx-1">x${item.qty}</span> ${priceText}</div><div><span class="badge bg-danger">ยกเลิกแล้ว</span></div></div>`; 
+            } else { 
+              const statusBadge = (item.served || o.status === 'served') ? `<span class="badge bg-success"><i class="fa-solid fa-check"></i> เสิร์ฟแล้ว</span>` : `<span class="badge bg-warning text-dark"><i class="fa-solid fa-spinner fa-spin"></i> กำลังเตรียม</span>`; 
+              html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-white"><div class="fw-bold">${item.name} <span class="text-danger mx-1">x${item.qty}</span> ${priceText}</div><div class="d-flex gap-2 align-items-center">${statusBadge}<button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="cancelOrderItem('${tId}', '${oId}', '${itemId}', ${item.price}, ${item.qty})" title="ยกเลิกรายการนี้"><i class="fa-solid fa-xmark"></i></button></div></div>`; 
+            } 
+          }); 
+          html += `</div>`;
         });
       }
+      
       if (t.extraOrders) {
         html += `<h6 class="fw-bold mt-4 text-warning text-dark"><i class="fa-solid fa-wine-glass"></i> รายการสั่งเพิ่ม (พิเศษ)</h6><div class="p-2 border rounded shadow-sm bg-white mb-3">`;
-        Object.entries(t.extraOrders).sort((a, b) => b[1].timestamp - a[1].timestamp).forEach(([extId, ext]) => { hasOrders = true; if (ext.status === 'canceled') { html += `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 opacity-50"><div class="fw-bold text-decoration-line-through">${ext.name} <span class="text-danger mx-1">x${ext.qty}</span> <span class="text-danger small">(+${ext.total}฿)</span></div><div><span class="badge bg-danger">ยกเลิกแล้ว</span></div></div>`; } else { html += `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2"><div class="fw-bold">${ext.name} <span class="text-danger mx-1">x${ext.qty}</span> <span class="text-danger small">(+${ext.total}฿)</span></div><div class="d-flex gap-2 align-items-center"><span class="badge bg-success"><i class="fa-solid fa-check"></i> ลงบิลแล้ว</span><button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="cancelExtraItem('${tId}', '${extId}', ${ext.total})" title="ยกเลิกรายการนี้"><i class="fa-solid fa-xmark"></i></button></div></div>`; } }); html += `</div>`;
+        Object.entries(t.extraOrders).sort((a, b) => b[1].timestamp - a[1].timestamp).forEach(([extId, ext]) => { 
+          hasOrders = true; 
+          if (ext.status === 'canceled') { 
+            html += `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 opacity-50"><div class="fw-bold text-decoration-line-through">${ext.name} <span class="text-danger mx-1">x${ext.qty}</span> <span class="text-danger small">(+${ext.total}฿)</span></div><div><span class="badge bg-danger">ยกเลิกแล้ว</span></div></div>`; 
+          } else { 
+            html += `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2"><div class="fw-bold">${ext.name} <span class="text-danger mx-1">x${ext.qty}</span> <span class="text-danger small">(+${ext.total}฿)</span></div><div class="d-flex gap-2 align-items-center"><span class="badge bg-success"><i class="fa-solid fa-check"></i> ลงบิลแล้ว</span><button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="cancelExtraItem('${tId}', '${extId}', ${ext.total})" title="ยกเลิกรายการนี้"><i class="fa-solid fa-xmark"></i></button></div></div>`; 
+          } 
+        }); 
+        html += `</div>`;
       }
+      
       if (!hasOrders) { html += `<div class="text-center text-muted py-4"><i class="fa-solid fa-receipt fs-1 mb-2"></i><br>ยังไม่มีประวัติการสั่งอาหาร</div>`; }
-      let modalEl = document.getElementById('historyModal'); if (!modalEl) { const modalHtml = `<div class="modal fade" id="historyModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg" style="border-radius: 16px;"><div class="modal-header bg-light border-bottom-0 pb-3"><h5 class="modal-title fw-bold text-primary" id="historyModalTitle">ประวัติการสั่ง</h5><button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" onclick="openManageTable(document.getElementById('mt-table-id').value)"></button></div><div class="modal-body pt-2 px-3" id="historyModalBody"></div><div class="modal-footer border-top-0 pt-0"><button type="button" class="btn btn-primary w-100 fw-bold rounded-3 py-2" data-bs-dismiss="modal" onclick="openManageTable(document.getElementById('mt-table-id').value)">กลับไปหน้าจัดการโต๊ะ</button></div></div></div></div>`; document.body.insertAdjacentHTML('beforeend', modalHtml); modalEl = document.getElementById('historyModal'); historyModalInstance = new bootstrap.Modal(modalEl, { backdrop: 'static' }); }
-      document.getElementById('historyModalTitle').innerText = 'ประวัติการสั่ง: โต๊ะ ' + t.name; document.getElementById('historyModalBody').innerHTML = html; if(modals.manage) modals.manage.hide(); if (!modalEl.classList.contains('show')) { historyModalInstance.show(); }
+      
+      let modalEl = document.getElementById('historyModal'); 
+      if (!modalEl) { 
+        const modalHtml = `<div class="modal fade" id="historyModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow-lg" style="border-radius: 16px;"><div class="modal-header bg-light border-bottom-0 pb-3"><h5 class="modal-title fw-bold text-primary" id="historyModalTitle">ประวัติการสั่ง</h5><button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" onclick="openManageTable(document.getElementById('mt-table-id').value)"></button></div><div class="modal-body pt-2 px-3" id="historyModalBody"></div><div class="modal-footer border-top-0 pt-0"><button type="button" class="btn btn-primary w-100 fw-bold rounded-3 py-2" data-bs-dismiss="modal" onclick="openManageTable(document.getElementById('mt-table-id').value)">กลับไปหน้าจัดการโต๊ะ</button></div></div></div></div>`; 
+        document.body.insertAdjacentHTML('beforeend', modalHtml); 
+        modalEl = document.getElementById('historyModal'); 
+        historyModalInstance = new bootstrap.Modal(modalEl, { backdrop: 'static' }); 
+      }
+      
+      document.getElementById('historyModalTitle').innerText = 'ประวัติการสั่ง: โต๊ะ ' + t.name; 
+      document.getElementById('historyModalBody').innerHTML = html; 
+      if(modals.manage) modals.manage.hide(); 
+      if (!modalEl.classList.contains('show')) { historyModalInstance.show(); }
     }
     
-    function cancelOrderItem(tableId, orderId, itemId, price, qty) { Swal.fire({ title: 'ยืนยันยกเลิกรายการ?', text: 'ยอดเงินจะถูกหักออกจากบิลอัตโนมัติ (ถ้ามีราคา)', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ยกเลิก' }).then((res) => { if(res.isConfirmed) { Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const updates = {}; updates[`orders/${orderId}/items/${itemId}/status`] = 'canceled'; if(price > 0) { const currentTotal = gTables[tableId].currentTotal || 0; updates[`tables/${tableId}/currentTotal`] = Math.max(0, currentTotal - (price * qty)); } window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.close(); viewOrderHistory(); }); } }); }
-    function cancelExtraItem(tableId, extId, totalDeduct) { Swal.fire({ title: 'ยืนยันยกเลิกรายการ?', text: 'ยอดเงินจะถูกหักออกจากบิลอัตโนมัติ', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ยกเลิก' }).then((res) => { if(res.isConfirmed) { Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const updates = {}; updates[`tables/${tableId}/extraOrders/${extId}/status`] = 'canceled'; const currentTotal = gTables[tableId].currentTotal || 0; updates[`tables/${tableId}/currentTotal`] = Math.max(0, currentTotal - totalDeduct); window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.close(); viewOrderHistory(); }); } }); }
+    function cancelOrderItem(tableId, orderId, itemId, price, qty) { 
+      Swal.fire({ title: 'ยืนยันยกเลิกรายการ?', text: 'ยอดเงินจะถูกหักออกจากบิลอัตโนมัติ (ถ้ามีราคา)', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ยกเลิก' }).then((res) => { 
+        if(res.isConfirmed) { 
+          Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
+          const updates = {}; updates[`orders/${orderId}/items/${itemId}/status`] = 'canceled'; 
+          if(price > 0) { const currentTotal = gTables[tableId].currentTotal || 0; updates[`tables/${tableId}/currentTotal`] = Math.max(0, currentTotal - (price * qty)); } 
+          window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.close(); viewOrderHistory(); }); 
+        } 
+      }); 
+    }
+    
+    function cancelExtraItem(tableId, extId, totalDeduct) { 
+      Swal.fire({ title: 'ยืนยันยกเลิกรายการ?', text: 'ยอดเงินจะถูกหักออกจากบิลอัตโนมัติ', icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ยกเลิก' }).then((res) => { 
+        if(res.isConfirmed) { 
+          Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
+          const updates = {}; updates[`tables/${tableId}/extraOrders/${extId}/status`] = 'canceled'; 
+          const currentTotal = gTables[tableId].currentTotal || 0; updates[`tables/${tableId}/currentTotal`] = Math.max(0, currentTotal - totalDeduct); 
+          window.dbUpdate(window.dbRef(window.db), updates).then(() => { Swal.close(); viewOrderHistory(); }); 
+        } 
+      }); 
+    }
     
     function openExtraOrderModal() {
-      const tId = document.getElementById('mt-table-id').value; if (Object.keys(gExtraMenus).length === 0) return Swal.fire('แจ้งเตือน', 'แอดมินยังไม่ได้ตั้งค่ารายการสั่งเพิ่มในระบบ', 'warning');
-      let html = `<div class="text-start" style="max-height: 350px; overflow-y: auto; overflow-x: hidden;">`; Object.entries(gExtraMenus).forEach(([id, item]) => { const img = item.image ? `<img src="${item.image}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">` : `<div style="width:50px;height:50px;background:#eee;border-radius:8px;"></div>`; html += `<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom"><div class="d-flex align-items-center gap-3">${img}<div><strong>${item.name}</strong><br><small class="text-danger">${item.price} ฿</small></div></div><div class="d-flex align-items-center"><button class="btn btn-sm btn-light border fw-bold px-2" onclick="const i=document.getElementById('eo_${id}'); i.value=Math.max(0, (parseInt(i.value)||0)-1)">-</button><input type="number" id="eo_${id}" class="form-control text-center mx-1 extra-order-qty" data-name="${item.name}" data-price="${item.price}" value="0" min="0" style="width: 50px;" readonly><button class="btn btn-sm btn-light border fw-bold px-2" onclick="const i=document.getElementById('eo_${id}'); i.value=(parseInt(i.value)||0)+1">+</button></div></div>`; }); html += `</div>`;
-      Swal.fire({ title: 'สั่งรายการพิเศษเพิ่มเติม', html: html, showCancelButton: true, confirmButtonText: 'ยืนยันและคิดเงินลงบิล', preConfirm: () => { let orders = []; let totalAdded = 0; document.querySelectorAll('.extra-order-qty').forEach(inp => { const qty = parseInt(inp.value) || 0; if (qty > 0) { const price = parseFloat(inp.dataset.price); orders.push({ name: inp.dataset.name, qty: qty, price: price, total: qty * price }); totalAdded += qty * price; } }); return { orders, totalAdded }; } }).then(res => { if (res.isConfirmed && res.value.orders.length > 0) { const t = gTables[tId]; const currentTotal = t.currentTotal || 0; Swal.fire({ title: 'กำลังบันทึกบิล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const extraOrdersRef = window.dbRef(window.db, 'tables/' + tId + '/extraOrders'); res.value.orders.forEach(order => { window.dbPush(extraOrdersRef, { ...order, timestamp: Date.now() }); }); window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { currentTotal: currentTotal + res.value.totalAdded }).then(() => { Swal.fire('สำเร็จ', 'สั่งอาหารเพิ่มและอัปเดตบิลเรียบร้อยแล้ว', 'success'); modals.manage.hide(); }); } });
+      const tId = document.getElementById('mt-table-id').value; 
+      if (Object.keys(gExtraMenus).length === 0) return Swal.fire('แจ้งเตือน', 'แอดมินยังไม่ได้ตั้งค่ารายการสั่งเพิ่มในระบบ', 'warning');
+      
+      let html = `<div class="text-start" style="max-height: 350px; overflow-y: auto; overflow-x: hidden;">`; 
+      Object.entries(gExtraMenus).forEach(([id, item]) => { 
+        const img = item.image ? `<img src="${item.image}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">` : `<div style="width:50px;height:50px;background:#eee;border-radius:8px;"></div>`; 
+        html += `<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom"><div class="d-flex align-items-center gap-3">${img}<div><strong>${item.name}</strong><br><small class="text-danger">${item.price} ฿</small></div></div><div class="d-flex align-items-center"><button class="btn btn-sm btn-light border fw-bold px-2" onclick="const i=document.getElementById('eo_${id}'); i.value=Math.max(0, (parseInt(i.value)||0)-1)">-</button><input type="number" id="eo_${id}" class="form-control text-center mx-1 extra-order-qty" data-name="${item.name}" data-price="${item.price}" value="0" min="0" style="width: 50px;" readonly><button class="btn btn-sm btn-light border fw-bold px-2" onclick="const i=document.getElementById('eo_${id}'); i.value=(parseInt(i.value)||0)+1">+</button></div></div>`; 
+      }); 
+      html += `</div>`;
+      
+      Swal.fire({ title: 'สั่งรายการพิเศษเพิ่มเติม', html: html, showCancelButton: true, confirmButtonText: 'ยืนยันและคิดเงินลงบิล', preConfirm: () => { 
+        let orders = []; let totalAdded = 0; 
+        document.querySelectorAll('.extra-order-qty').forEach(inp => { const qty = parseInt(inp.value) || 0; if (qty > 0) { const price = parseFloat(inp.dataset.price); orders.push({ name: inp.dataset.name, qty: qty, price: price, total: qty * price }); totalAdded += qty * price; } }); 
+        return { orders, totalAdded }; 
+      } }).then(res => { 
+        if (res.isConfirmed && res.value.orders.length > 0) { 
+          const t = gTables[tId]; const currentTotal = t.currentTotal || 0; 
+          Swal.fire({ title: 'กำลังบันทึกบิล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); 
+          const extraOrdersRef = window.dbRef(window.db, 'tables/' + tId + '/extraOrders'); 
+          res.value.orders.forEach(order => { window.dbPush(extraOrdersRef, { ...order, timestamp: Date.now() }); }); 
+          window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { currentTotal: currentTotal + res.value.totalAdded }).then(() => { Swal.fire('สำเร็จ', 'สั่งอาหารเพิ่มและอัปเดตบิลเรียบร้อยแล้ว', 'success'); modals.manage.hide(); }); 
+        } 
+      });
     }
     
-    function deleteData(path, id) { if(confirm('ยืนยันการลบข้อมูลนี้?')) { window.dbRemove(window.dbRef(window.db, `${path}/${id}`)).then(() => openAdminModal(currentAdminMode)); } }
+    function deleteData(path, id) { 
+      if(confirm('ยืนยันการลบข้อมูลนี้?')) { 
+        window.dbRemove(window.dbRef(window.db, `${path}/${id}`)).then(() => openAdminModal(currentAdminMode)); 
+      } 
+    }
     
+    // สร้าง QR Code อ้างอิงลิงก์ปัจจุบัน
     function printTableQR() {
-      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if(!t) return;
-      let timeLimitStr = "ไม่จำกัดเวลา"; let rateData = null; Object.values(gRates).forEach(r => { if(r.name === t.rateName) rateData = r; });
+      const tId = document.getElementById('mt-table-id').value; 
+      const t = gTables[tId]; if(!t) return;
+      
+      let timeLimitStr = "ไม่จำกัดเวลา"; let rateData = null; 
+      Object.values(gRates).forEach(r => { if(r.name === t.rateName) rateData = r; });
       if(rateData && rateData.timeLimit > 0) { const outTime = new Date(t.checkInTime + (rateData.timeLimit * 60000)); timeLimitStr = outTime.toLocaleTimeString('th-TH'); }
-      document.getElementById('print-table').innerText = 'โต๊ะ: ' + t.name; document.getElementById('print-in').innerText = new Date(t.checkInTime).toLocaleTimeString('th-TH') + ' น.'; document.getElementById('print-out').innerText = timeLimitStr + (timeLimitStr !== "ไม่จำกัดเวลา" ? ' น.' : ''); document.getElementById('print-rate').innerText = t.rateName || '-';
-      let custDetails = ''; if(t.customers) Object.entries(t.customers).forEach(([n, q]) => custDetails += `${n}:${q} `); document.getElementById('print-cust').innerText = custDetails;
+      
+      document.getElementById('print-table').innerText = 'โต๊ะ: ' + t.name; 
+      document.getElementById('print-in').innerText = new Date(t.checkInTime).toLocaleTimeString('th-TH') + ' น.'; 
+      document.getElementById('print-out').innerText = timeLimitStr + (timeLimitStr !== "ไม่จำกัดเวลา" ? ' น.' : ''); 
+      document.getElementById('print-rate').innerText = t.rateName || '-';
+      
+      let custDetails = ''; 
+      if(t.customers) Object.entries(t.customers).forEach(([n, q]) => custDetails += `${n}:${q} `); 
+      document.getElementById('print-cust').innerText = custDetails;
       
       const qrContainer = document.getElementById('qrcode-container'); qrContainer.innerHTML = '';
       
-      // ดึง URL ปัจจุบันและชี้ไปที่ไฟล์ customer.html
-      const currentUrl = window.location.origin + window.location.pathname;
+      // ดึง URL ของหน้าปัจจุบัน แล้วต่อท้ายด้วย customer.html 
+      const currentUrl = window.location.href.split('?')[0];
       const baseUrl = currentUrl.replace('index.html', '');
       const orderLink = baseUrl + 'customer.html?table=' + tId;
       
       new QRCode(qrContainer, { text: orderLink, width: 150, height: 150 });
-      modals.manage.hide(); setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); }, 500);
+      modals.manage.hide(); 
+      setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); }, 500);
     }
     
-    // บังคับผูกฟังก์ชันกับ Global Window สำหรับระบบ Web App แบบไฟล์ Static 
+    // บังคับผูกฟังก์ชันกับ Global Window
     window.initData = initData; window.renderTablesFront = renderTablesFront; window.handleTableClick = handleTableClick; window.openCheckIn = openCheckIn; window.renderCheckInCustomers = renderCheckInCustomers; window.calcCheckIn = calcCheckIn; window.checkSoupLimit = checkSoupLimit; window.selectKitchenStation = selectKitchenStation; window.toggleKitchenStatus = toggleKitchenStatus; window.renderKDS = renderKDS; window.serveItem = serveItem; window.serveAll = serveAll; window.confirmCheckIn = confirmCheckIn; window.openManageTable = openManageTable; window.openEditTable = openEditTable; window.openMoveTable = openMoveTable; window.clearTable = clearTable; window.openAdminModal = openAdminModal; window.renderListItem = renderListItem; window.addSimpleData = addSimpleData; window.compressMenuImage = compressMenuImage; window.addMenuAdmin = addMenuAdmin; window.saveMenuToFirebase = saveMenuToFirebase; window.addRateAdmin = addRateAdmin; window.manageRateMenus = manageRateMenus; window.addExtraMenuAdmin = addExtraMenuAdmin; window.viewOrderHistory = viewOrderHistory; window.cancelOrderItem = cancelOrderItem; window.cancelExtraItem = cancelExtraItem; window.openExtraOrderModal = openExtraOrderModal; window.deleteData = deleteData; window.printTableQR = printTableQR;
   </script>
 </body>
