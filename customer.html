@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>สั่งอาหาร</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body { font-family: 'Prompt', sans-serif; background-color: #f8f9fa; padding-bottom: 80px; }
+    .header-bar { background: linear-gradient(135deg, #d32f2f, #f44336); color: white; padding: 15px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .menu-card { background: white; border-radius: 12px; padding: 10px; margin-bottom: 12px; display: flex; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .menu-img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; margin-right: 12px; background-color: #eee; }
+    .qty-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: #f0f0f0; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+    .qty-btn.plus { background: #ffebee; color: #d32f2f; }
+    .cart-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+  </style>
+</head>
+<body>
+  <div class="header-bar text-center">
+    <h5 class="fw-bold mb-1">สั่งอาหาร</h5>
+    <small id="table-info">กำลังโหลดข้อมูล...</small>
+  </div>
+  <div class="container mt-3" id="menu-container">
+    <div class="text-center mt-5"><div class="spinner-border text-danger"></div></div>
+  </div>
+  <div class="cart-bar d-none" id="cart-bar">
+    <div>
+      <span class="text-muted small d-block">รวม <span id="cart-qty" class="fw-bold text-dark">0</span> รายการ</span>
+      <span class="text-danger fw-bold fs-5" id="cart-price">0 ฿</span>
+    </div>
+    <button class="btn btn-danger fw-bold rounded-pill px-4" onclick="viewCart()">ตะกร้าอาหาร <i class="fa-solid fa-basket-shopping ms-1"></i></button>
+  </div>
+
+  <div class="modal fade" id="cartModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0" style="border-radius: 20px;">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-basket-shopping text-danger"></i> รายการที่สั่ง</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pb-0" id="cart-items"></div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button class="btn btn-success w-100 fw-bold rounded-pill py-2 fs-5" onclick="submitOrder()">ส่งออเดอร์เข้าครัว</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getDatabase, ref, get, push, set, update } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    const app = initializeApp({
+      apiKey: "AIzaSyDlt_nDOBUZrsFEoc-bKXotwrcfRiaCtZY",
+      databaseURL: "https://chaboo-75e53-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "chaboo-75e53"
+    });
+    const db = getDatabase(app);
+    
+    // ดึงค่า table ID จาก URL แทนการใช้ GAS tags
+    const urlParams = new URLSearchParams(window.location.search);
+    const TABLE_ID = urlParams.get('table'); 
+    
+    let tableData = null;
+    let allowedMenus = [];
+    let cart = {}; 
+    
+    async function initClient() {
+      if(!TABLE_ID) {
+        document.getElementById('menu-container').innerHTML = '<div class="alert alert-danger text-center fw-bold mt-5">ไม่พบรหัสโต๊ะ กรุณาสแกน QR Code ใหม่อีกครั้ง</div>';
+        document.getElementById('table-info').innerText = 'เกิดข้อผิดพลาด';
+        return;
+      }
+      try {
+        const tSnap = await get(ref(db, 'tables/' + TABLE_ID));
+        if (!tSnap.exists() || tSnap.val().status !== 'eating') {
+          document.getElementById('menu-container').innerHTML = '<div class="alert alert-warning text-center fw-bold mt-5">โต๊ะนี้ยังไม่ได้เปิดใช้งาน หรือหมดเวลาทานแล้ว</div>';
+          document.getElementById('table-info').innerText = 'ไม่พบโต๊ะ';
+          return;
+        }
+        tableData = tSnap.val();
+        document.getElementById('table-info').innerText = `โต๊ะ: ${tableData.name} | ${tableData.rateName}`;
+        const rSnap = await get(ref(db, 'settings/rates'));
+        const rates = rSnap.val() || {};
+        let rateId = null;
+        Object.entries(rates).forEach(([id, r]) => { if(r.name === tableData.rateName) rateId = id; });
+        if (!rateId || !rates[rateId].menus) {
+          document.getElementById('menu-container').innerHTML = '<div class="text-center mt-5 text-muted">ยังไม่มีเมนูสำหรับเรทราคานี้</div>';
+          return;
+        }
+        const validMenuIds = Object.keys(rates[rateId].menus);
+        const mSnap = await get(ref(db, 'settings/menus'));
+        const allMenus = mSnap.val() || {};
+        let html = '';
+        Object.entries(allMenus).forEach(([mId, m]) => {
+          if(validMenuIds.includes(mId) && m.status === 'active') {
+            allowedMenus[mId] = m;
+            const priceTag = m.price > 0 ? `<span class="text-danger fw-bold small">+${m.price}฿</span>` : `<span class="badge bg-success" style="font-size:0.6rem;">ฟรี</span>`;
+            const imgHtml = (m.image && m.image.trim() !== '') ? `<img src="${m.image}" class="menu-img">` : `<div class="menu-img d-flex justify-content-center align-items-center"><i class="fa-solid fa-utensils text-muted"></i></div>`;
+            html += `<div class="menu-card">${imgHtml}<div class="flex-grow-1"><div class="fw-bold text-dark">${m.name}</div><div>${priceTag}</div></div><div class="d-flex align-items-center"><button class="qty-btn" onclick="updateCart('${mId}', -1)">-</button><span class="mx-2 fw-bold" id="qty_${mId}">0</span><button class="qty-btn plus" onclick="updateCart('${mId}', 1)">+</button></div></div>`;
+          }
+        });
+        document.getElementById('menu-container').innerHTML = html || '<div class="text-center mt-5 text-muted">ไม่มีรายการอาหาร</div>';
+      } catch (err) { alert("การเชื่อมต่อล้มเหลว: " + err.message); }
+    }
+    
+    window.updateCart = (mId, change) => {
+      if(!cart[mId]) cart[mId] = { name: allowedMenus[mId].name, price: allowedMenus[mId].price || 0, qty: 0 };
+      cart[mId].qty += change;
+      if(cart[mId].qty <= 0) delete cart[mId];
+      document.getElementById(`qty_${mId}`).innerText = cart[mId] ? cart[mId].qty : 0;
+      updateCartUI();
+    };
+    
+    function updateCartUI() {
+      let totalQty = 0; let totalPrice = 0;
+      Object.values(cart).forEach(item => { totalQty += item.qty; totalPrice += (item.qty * item.price); });
+      const bar = document.getElementById('cart-bar');
+      if(totalQty > 0) { bar.classList.remove('d-none'); document.getElementById('cart-qty').innerText = totalQty; document.getElementById('cart-price').innerText = totalPrice > 0 ? `+${totalPrice.toLocaleString()} ฿` : 'ฟรี'; } 
+      else { bar.classList.add('d-none'); }
+    }
+    
+    let cartModalInstance = null;
+    window.viewCart = () => {
+      if(!cartModalInstance) cartModalInstance = new bootstrap.Modal(document.getElementById('cartModal'));
+      let html = '';
+      Object.entries(cart).forEach(([mId, item]) => { html += `<div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom"><div><strong class="d-block">${item.name}</strong><small class="text-muted">${item.price > 0 ? '+'+item.price+'฿' : 'ฟรี'}</small></div><div class="fw-bold">x${item.qty}</div></div>`; });
+      document.getElementById('cart-items').innerHTML = html;
+      cartModalInstance.show();
+    };
+    
+    window.submitOrder = async () => {
+      Swal.fire({ title: 'ส่งออเดอร์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        const kSnap = await get(ref(db, 'settings/kitchens')); const kitchens = kSnap.val() || {};
+        const pSnap = await get(ref(db, 'kitchenPings')); const pings = pSnap.val() || {};
+        const now = Date.now();
+        const openKIds = Object.keys(kitchens).filter(id => { const isOnline = pings[id] && (now - pings[id] <= 25000); return kitchens[id].status === 'open' && isOnline; });
+        
+        let assignedKitchenId = "unassigned";
+        if (openKIds.length > 0) {
+          const oSnap = await get(ref(db, 'orders')); const orders = oSnap.val() || {};
+          let loadCount = {}; openKIds.forEach(id => loadCount[id] = 0);
+          Object.values(orders).forEach(o => { if (o.status === 'pending' && o.kitchenId && loadCount[o.kitchenId] !== undefined) { loadCount[o.kitchenId]++; } });
+          assignedKitchenId = openKIds.reduce((minId, id) => loadCount[id] < loadCount[minId] ? id : minId, openKIds[0]);
+        }
+        
+        const orderRef = push(ref(db, 'orders'));
+        let totalExtra = 0; let itemsForDb = {};
+        Object.entries(cart).forEach(([mId, item]) => { itemsForDb[mId] = { ...item, image: allowedMenus[mId].image || "", served: false }; totalExtra += (item.qty * item.price); });
+        
+        await set(orderRef, { tableId: TABLE_ID, tableName: tableData.name, timestamp: Date.now(), status: 'pending', kitchenId: assignedKitchenId, items: itemsForDb });
+        if(totalExtra > 0) { await update(ref(db, 'tables/' + TABLE_ID), { currentTotal: (tableData.currentTotal || 0) + totalExtra }); }
+        
+        cart = {}; document.querySelectorAll('[id^="qty_"]').forEach(el => el.innerText = '0'); updateCartUI();
+        if(cartModalInstance) cartModalInstance.hide();
+        Swal.fire('สำเร็จ', 'ส่งออเดอร์เข้าครัวแล้ว', 'success');
+      } catch (err) { Swal.fire('ผิดพลาด', err.message, 'error'); }
+    };
+    
+    initClient();
+  </script>
+</body>
+</html>
