@@ -141,21 +141,29 @@
             groupedMenus[catName].push({ id: mId, ...m });
           }
         });
-        
+
+        // สร้าง HTML แถบปุ่มหมวดหมู่ (เลื่อนซ้ายขวาได้)
+        let html = '<style>#category-filters::-webkit-scrollbar { display: none; }</style>';
+        html += '<div class="d-flex gap-2 overflow-auto pb-1 mb-2" style="white-space: nowrap; scrollbar-width: none; -ms-overflow-style: none;" id="category-filters">';
+        html += `<button class="btn btn-danger rounded-pill px-4 py-1 btn-filter shadow-sm" onclick="filterByCategory('ทั้งหมด', this)">ทั้งหมด</button>`;
+        for(let cat in groupedMenus) {
+          html += `<button class="btn btn-outline-danger rounded-pill px-4 py-1 btn-filter bg-white shadow-sm" onclick="filterByCategory('${cat}', this)">${cat}</button>`;
+        }
+        html += '</div>';
+
         // สร้าง HTML ตามหมวดหมู่
-        let html = '';
         for(let cat in groupedMenus) {
           html += `
-            <div class="category-section">
+            <div class="category-section" data-category="${cat}">
               <h6 class="fw-bold mt-4 mb-3 text-danger border-bottom pb-2 category-header">${cat}</h6>`;
               
           groupedMenus[cat].forEach(m => {
             const priceTag = m.price > 0 ? `<span class="text-danger fw-bold small">+${m.price}฿</span>` : `<span class="badge bg-success" style="font-size:0.6rem;">ฟรี</span>`;
             const imgHtml = (m.image && m.image.trim() !== '') ? `<img src="${m.image}" class="menu-img">` : `<div class="menu-img d-flex justify-content-center align-items-center"><i class="fa-solid fa-utensils text-muted"></i></div>`;
             
-            // ใส่คลาส menu-item-card เพื่อให้ค้นหาด้วยชื่อได้
+            // เพิ่ม data-cat สำหรับการกรอง
             html += `
-              <div class="menu-card menu-item-card" data-name="${m.name.toLowerCase()}">
+              <div class="menu-card menu-item-card" data-name="${m.name.toLowerCase()}" data-cat="${cat}">
                 ${imgHtml}
                 <div class="flex-grow-1">
                   <div class="fw-bold text-dark lh-sm mb-1">${m.name}</div>
@@ -176,24 +184,60 @@
     }
     
     // ----------------------------------------------------
-    // ฟังก์ชันค้นหาเมนู
+    // ฟังก์ชันค้นหาและกรองหมวดหมู่เมนู
     // ----------------------------------------------------
-    window.filterMenus = () => {
-      let input = document.getElementById('search-input').value.toLowerCase();
-      let cards = document.querySelectorAll('.menu-item-card');
+    let currentCategory = 'ทั้งหมด';
+
+    window.filterByCategory = (catName, btnEl) => {
+      currentCategory = catName;
       
-      cards.forEach(card => {
-        if(card.dataset.name.includes(input)) { card.style.display = 'flex'; } 
-        else { card.style.display = 'none'; }
+      // อัปเดตสีปุ่มหมวดหมู่
+      document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-outline-danger', 'bg-white');
       });
-      
-      // ซ่อนหมวดหมู่ที่ไม่มีเมนูแสดงอยู่เลย
+      btnEl.classList.remove('btn-outline-danger', 'bg-white');
+      btnEl.classList.add('btn-danger');
+
+      applyFilters();
+    };
+
+    window.filterMenus = () => {
+      applyFilters();
+    };
+
+    function applyFilters() {
+      let input = document.getElementById('search-input').value.toLowerCase();
       let sections = document.querySelectorAll('.category-section');
+      
       sections.forEach(sec => {
-        let visibleCards = sec.querySelectorAll('.menu-item-card[style="display: flex;"], .menu-item-card:not([style*="display: none"])');
+        let secCat = sec.dataset.category;
+        // ตรวจสอบว่าหมวดหมู่นี้ตรงกับที่กดเลือกหรือไม่
+        let isCatMatch = (currentCategory === 'ทั้งหมด' || currentCategory === secCat);
+        
+        let visibleCount = 0;
+        let cards = sec.querySelectorAll('.menu-item-card');
+        
+        cards.forEach(card => {
+          let isNameMatch = card.dataset.name.includes(input);
+          
+          if (isCatMatch && isNameMatch) {
+            card.style.display = 'flex';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        
+        // จัดการซ่อน/แสดง โซนหมวดหมู่
         let header = sec.querySelector('.category-header');
-        if(visibleCards.length === 0 && input !== '') { header.style.display = 'none'; } 
-        else { header.style.display = 'block'; }
+        if (visibleCount === 0 || !isCatMatch) {
+          sec.style.display = 'none';
+        } else {
+          sec.style.display = 'block';
+          // ถ้ากำลังพิมพ์ค้นหา ให้ซ่อนชื่อหมวดหมู่ไปเลยเพื่อความสะอาดตา
+          header.style.display = (input !== '') ? 'none' : 'block'; 
+        }
       });
     }
     
