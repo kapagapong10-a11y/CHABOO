@@ -312,7 +312,7 @@
   <!-- Checkout Modal (หน้าต่างคิดเงินใหม่) -->
   <div class="modal fade" id="checkoutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
-      <div class="modal-content border-0 shadow-lg" style="background-color: #f8f9fa;">
+      <div class="modal-content border-0 shadow-lg" style="background-color: #f4f7f6;">
         <div class="modal-header bg-primary text-white border-bottom-0 pb-3">
           <h4 class="modal-title fw-bold"><i class="fa-solid fa-file-invoice-dollar"></i> สรุปบิลชำระเงิน: <span id="co-table-name"></span></h4>
           <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" onclick="modals.manage.show()"></button>
@@ -321,52 +321,85 @@
           <input type="hidden" id="co-table-id">
           
           <div class="row g-4">
-            <!-- ซ้าย: รายการอาหารสำหรับรีวิวและแก้ไข -->
-            <div class="col-12 col-lg-7">
-              <div class="bg-white rounded-4 shadow-sm border p-3 h-100">
-                <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-list-check"></i> รายการสั่งทั้งหมด</h5>
-                <div id="co-items-list" class="pe-2" style="max-height: 45vh; overflow-y: auto;">
-                  <!-- รายการจะถูกสร้างด้วย JS -->
+            <!-- ซ้าย: แบ่งเป็น 2 โซน (ค่าหัว และ รายการคิดเพิ่ม) -->
+            <div class="col-12 col-lg-7 d-flex flex-column gap-3">
+              <!-- โซน 1: ค่าบุฟเฟ่ต์ -->
+              <div class="bg-white rounded-4 shadow-sm border p-3">
+                <h5 class="fw-bold mb-3 text-primary border-bottom pb-2"><i class="fa-solid fa-users"></i> ค่าบุฟเฟ่ต์ (รายหัว)</h5>
+                <div id="co-items-buffet" class="pe-2"></div>
+              </div>
+              
+              <!-- โซน 2: อาหารคิดเพิ่ม และ ค่าปรับ -->
+              <div class="bg-white rounded-4 shadow-sm border p-3 flex-grow-1 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                  <h5 class="fw-bold text-danger mb-0"><i class="fa-solid fa-bowl-food"></i> รายการสั่งเพิ่ม / ค่าปรับ</h5>
+                  <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3" onclick="addFineToBill()"><i class="fa-solid fa-plus"></i> เพิ่มค่าปรับ</button>
                 </div>
+                <div id="co-items-extra" style="max-height: 25vh; overflow-y: auto; overflow-x: hidden;" class="pe-2 flex-grow-1"></div>
               </div>
             </div>
             
-            <!-- ขวา: สรุปยอดและรับชำระ -->
+            <!-- ขวา: สรุปยอดและช่องทางรับชำระ -->
             <div class="col-12 col-lg-5">
               <div class="bg-white rounded-4 shadow-sm border p-3 mb-3">
                 <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-tags"></i> เลือกโปรโมชัน / โครงการรัฐ</h6>
-                <div id="co-promotions-list" class="mb-2" style="max-height: 150px; overflow-y: auto;"></div>
+                <div id="co-promotions-list" class="mb-2" style="max-height: 140px; overflow-y: auto;"></div>
               </div>
               
-              <div class="bg-white rounded-4 shadow-sm border p-3 p-md-4 text-end">
+              <div class="bg-white rounded-4 shadow-sm border p-3 text-end mb-3">
                 <div class="d-flex justify-content-between mb-2 text-muted fs-5">
-                  <span>ยอดรวมบิล (Subtotal):</span>
-                  <span id="co-subtotal" class="fw-bold text-dark">0 ฿</span>
+                  <span>ยอดรวมบิล (Subtotal):</span><span id="co-subtotal" class="fw-bold text-dark">0 ฿</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2 text-danger fs-5">
-                  <span>ส่วนลด (Discount):</span>
-                  <span id="co-discount" class="fw-bold">-0 ฿</span>
+                  <span>ส่วนลด (Discount):</span><span id="co-discount" class="fw-bold">-0 ฿</span>
                 </div>
                 <hr class="border-2 opacity-50">
                 <div class="text-center mt-3">
                   <span class="text-muted fw-bold d-block mb-1 fs-5">ยอดสุทธิที่ต้องชำระ (Net Total)</span>
-                  <h1 class="text-primary fw-bold mb-3" style="font-size: 3.5rem;" id="co-nettotal">0 ฿</h1>
-                  
-                  <!-- พื้นที่แสดง QR โค้ด (ซ่อนไว้ก่อน) -->
-                  <div id="co-payment-area" class="mt-3 mb-3 p-3 bg-light rounded-4 border text-center d-none">
-                    <h5 class="fw-bold text-success mb-2"><i class="fa-solid fa-mobile-screen"></i> สแกนพร้อมเพย์เพื่อชำระเงิน</h5>
+                  <h1 class="text-primary fw-bold mb-2" style="font-size: 3.5rem;" id="co-nettotal">0 ฿</h1>
+                </div>
+              </div>
+
+              <!-- โซนรับเงิน -->
+              <div class="bg-white rounded-4 shadow-sm border p-3">
+                 <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-wallet"></i> ช่องทางการรับเงิน (สำหรับการลงบัญชี)</h6>
+                 <select class="form-select mb-3 fw-bold border-success text-success" id="payment-method-select" onchange="togglePaymentMethods()">
+                    <option value="transfer">📱 โอนเงิน / สแกน QR (เต็มจำนวน)</option>
+                    <option value="cash">💵 เงินสด (เต็มจำนวน)</option>
+                    <option value="gov">🏛️ โครงการรัฐ / สวัสดิการ (เต็มจำนวน)</option>
+                    <option value="split">⚖️ แบ่งจ่าย (โอน + เงินสด + รัฐ)</option>
+                 </select>
+                 
+                 <!-- ส่วนกรอกแบ่งจ่าย -->
+                 <div id="split-payment-area" class="d-none bg-light p-2 rounded-3 border mb-3 text-start">
+                    <div class="mb-2">
+                       <label class="small text-muted fw-bold">ยอดโอนเงิน / สแกน:</label>
+                       <div class="input-group input-group-sm"><input type="number" id="split-transfer" class="form-control text-end fw-bold text-primary" placeholder="0" onkeyup="calcSplitPayment()" onchange="calcSplitPayment()"><span class="input-group-text">฿</span></div>
+                    </div>
+                    <div class="mb-2">
+                       <label class="small text-muted fw-bold">ยอดเงินสด:</label>
+                       <div class="input-group input-group-sm"><input type="number" id="split-cash" class="form-control text-end fw-bold text-success" placeholder="0" onkeyup="calcSplitPayment()" onchange="calcSplitPayment()"><span class="input-group-text">฿</span></div>
+                    </div>
+                    <div class="mb-2">
+                       <label class="small text-muted fw-bold">ยอดโครงการรัฐ:</label>
+                       <div class="input-group input-group-sm"><input type="number" id="split-gov" class="form-control text-end fw-bold text-warning" placeholder="0" onkeyup="calcSplitPayment()" onchange="calcSplitPayment()"><span class="input-group-text">฿</span></div>
+                    </div>
+                    <div class="text-end small fw-bold mt-2" id="split-balance-warning">เหลือยอดที่ต้องระบุ: <span class="text-danger fs-6" id="split-balance">0</span> ฿</div>
+                 </div>
+
+                 <!-- พื้นที่แสดง QR โค้ด -->
+                  <div id="co-payment-area" class="mb-3 p-3 bg-light rounded-4 border text-center d-none">
+                    <h6 class="fw-bold text-success mb-2"><i class="fa-solid fa-mobile-screen"></i> สแกนพร้อมเพย์</h6>
                     <div id="co-qrcode" class="d-flex justify-content-center mb-2 p-2 bg-white rounded-3 d-inline-block mx-auto border shadow-sm"></div>
                     <div class="text-start bg-white p-2 rounded-3 mt-2 border">
-                      <div class="small fw-bold text-primary mb-1 border-bottom pb-1"><i class="fa-solid fa-building-columns"></i> โอนผ่านเลขบัญชี</div>
                       <div class="d-flex justify-content-between" style="font-size: 0.85rem;"><span>ธนาคาร:</span> <strong id="co-bank-name">-</strong></div>
                       <div class="d-flex justify-content-between" style="font-size: 0.85rem;"><span>ชื่อบัญชี:</span> <strong id="co-bank-account">-</strong></div>
                       <div class="d-flex justify-content-between mt-1"><span>เลขบัญชี:</span> <strong id="co-bank-number" class="text-danger fs-5">-</strong></div>
                     </div>
                   </div>
                   
-                  <button class="btn btn-info text-white fw-bold w-100 py-3 fs-5 shadow-sm rounded-pill mb-2" onclick="showPaymentQR()"><i class="fa-solid fa-qrcode"></i> สร้าง QR รับเงิน (พร้อมเพย์)</button>
+                  <button class="btn btn-info text-white fw-bold w-100 py-2 shadow-sm rounded-pill mb-2" id="btn-show-qr" onclick="showPaymentQR()"><i class="fa-solid fa-qrcode"></i> สร้าง QR รับเงิน</button>
                   <button class="btn btn-success fw-bold w-100 py-3 fs-5 rounded-pill shadow-sm" onclick="finalizeCheckout()"><i class="fa-solid fa-check-double"></i> ยืนยันรับเงิน & เคลียร์โต๊ะ</button>
-                </div>
               </div>
             </div>
           </div>
@@ -975,10 +1008,10 @@
         if(p.startDate && todayDateStr < p.startDate) { isTimeValid = false; warnText = '(ยังไม่ถึงวันโปรโมชัน)'; }
         if(p.endDate && todayDateStr > p.endDate) { isTimeValid = false; warnText = '(หมดเขตแล้ว)'; }
         if(p.startTime && nowTimeStr < p.startTime) { isTimeValid = false; warnText = '(ยังไม่ถึงเวลา)'; }
-        if(p.endTime && nowTimeStr > p.endTime) { isTimeValid = false; warnText = '(หมดเวลาโปรของวันนี้)'; }
+        if(p.endTime && nowTimeStr > p.endTime) { isTimeValid = false; warnText = '(หมดเวลาของวันนี้)'; }
         
-        let typeStr = p.type === 'percent' ? `ลด ${p.value}%` : p.type === 'fixed' ? `ลด ${p.value} ฿` : `โครงการรัฐ/กรอกยอดลดเอง`;
-        let inputManual = p.type === 'manual' ? `<input type="number" id="promo_manual_${pId}" class="form-control form-control-sm ms-2 mt-1 d-none promo-manual-input" placeholder="พิมพ์ยอดที่ต้องการหัก" onchange="calculateCheckout()">` : '';
+        let typeStr = p.type === 'percent' ? `ลด ${p.value}%` : p.type === 'fixed' ? `ลด ${p.value} ฿` : `กรอกยอดลดเอง`;
+        let inputManual = p.type === 'manual' ? `<input type="number" id="promo_manual_${pId}" class="form-control form-control-sm ms-2 mt-1 d-none promo-manual-input" placeholder="พิมพ์ยอดที่หักได้" onchange="calculateCheckout()" onkeyup="calculateCheckout()">` : '';
         
         promoHtml += `
           <div class="form-check mb-2 p-2 border rounded ${isTimeValid ? 'bg-white' : 'bg-light opacity-50'}">
@@ -992,9 +1025,11 @@
       });
       document.getElementById('co-promotions-list').innerHTML = promoHtml || '<div class="text-muted small">ไม่มีโปรโมชันในระบบ</div>';
       
-      // ซ่อนหน้าต่างเดิม และแสดง Checkout Modal
+      // รีเซ็ตการชำระเงิน
+      document.getElementById('payment-method-select').value = 'transfer';
+      togglePaymentMethods();
+      
       modals.manage.hide(); 
-      document.getElementById('co-payment-area').classList.add('d-none');
       renderCheckoutItems();
       modals.checkout.show();
     }
@@ -1007,12 +1042,12 @@
       }
     }
     
-    // ดึงรายการอาหารทั้งหมดมาแสดงให้ลบ/แก้ไขได้
+    // ดึงรายการอาหารมาแสดงแบบแยก 2 โซน
     function renderCheckoutItems() {
       const t = gTables[checkoutState.tableId]; if(!t) return;
-      let html = ''; let calcSubtotal = 0;
+      let buffetHtml = ''; let extraHtml = ''; let calcSubtotal = 0;
       
-      // 1. ค่าหัวบุฟเฟ่ต์ (แก้ไขจำนวนคนต้องไปแก้ที่หน้าข้อมูลโต๊ะ)
+      // โซน 1. ค่าหัวบุฟเฟ่ต์
       if(t.customers) {
         const rate = Object.values(gRates).find(r => r.name === t.rateName);
         Object.entries(t.customers).forEach(([name, qty]) => {
@@ -1022,60 +1057,124 @@
             if(cId) price = rate.prices[cId] || 0;
           }
           let rowTotal = price * qty; calcSubtotal += rowTotal;
-          html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong class="text-primary"><i class="fa-solid fa-user"></i> บุฟเฟ่ต์ (${name})</strong><br><small class="text-muted">${price} ฿</small></div><div class="fw-bold">x${qty}</div><div class="fw-bold text-end" style="width:70px;">${rowTotal} ฿</div></div>`;
+          buffetHtml += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong class="text-primary"><i class="fa-solid fa-user"></i> ${name}</strong><br><small class="text-muted">${price} ฿/ท่าน</small></div><div class="fw-bold text-secondary">x${qty}</div><div class="fw-bold text-end" style="width:70px;">${rowTotal} ฿</div></div>`;
         });
       }
+      if(!buffetHtml) buffetHtml = '<div class="text-muted small">ไม่มีข้อมูลลูกค้า</div>';
       
-      // 2. ออเดอร์ครัว (ลบทิ้งได้)
+      // โซน 2.1 ออเดอร์ครัว (คิดเงินเพิ่ม)
       const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === checkoutState.tableId);
       tableOrders.forEach(([oId, o]) => {
         Object.entries(o.items).forEach(([itemId, item]) => {
           if (item.status !== 'canceled' && item.price > 0) {
             let rowTotal = item.price * item.qty; calcSubtotal += rowTotal;
-            html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong>${item.name}</strong><br><small class="text-danger">+${item.price} ฿</small></div><div class="fw-bold">x${item.qty}</div><div class="fw-bold text-end" style="width:70px;">${rowTotal} ฿</div><button class="btn btn-sm btn-outline-danger ms-2" onclick="removeCheckoutItem('kitchen', '${oId}', '${itemId}', ${rowTotal})" title="ลบรายการนี้"><i class="fa-solid fa-xmark"></i></button></div>`;
+            extraHtml += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+              <div style="flex:1;"><strong class="text-dark">${item.name}</strong><br><small class="text-danger">+${item.price} ฿</small></div>
+              <div class="d-flex align-items-center bg-light rounded-pill px-1 border me-2 shadow-sm">
+                <button class="btn btn-sm text-danger fw-bold px-2 py-0 border-0" onclick="updateCheckoutItemQty('kitchen', '${oId}', '${itemId}', ${item.qty}, -1, ${item.price})">-</button>
+                <span class="mx-1 fw-bold">${item.qty}</span>
+                <button class="btn btn-sm text-success fw-bold px-2 py-0 border-0" onclick="updateCheckoutItemQty('kitchen', '${oId}', '${itemId}', ${item.qty}, 1, ${item.price})">+</button>
+              </div>
+              <div class="fw-bold text-end" style="width:50px;">${rowTotal} ฿</div>
+            </div>`;
           }
         });
       });
       
-      // 3. รายการสั่งเพิ่ม (ลบทิ้งได้)
+      // โซน 2.2 รายการสั่งเพิ่มพิเศษ
       if (t.extraOrders) {
         Object.entries(t.extraOrders).forEach(([extId, ext]) => {
           if (ext.status !== 'canceled') {
-            calcSubtotal += ext.total;
-            html += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom"><div><strong class="text-warning text-dark"><i class="fa-solid fa-star"></i> ${ext.name}</strong><br><small class="text-danger">+${ext.price} ฿</small></div><div class="fw-bold">x${ext.qty}</div><div class="fw-bold text-end" style="width:70px;">${ext.total} ฿</div><button class="btn btn-sm btn-outline-danger ms-2" onclick="removeCheckoutItem('extra', null, '${extId}', ${ext.total})" title="ลบรายการนี้"><i class="fa-solid fa-xmark"></i></button></div>`;
+            let extTotal = ext.price * ext.qty; calcSubtotal += extTotal;
+            extraHtml += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+              <div style="flex:1;"><strong class="text-dark"><i class="fa-solid fa-star text-warning"></i> ${ext.name}</strong><br><small class="text-danger">+${ext.price} ฿</small></div>
+              <div class="d-flex align-items-center bg-light rounded-pill px-1 border me-2 shadow-sm">
+                <button class="btn btn-sm text-danger fw-bold px-2 py-0 border-0" onclick="updateCheckoutItemQty('extra', null, '${extId}', ${ext.qty}, -1, ${ext.price})">-</button>
+                <span class="mx-1 fw-bold">${ext.qty}</span>
+                <button class="btn btn-sm text-success fw-bold px-2 py-0 border-0" onclick="updateCheckoutItemQty('extra', null, '${extId}', ${ext.qty}, 1, ${ext.price})">+</button>
+              </div>
+              <div class="fw-bold text-end" style="width:50px;">${extTotal} ฿</div>
+            </div>`;
           }
         });
       }
+
+      // โซน 2.3 ค่าปรับ
+      if (t.fines) {
+         Object.entries(t.fines).forEach(([fId, f]) => {
+            calcSubtotal += f.amount;
+            extraHtml += `<div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+              <div style="flex:1;"><strong class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ: ${f.reason}</strong></div>
+              <div class="fw-bold text-end text-danger" style="width:60px;">+${f.amount} ฿</div>
+              <button class="btn btn-sm btn-outline-danger ms-2 border-0" onclick="removeFine('${fId}')" title="ลบค่าปรับ"><i class="fa-solid fa-trash"></i></button>
+            </div>`;
+         });
+      }
       
-      document.getElementById('co-items-list').innerHTML = html;
+      if(!extraHtml) extraHtml = '<div class="text-muted small text-center my-4 py-2 bg-light rounded border-dashed">ไม่มีรายการคิดเงินเพิ่ม</div>';
+      
+      document.getElementById('co-items-buffet').innerHTML = buffetHtml;
+      document.getElementById('co-items-extra').innerHTML = extraHtml;
+      
       checkoutState.subtotal = calcSubtotal;
-      
-      // บังคับเซฟยอดรวมที่คำนวณใหม่ลงฐานข้อมูล (เผื่อมีการลบ)
       if(t.currentTotal !== calcSubtotal) { window.dbUpdate(window.dbRef(window.db, 'tables/' + checkoutState.tableId), { currentTotal: calcSubtotal }); }
       calculateCheckout();
     }
     
-    // ฟังก์ชันลบรายการทิ้งจากหน้า Checkout ทันที
-    function removeCheckoutItem(type, orderId, itemId, amountToDeduct) {
-      Swal.fire({ title: 'ลบรายการนี้ออกจากบิล?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ' }).then((res) => {
-        if(res.isConfirmed) {
+    // ฟังก์ชันเพิ่ม/ลดจำนวน (และลบอัตโนมัติถ้าเหลือ 0)
+    function updateCheckoutItemQty(type, orderId, itemId, currentQty, change, unitPrice) {
+       let newQty = currentQty + change;
+       if (newQty <= 0) {
+          Swal.fire({ title: 'ลบรายการนี้ออกจากบิล?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ' }).then((res) => {
+             if(res.isConfirmed) {
+                const updates = {};
+                if(type === 'kitchen') updates[`orders/${orderId}/items/${itemId}/status`] = 'canceled';
+                else if(type === 'extra') updates[`tables/${checkoutState.tableId}/extraOrders/${itemId}/status`] = 'canceled';
+                window.dbUpdate(window.dbRef(window.db), updates).then(() => { renderCheckoutItems(); });
+             }
+          });
+       } else {
           const updates = {};
-          if(type === 'kitchen') updates[`orders/${orderId}/items/${itemId}/status`] = 'canceled';
-          else if(type === 'extra') updates[`tables/${checkoutState.tableId}/extraOrders/${itemId}/status`] = 'canceled';
-          
+          if(type === 'kitchen') updates[`orders/${orderId}/items/${itemId}/qty`] = newQty;
+          else if(type === 'extra') {
+             updates[`tables/${checkoutState.tableId}/extraOrders/${itemId}/qty`] = newQty;
+             updates[`tables/${checkoutState.tableId}/extraOrders/${itemId}/total`] = newQty * unitPrice;
+          }
           window.dbUpdate(window.dbRef(window.db), updates).then(() => { renderCheckoutItems(); });
-        }
-      });
+       }
+    }
+
+    // ฟังก์ชันเพิ่ม-ลบค่าปรับ
+    function addFineToBill() {
+       Swal.fire({
+          title: 'เพิ่มค่าปรับ',
+          html: `<input id="swal-fine-reason" class="swal2-input mb-2" placeholder="เหตุผล (เช่น ทานเหลือ, นำเครื่องดื่มมาเอง)">
+                 <input id="swal-fine-amount" type="number" class="swal2-input mt-0" placeholder="จำนวนเงินค่าปรับ (บาท)">`,
+          showCancelButton: true, confirmButtonText: 'ยืนยันเพิ่มค่าปรับ',
+          preConfirm: () => {
+             const reason = document.getElementById('swal-fine-reason').value || 'ค่าปรับอื่นๆ';
+             const amount = parseFloat(document.getElementById('swal-fine-amount').value) || 0;
+             if(amount <= 0) { Swal.showValidationMessage('กรุณาใส่จำนวนเงินให้ถูกต้อง'); return false; }
+             return { reason, amount, timestamp: Date.now() };
+          }
+       }).then(res => {
+          if(res.isConfirmed) {
+             window.dbSet(window.dbPush(window.dbRef(window.db, `tables/${checkoutState.tableId}/fines`)), res.value)
+             .then(() => renderCheckoutItems());
+          }
+       });
     }
     
-    // คำนวณโปรโมชัน
+    function removeFine(fId) {
+       window.dbRemove(window.dbRef(window.db, `tables/${checkoutState.tableId}/fines/${fId}`))
+       .then(() => renderCheckoutItems());
+    }
+    
     function calculateCheckout() {
       let sub = checkoutState.subtotal; let totalDisc = 0; let net = sub;
-      // หักเปอร์เซ็นต์ก่อน
       document.querySelectorAll('.checkout-promo-cb:checked').forEach(cb => {
         if(cb.dataset.type === 'percent') { let d = sub * (parseFloat(cb.dataset.val)/100); totalDisc += d; net -= d; }
       });
-      // หักเงินสด/โครงการรัฐ
       document.querySelectorAll('.checkout-promo-cb:checked').forEach(cb => {
         if(cb.dataset.type === 'fixed') { totalDisc += parseFloat(cb.dataset.val); net -= parseFloat(cb.dataset.val); }
         else if(cb.dataset.type === 'manual') { let mVal = parseFloat(document.getElementById(`promo_manual_${cb.value}`).value) || 0; totalDisc += mVal; net -= mVal; }
@@ -1088,13 +1187,45 @@
       document.getElementById('co-discount').innerText = '-' + totalDisc.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' ฿';
       document.getElementById('co-nettotal').innerText = net.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' ฿';
       
-      // อัปเดต QR หากกำลังเปิดอยู่
       if(!document.getElementById('co-payment-area').classList.contains('d-none')) showPaymentQR();
+      calcSplitPayment(); // อัปเดตยอดคงเหลือกรณีเปิดโหมดแบ่งจ่ายทิ้งไว้
+    }
+
+    // ==========================================
+    // ระบบช่องทางการชำระเงิน
+    // ==========================================
+    function togglePaymentMethods() {
+       let val = document.getElementById('payment-method-select').value;
+       let splitArea = document.getElementById('split-payment-area');
+       let btnQr = document.getElementById('btn-show-qr');
+       let qrArea = document.getElementById('co-payment-area');
+       
+       if(val === 'split') {
+          splitArea.classList.remove('d-none');
+          btnQr.classList.add('d-none'); 
+          qrArea.classList.add('d-none');
+          calcSplitPayment();
+       } else {
+          splitArea.classList.add('d-none');
+          if(val === 'transfer') { btnQr.classList.remove('d-none'); } 
+          else { btnQr.classList.add('d-none'); qrArea.classList.add('d-none'); }
+       }
+    }
+
+    function calcSplitPayment() {
+       let transfer = parseFloat(document.getElementById('split-transfer').value) || 0;
+       let cash = parseFloat(document.getElementById('split-cash').value) || 0;
+       let gov = parseFloat(document.getElementById('split-gov').value) || 0;
+       let totalInput = transfer + cash + gov;
+       let balance = checkoutState.netTotal - totalInput;
+       
+       let balEl = document.getElementById('split-balance');
+       balEl.innerText = balance.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+       
+       if(Math.abs(balance) > 0.01) { balEl.classList.remove('text-success'); balEl.classList.add('text-danger'); } 
+       else { balEl.classList.remove('text-danger'); balEl.classList.add('text-success'); }
     }
     
-    // ==========================================
-    // ระบบสร้าง QR Code พร้อมเพย์
-    // ==========================================
     function CRC16(data) {
       let crc = 0xFFFF;
       for (let i = 0; i < data.length; i++) {
@@ -1125,25 +1256,34 @@
       
       const payload = generatePromptPayPayload(p.promptpay, checkoutState.netTotal);
       const qrContainer = document.getElementById('co-qrcode'); qrContainer.innerHTML = '';
-      new QRCode(qrContainer, { text: payload, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
+      new QRCode(qrContainer, { text: payload, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
       
-      // เลื่อนหน้าจอลงมาหา QR โค้ด
       setTimeout(() => document.getElementById('co-payment-area').scrollIntoView({ behavior: 'smooth' }), 100);
     }
     
-    // จบการทำงาน เคลียร์โต๊ะ
     function finalizeCheckout() {
-      Swal.fire({ title: 'ยืนยันรับเงินเสร็จสิ้น?', text: `ยอดรับเงิน ${checkoutState.netTotal.toLocaleString()} บาท (โต๊ะจะถูกเคลียร์เป็นโต๊ะว่าง)`, icon: 'success', showCancelButton: true, confirmButtonText: 'ใช่, รับเงินแล้ว' }).then((res) => {
-        if(res.isConfirmed) {
-          window.dbUpdate(window.dbRef(window.db, 'tables/' + checkoutState.tableId), { status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0 });
-          modals.checkout.hide(); Swal.fire({icon: 'success', title: 'เคลียร์โต๊ะเรียบร้อย', timer: 1500, showConfirmButton: false});
-        }
-      });
+       let method = document.getElementById('payment-method-select').value;
+       let payText = document.getElementById('payment-method-select').options[document.getElementById('payment-method-select').selectedIndex].text;
+       
+       if(method === 'split') {
+          let transfer = parseFloat(document.getElementById('split-transfer').value) || 0;
+          let cash = parseFloat(document.getElementById('split-cash').value) || 0;
+          let gov = parseFloat(document.getElementById('split-gov').value) || 0;
+          let totalInput = transfer + cash + gov;
+          if(Math.abs(totalInput - checkoutState.netTotal) > 0.01) {
+             return Swal.fire('ยอดเงินไม่ถูกต้อง', 'ยอดแบ่งจ่ายรวมกันไม่ตรงกับยอดสุทธิที่ต้องชำระ', 'error');
+          }
+       }
+       
+       Swal.fire({ title: 'ยืนยันรับเงินเสร็จสิ้น?', html: `ยอดรับเงิน <b>${checkoutState.netTotal.toLocaleString()}</b> บาท<br><span class="text-success small">${payText}</span>`, icon: 'success', showCancelButton: true, confirmButtonText: 'ใช่, รับเงินแล้ว' }).then((res) => {
+          if(res.isConfirmed) {
+             window.dbUpdate(window.dbRef(window.db, 'tables/' + checkoutState.tableId), { status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0, extraOrders:null, fines:null });
+             modals.checkout.hide(); Swal.fire({icon: 'success', title: 'รับเงินและเคลียร์โต๊ะเรียบร้อย', timer: 1500, showConfirmButton: false});
+          }
+       });
     }
 
-    // ==========================================
-    // ปริ้น QR Code โต๊ะสำหรับลูกค้า
-    // ==========================================
+    // ปริ้น QR Code โต๊ะ
     function printTableQR() {
       const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if(!t) return;
       let timeLimitStr = "ไม่จำกัดเวลา"; let rateData = null; Object.values(gRates).forEach(r => { if(r.name === t.rateName) rateData = r; });
@@ -1157,8 +1297,8 @@
       modals.manage.hide(); setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); }, 500);
     }
     
-    // บังคับผูกฟังก์ชันกับ Global Window
-    window.initData = initData; window.renderTablesFront = renderTablesFront; window.handleTableClick = handleTableClick; window.openCheckIn = openCheckIn; window.renderCheckInCustomers = renderCheckInCustomers; window.calcCheckIn = calcCheckIn; window.checkSoupLimit = checkSoupLimit; window.selectKitchenStation = selectKitchenStation; window.toggleKitchenStatus = toggleKitchenStatus; window.renderKDS = renderKDS; window.serveItem = serveItem; window.serveAll = serveAll; window.confirmCheckIn = confirmCheckIn; window.openManageTable = openManageTable; window.openEditTable = openEditTable; window.openMoveTable = openMoveTable; window.clearTable = clearTable; window.openAdminModal = openAdminModal; window.renderListItem = renderListItem; window.addSimpleData = addSimpleData; window.compressMenuImage = compressMenuImage; window.addMenuAdmin = addMenuAdmin; window.saveMenuToFirebase = saveMenuToFirebase; window.addRateAdmin = addRateAdmin; window.manageRateMenus = manageRateMenus; window.addExtraMenuAdmin = addExtraMenuAdmin; window.addPromotionAdmin = addPromotionAdmin; window.editPaymentSettings = editPaymentSettings; window.openCheckoutModal = openCheckoutModal; window.togglePromoManual = togglePromoManual; window.renderCheckoutItems = renderCheckoutItems; window.removeCheckoutItem = removeCheckoutItem; window.calculateCheckout = calculateCheckout; window.showPaymentQR = showPaymentQR; window.finalizeCheckout = finalizeCheckout; window.viewOrderHistory = viewOrderHistory; window.cancelOrderItem = cancelOrderItem; window.cancelExtraItem = cancelExtraItem; window.openExtraOrderModal = openExtraOrderModal; window.deleteData = deleteData; window.printTableQR = printTableQR;
+    // ผูกฟังก์ชัน Global
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR;
   </script>
 </body>
 </html>
