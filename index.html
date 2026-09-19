@@ -181,6 +181,7 @@
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('rates')"><i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('promotions')"><i class="fa-solid fa-bullhorn admin-icon"></i><h5 class="fw-bold">จัดการโปรโมชัน</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('payment')"><i class="fa-solid fa-qrcode admin-icon"></i><h5 class="fw-bold">ตั้งค่ารับเงิน</h5></div></div>
+          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('inventory')"><i class="fa-solid fa-boxes-stacked admin-icon"></i><h5 class="fw-bold">สต๊อควัตถุดิบ</h5></div></div>
         </div>
       </div>
 
@@ -418,7 +419,7 @@
   
   <script>
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
-    let gPromotions = {}, gPayment = {};
+    let gPromotions = {}, gPayment = {}, gInventory = {};
     let currentKitchenId = ""; 
     let kitchenPingInterval = null;
     const modals = { checkIn: null, manage: null, admin: null, checkout: null };
@@ -438,6 +439,7 @@
       window.dbOnValue(window.dbRef(window.db, 'settings/extraMenus'), s => { gExtraMenus = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/promotions'), s => { gPromotions = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/payment'), s => { gPayment = s.val() || {}; });
+      window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { gInventory = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'kitchenPings'), s => { gPings = s.val() || {}; rescueOrphanedOrders(); });
       
       window.dbOnValue(window.dbRef(window.db, 'settings/kitchens'), s => { 
@@ -930,21 +932,30 @@
           listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${item.name}</strong> <span class="badge bg-danger ms-1">${typeStr}</span><br><small class="text-muted">${timeStr}</small></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/promotions', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
         }); 
       }
-      else if(mode === 'payment') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-qrcode"></i> ตั้งค่าบัญชีรับเงิน'; 
-        btnEl.onclick = () => editPaymentSettings();
-        btnEl.innerHTML = '<i class="fa-solid fa-pen"></i> แก้ไขข้อมูล';
-        let p = gPayment || {};
-        listEl.innerHTML = `
-          <div class="p-3 bg-white border rounded text-center shadow-sm">
-            <h5 class="text-primary fw-bold mb-3">ข้อมูลพร้อมเพย์สำหรับสแกนจ่าย</h5>
-            <p class="mb-1"><strong>เบอร์โทร/บัตรประชาชน (PromptPay):</strong> <span class="text-danger fs-5">${p.promptpay || 'ยังไม่ตั้งค่า'}</span></p>
-            <hr>
-            <h6 class="text-secondary fw-bold mb-2">บัญชีธนาคาร (สำหรับโอน)</h6>
-            <p class="mb-1"><strong>ธนาคาร:</strong> ${p.bankName || '-'}</p>
-            <p class="mb-1"><strong>ชื่อบัญชี:</strong> ${p.accountName || '-'}</p>
-            <p class="mb-0"><strong>เลขบัญชี:</strong> <span class="fs-5 text-dark fw-bold">${p.accountNumber || '-'}</span></p>
-          </div>`; 
+      else if(mode === 'payment') { titleEl.innerHTML = '<i class="fa-solid fa-qrcode"></i> ตั้งค่าบัญชีรับเงิน'; btnEl.onclick = () => editPaymentSettings(); btnEl.innerHTML = '<i class="fa-solid fa-pen"></i> แก้ไขข้อมูล'; let p = gPayment || {}; listEl.innerHTML = `<div class="p-3 bg-white border rounded text-center shadow-sm"><h5 class="text-primary fw-bold mb-3">ข้อมูลพร้อมเพย์สำหรับสแกนจ่าย</h5><p class="mb-1"><strong>เบอร์โทร/บัตรประชาชน (PromptPay):</strong> <span class="text-danger fs-5">${p.promptpay || 'ยังไม่ตั้งค่า'}</span></p><hr><h6 class="text-secondary fw-bold mb-2">บัญชีธนาคาร (สำหรับโอน)</h6><p class="mb-1"><strong>ธนาคาร:</strong> ${p.bankName || '-'}</p><p class="mb-1"><strong>ชื่อบัญชี:</strong> ${p.accountName || '-'}</p><p class="mb-0"><strong>เลขบัญชี:</strong> <span class="fs-5 text-dark fw-bold">${p.accountNumber || '-'}</span></p></div>`; }
+      else if(mode === 'inventory') { 
+        titleEl.innerHTML = '<i class="fa-solid fa-boxes-stacked"></i> จัดการสต๊อควัตถุดิบ'; 
+        btnEl.onclick = () => addInventoryItem(); 
+        
+        let sortedInv = Object.entries(gInventory).sort((a, b) => (parseFloat(a[1].qty) || 0) - (parseFloat(b[1].qty) || 0));
+        
+        sortedInv.forEach(([id, item]) => { 
+          let stockClass = item.qty <= 5 ? 'text-danger' : 'text-success'; 
+          listEl.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                ${item.image ? `<img src="${item.image}" style="width:45px; height:45px; object-fit:cover; border-radius:8px; margin-right:12px;" class="shadow-sm">` : `<div style="width:45px;height:45px;background:#eee;border-radius:8px;margin-right:12px;display:flex;align-items:center;justify-content:center;" class="shadow-sm"><i class="fa-solid fa-box text-muted"></i></div>`}
+                <div>
+                  <strong class="fs-6">${item.name}</strong> <small class="text-muted">(${item.cost} ฿/${item.unit})</small><br>
+                  คงเหลือ: <span class="fw-bold fs-5 ${stockClass}">${item.qty}</span> ${item.unit}
+                </div>
+              </div>
+              <div>
+                <button class="btn btn-sm btn-warning fw-bold text-dark me-1 shadow-sm" onclick="adjustStock('${id}')"><i class="fa-solid fa-calculator"></i> ตัด/เพิ่ม</button>
+                <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteData('settings/inventory', '${id}')"><i class="fa-solid fa-trash fs-5"></i></button>
+              </div>
+            </li>`; 
+        }); 
       }
       modals.admin.show();
     }
@@ -1076,7 +1087,62 @@
         return { name: name, type: type, value: val, startDate: document.getElementById('swal-promo-start-date').value, endDate: document.getElementById('swal-promo-end-date').value, startTime: document.getElementById('swal-promo-start-time').value, endTime: document.getElementById('swal-promo-end-time').value }; 
       } }).then(res => { if(res.isConfirmed) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/promotions')), res.value).then(() => openAdminModal('promotions')); } });
     }
-    
+    function addInventoryItem() {
+      tempCompressedImage = ""; 
+      let html = `<input id="swal-inv-name" class="swal2-input mb-2" placeholder="ชื่อวัตถุดิบ (เช่น หมูสไลด์, ผักกาด)">
+                  <input id="swal-inv-unit" class="swal2-input mb-2" placeholder="หน่วยนับ (เช่น กิโลกรัม, แพ็ค, ถาด)">
+                  <input id="swal-inv-cost" type="number" class="swal2-input mb-2" placeholder="ต้นทุนเฉลี่ยต่อหน่วย (บาท)">
+                  <input id="swal-inv-qty" type="number" class="swal2-input mb-2" placeholder="จำนวนคงเหลือตั้งต้น">
+                  <div class="text-start small text-muted px-4 mt-2">รูปภาพวัตถุดิบ:</div>
+                  <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`;
+      Swal.fire({ title: 'เพิ่มรายการสต๊อค', html: html, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { 
+        if(res.isConfirmed) { 
+          const name = document.getElementById('swal-inv-name').value;
+          const unit = document.getElementById('swal-inv-unit').value || 'หน่วย';
+          const cost = parseFloat(document.getElementById('swal-inv-cost').value) || 0;
+          const qty = parseFloat(document.getElementById('swal-inv-qty').value) || 0;
+          if(!name) return Swal.fire('ผิดพลาด', 'กรุณาใส่ชื่อวัตถุดิบ', 'error');
+          
+          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/inventory')), {
+             name: name, unit: unit, cost: cost, qty: qty, image: tempCompressedImage || "", lastUpdate: Date.now()
+          }).then(() => { Swal.close(); openAdminModal('inventory'); });
+        } 
+      });
+    }
+
+    function adjustStock(id) {
+       const item = gInventory[id];
+       if(!item) return;
+       Swal.fire({
+          title: `จัดการสต๊อค: ${item.name}`,
+          html: `<div class="mb-3 mt-2">ยอดคงเหลือปัจจุบัน: <strong class="text-primary fs-3">${item.qty}</strong> ${item.unit}</div>
+                 <div class="d-flex justify-content-center gap-2 mb-3">
+                    <input type="radio" class="btn-check" name="adjType" id="adjAdd" value="add" checked>
+                    <label class="btn btn-outline-success fw-bold px-4" for="adjAdd"><i class="fa-solid fa-plus"></i> รับเข้า</label>
+                    <input type="radio" class="btn-check" name="adjType" id="adjMinus" value="minus">
+                    <label class="btn btn-outline-danger fw-bold px-4" for="adjMinus"><i class="fa-solid fa-minus"></i> ตัดยอด</label>
+                 </div>
+                 <input type="number" id="swal-adj-val" class="swal2-input mt-0 w-75" placeholder="จำนวนที่ต้องการทำรายการ" step="0.01">`,
+          showCancelButton: true, confirmButtonText: 'ยืนยัน',
+          preConfirm: () => {
+             const val = parseFloat(document.getElementById('swal-adj-val').value);
+             const type = document.querySelector('input[name="adjType"]:checked').value;
+             if(!val || val <= 0) { Swal.showValidationMessage('กรุณาใส่จำนวนที่มากกว่า 0'); return false; }
+             return { val, type };
+          }
+       }).then(res => {
+          if(res.isConfirmed) {
+             let newQty = item.qty;
+             if(res.value.type === 'add') newQty += res.value.val;
+             else newQty -= res.value.val;
+             
+             if(newQty < 0) newQty = 0;
+             window.dbUpdate(window.dbRef(window.db, `settings/inventory/${id}`), { qty: newQty, lastUpdate: Date.now() })
+             .then(() => openAdminModal('inventory'));
+          }
+       });
+    }
     let tempShopLogo = "";
     function editPaymentSettings() {
       let p = gPayment || {};
@@ -1602,7 +1668,7 @@
     }
     
     // บังคับผูกฟังก์ชันกับ Global Window
-    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR;
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; wind
   </script>
 </body>
 </html>
