@@ -98,6 +98,11 @@
             <i class="fa-solid fa-display me-3"></i> จอห้องครัว (KDS)
           </button>
         </li>
+        <li class="nav-item mb-2">
+          <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-inventory" data-bs-dismiss="offcanvas">
+            <i class="fa-solid fa-boxes-stacked me-3"></i> สต๊อควัตถุดิบ
+          </button>
+        </li>
         <li class="nav-item">
           <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-admin" data-bs-dismiss="offcanvas">
             <i class="fa-solid fa-gear me-3"></i> ตั้งค่าแอดมิน
@@ -107,7 +112,7 @@
     </div>
   </div>
 
-  <!-- Print Section -->
+  <!-- Print Section สำหรับ QR โต๊ะ -->
   <div id="print-section" class="d-none">
     <h2 style="margin-bottom: 5px; font-weight: bold;">Shabu POS</h2>
     <h3 style="margin-top: 0; margin-bottom: 10px;" id="print-table">โต๊ะ: </h3>
@@ -122,9 +127,9 @@
     </div>
     <hr style="border-top: 1px dashed black;">
   </div>
-  <!-- พื้นที่สำหรับพิมพ์ใบเสร็จ (ซ่อนไว้) -->
+
+  <!-- พื้นที่สำหรับพิมพ์ใบเสร็จ -->
   <div id="print-receipt-section" class="d-none" style="width: 100%; max-width: 300px; margin: 0 auto; text-align: center; background: white; padding: 10px;">
-    <!-- ข้อมูลใบเสร็จจะถูกสร้างอัตโนมัติด้วย JavaScript -->
   </div>
 
   <!-- Main Content -->
@@ -167,6 +172,17 @@
         </div>
       </div>
       
+      <!-- Inventory Tab -->
+      <div class="tab-pane fade" id="tab-inventory">
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border">
+          <h4 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-boxes-stacked"></i> สต๊อควัตถุดิบ</h4>
+          <button class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm" onclick="addInventoryItem()"><i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบ</button>
+        </div>
+        <div class="row g-3" id="inventory-container">
+          <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+        </div>
+      </div>
+
       <!-- Admin Tab -->
       <div class="tab-pane fade" id="tab-admin">
         <h4 class="fw-bold mb-4 text-center">เมนูจัดการระบบ</h4>
@@ -180,8 +196,8 @@
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('extraMenus')"><i class="fa-solid fa-wine-glass admin-icon"></i><h5 class="fw-bold">รายการสั่งเพิ่ม</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('rates')"><i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('promotions')"><i class="fa-solid fa-bullhorn admin-icon"></i><h5 class="fw-bold">จัดการโปรโมชัน</h5></div></div>
+          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('shop')"><i class="fa-solid fa-store admin-icon"></i><h5 class="fw-bold">ตั้งค่าร้านค้า</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('payment')"><i class="fa-solid fa-qrcode admin-icon"></i><h5 class="fw-bold">ตั้งค่ารับเงิน</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('inventory')"><i class="fa-solid fa-boxes-stacked admin-icon"></i><h5 class="fw-bold">สต๊อควัตถุดิบ</h5></div></div>
         </div>
       </div>
 
@@ -224,7 +240,7 @@
     </div>
   </div>
 
-  <!-- Manage Table Modal (อัปเดต Data-bs-focus) -->
+  <!-- Manage Table Modal -->
   <div class="modal fade" id="manageTableModal" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg">
@@ -274,7 +290,7 @@
     </div>
   </div>
 
-  <!-- Checkout Modal (หน้าต่างคิดเงินใหม่ - อัปเดต Data-bs-focus และจัดโซนใหม่) -->
+  <!-- Checkout Modal -->
   <div class="modal fade" id="checkoutModal" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
       <div class="modal-content border-0 shadow-lg" style="background-color: #f4f7f6;">
@@ -286,7 +302,7 @@
           <input type="hidden" id="co-table-id">
           
           <div class="row g-4">
-            <!-- ซ้าย: แบ่งเป็น 2 โซน (ค่าหัว และ รายการคิดเพิ่ม) -->
+            <!-- ซ้าย: แบ่งเป็น 2 โซน -->
             <div class="col-12 col-lg-7 d-flex flex-column gap-3">
               <div class="bg-white rounded-4 shadow-sm border p-3">
                 <h5 class="fw-bold mb-3 text-primary border-bottom pb-2"><i class="fa-solid fa-users"></i> ค่าบุฟเฟ่ต์ (รายหัว)</h5>
@@ -378,7 +394,7 @@
     </div>
   </div>
 
-  <!-- Admin CRUD Modal (อัปเดต Data-bs-focus) -->
+  <!-- Admin CRUD Modal -->
   <div class="modal fade" id="adminModal" data-bs-focus="false">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -419,7 +435,7 @@
   
   <script>
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
-    let gPromotions = {}, gPayment = {}, gInventory = {};
+    let gPromotions = {}, gPayment = {}, gShop = {}, gInventory = {};
     let currentKitchenId = ""; 
     let kitchenPingInterval = null;
     const modals = { checkIn: null, manage: null, admin: null, checkout: null };
@@ -439,7 +455,8 @@
       window.dbOnValue(window.dbRef(window.db, 'settings/extraMenus'), s => { gExtraMenus = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/promotions'), s => { gPromotions = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/payment'), s => { gPayment = s.val() || {}; });
-      window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { gInventory = s.val() || {}; });
+      window.dbOnValue(window.dbRef(window.db, 'settings/shop'), s => { gShop = s.val() || {}; });
+      window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { gInventory = s.val() || {}; renderInventoryFront(); });
       window.dbOnValue(window.dbRef(window.db, 'kitchenPings'), s => { gPings = s.val() || {}; rescueOrphanedOrders(); });
       
       window.dbOnValue(window.dbRef(window.db, 'settings/kitchens'), s => { 
@@ -700,45 +717,106 @@
       const cardDiv = btnEl.closest('.kds-card-container'); cardDiv.classList.add('removing'); 
       setTimeout(() => { window.dbUpdate(window.dbRef(window.db, `orders/${orderId}`), { status: 'served' }); }, 400); 
     }
-    
-    function confirmCheckIn() {
-      try {
-        const tId = document.getElementById('ci-table-id').value; 
-        const rId = document.getElementById('ci-rate').value;
-        if(!rId) { alert('กรุณาเลือกเรทราคา'); return; }
+
+    // ==========================================
+    // ระบบจัดการสต๊อคสินค้า (Inventory)
+    // ==========================================
+    function renderInventoryFront() {
+      const container = document.getElementById('inventory-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      let invArray = Object.entries(gInventory).map(([id, item]) => ({ id, ...item }));
+      if (invArray.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center py-5"><div class="text-muted fs-5"><i class="fa-solid fa-box-open fs-1 mb-3 d-block"></i>ยังไม่มีรายการวัตถุดิบในสต๊อค</div></div>';
+        return;
+      }
+      
+      invArray.sort((a, b) => (parseFloat(a.qty) || 0) - (parseFloat(b.qty) || 0));
+      
+      invArray.forEach(item => {
+        let isLow = item.qty <= 5; 
+        let qtyColor = isLow ? 'text-danger' : 'text-success';
+        let badge = isLow ? `<span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle" title="ของใกล้หมด!"><span class="visually-hidden">เตือน</span></span>` : '';
+        let imgHtml = item.image ? `<img src="${item.image}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;" class="shadow-sm">` : `<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 12px; display: flex; align-items: center; justify-content: center;" class="shadow-sm"><i class="fa-solid fa-box text-muted fs-3"></i></div>`;
         
-        let customersData = {}; 
-        let totalCount = 0; 
-        let totalMoney = 0;
-        
-        document.querySelectorAll('.ci-cust-input').forEach(inp => { 
-          const qty = parseInt(inp.value) || 0; 
-          if(qty > 0) { 
-            const safeName = (inp.dataset.name || 'ไม่ระบุ').replace(/[.#$/\[\]]/g, ''); 
-            const price = parseFloat(inp.dataset.price) || 0; 
-            customersData[safeName] = qty; 
-            totalCount += qty; 
-            totalMoney += qty * price; 
-          } 
-        });
-        
-        if(totalCount === 0) { alert('กรุณาใส่จำนวนลูกค้าอย่างน้อย 1 คน'); return; }
-        let selectedSoups = []; 
-        document.querySelectorAll('.ci-soup-cb:checked').forEach(cb => selectedSoups.push(cb.value));
-        
-        const rateName = gRates[rId] ? gRates[rId].name : 'ไม่ระบุ'; 
-        const t = gTables[tId]; 
-        const checkTime = (t && t.status === 'eating' && t.checkInTime) ? t.checkInTime : Date.now();
-        
-        window.dbUpdate(window.dbRef(window.db, 'tables/' + tId), { 
-          status: 'eating', checkInTime: checkTime, rateName: rateName, 
-          customers: customersData, soups: selectedSoups.join(', ') || 'ไม่ระบุ', currentTotal: totalMoney || 0 
-        }).then(() => { 
-          modals.checkIn.hide(); 
-          Swal.fire({icon:'success', title:'บันทึกข้อมูลโต๊ะสำเร็จ', timer:1500, showConfirmButton:false}); 
-        }).catch(err => alert('Firebase Error: ' + err.message));
-        
-      } catch (error) { alert('ระบบพบข้อผิดพลาด: ' + error.message); }
+        let html = `
+          <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 rounded-4 position-relative">
+              ${badge}
+              <div class="card-body p-3 d-flex align-items-center gap-3">
+                ${imgHtml}
+                <div class="flex-grow-1" style="min-width: 0;">
+                  <h6 class="fw-bold text-dark text-truncate mb-1">${item.name}</h6>
+                  <div class="text-muted small mb-1">ต้นทุน: ${item.cost} ฿/${item.unit}</div>
+                  <div class="fw-bold fs-5 ${qtyColor}">เหลือ: ${item.qty} <span class="fs-6 fw-normal text-muted">${item.unit}</span></div>
+                </div>
+              </div>
+              <div class="card-footer bg-white border-top-0 p-3 pt-0 d-flex gap-2">
+                <button class="btn btn-warning fw-bold text-dark flex-grow-1 rounded-3 shadow-sm" onclick="adjustStock('${item.id}')"><i class="fa-solid fa-calculator"></i> ตัด/เพิ่ม</button>
+                <button class="btn btn-outline-danger border-0 rounded-3 px-3" onclick="deleteData('settings/inventory', '${item.id}')" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+          </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+      });
+    }
+
+    function addInventoryItem() {
+      tempCompressedImage = ""; 
+      let html = `<input id="swal-inv-name" class="swal2-input mb-2" placeholder="ชื่อวัตถุดิบ (เช่น หมูสไลด์, ผักกาด)">
+                  <input id="swal-inv-unit" class="swal2-input mb-2" placeholder="หน่วยนับ (เช่น กิโลกรัม, แพ็ค, ถาด)">
+                  <input id="swal-inv-cost" type="number" class="swal2-input mb-2" placeholder="ต้นทุนเฉลี่ยต่อหน่วย (บาท)">
+                  <input id="swal-inv-qty" type="number" class="swal2-input mb-2" placeholder="จำนวนคงเหลือตั้งต้น">
+                  <div class="text-start small text-muted px-4 mt-2">รูปภาพวัตถุดิบ:</div>
+                  <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`;
+      Swal.fire({ title: 'เพิ่มรายการสต๊อค', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', customClass: { popup: 'rounded-4' } }).then(res => { 
+        if(res.isConfirmed) { 
+          const name = document.getElementById('swal-inv-name').value;
+          const unit = document.getElementById('swal-inv-unit').value || 'หน่วย';
+          const cost = parseFloat(document.getElementById('swal-inv-cost').value) || 0;
+          const qty = parseFloat(document.getElementById('swal-inv-qty').value) || 0;
+          if(!name) return Swal.fire('ผิดพลาด', 'กรุณาใส่ชื่อวัตถุดิบ', 'error');
+          
+          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/inventory')), {
+             name: name, unit: unit, cost: cost, qty: qty, image: tempCompressedImage || "", lastUpdate: Date.now()
+          }).then(() => { Swal.close(); Swal.fire({icon:'success', title:'เพิ่มสำเร็จ', timer: 1500, showConfirmButton:false}); });
+        } 
+      });
+    }
+
+    function adjustStock(id) {
+       const item = gInventory[id];
+       if(!item) return;
+       Swal.fire({
+          title: `สต๊อค: ${item.name}`,
+          html: `<div class="mb-3 mt-2">ยอดคงเหลือปัจจุบัน: <strong class="text-primary fs-3">${item.qty}</strong> ${item.unit}</div>
+                 <div class="d-flex justify-content-center gap-2 mb-3">
+                    <input type="radio" class="btn-check" name="adjType" id="adjAdd" value="add" checked>
+                    <label class="btn btn-outline-success fw-bold px-4 rounded-pill shadow-sm" for="adjAdd"><i class="fa-solid fa-plus"></i> รับเข้า</label>
+                    <input type="radio" class="btn-check" name="adjType" id="adjMinus" value="minus">
+                    <label class="btn btn-outline-danger fw-bold px-4 rounded-pill shadow-sm" for="adjMinus"><i class="fa-solid fa-minus"></i> ตัดยอด</label>
+                 </div>
+                 <input type="number" id="swal-adj-val" class="swal2-input mt-0 w-75" placeholder="ระบุจำนวนที่ต้องการทำรายการ" step="0.01">`,
+          showCancelButton: true, confirmButtonText: 'ยืนยันการปรับยอด', customClass: { popup: 'rounded-4' },
+          preConfirm: () => {
+             const val = parseFloat(document.getElementById('swal-adj-val').value);
+             const type = document.querySelector('input[name="adjType"]:checked').value;
+             if(!val || val <= 0) { Swal.showValidationMessage('กรุณาใส่จำนวนที่มากกว่า 0'); return false; }
+             return { val, type };
+          }
+       }).then(res => {
+          if(res.isConfirmed) {
+             let newQty = item.qty;
+             if(res.value.type === 'add') newQty += res.value.val;
+             else newQty -= res.value.val;
+             
+             if(newQty < 0) newQty = 0; 
+             window.dbUpdate(window.dbRef(window.db, `settings/inventory/${id}`), { qty: newQty, lastUpdate: Date.now() })
+             .then(() => Swal.fire({icon:'success', title:'ปรับยอดสต๊อคสำเร็จ', timer: 1500, showConfirmButton:false}));
+          }
+       });
     }
     
     function openManageTable(id) {
@@ -808,7 +886,6 @@
         if (res.isConfirmed) {
           const destId = res.value; const destName = gTables[destId].name; const updates = {};
           
-          // 1. คัดลอกข้อมูลไปโต๊ะใหม่ (เพิ่มค่าปรับ และรายการพิเศษ)
           updates['tables/' + destId + '/status'] = 'eating'; 
           updates['tables/' + destId + '/checkInTime'] = t.checkInTime || null; 
           updates['tables/' + destId + '/rateName'] = t.rateName || null; 
@@ -818,7 +895,6 @@
           updates['tables/' + destId + '/extraOrders'] = t.extraOrders || null;
           updates['tables/' + destId + '/fines'] = t.fines || null;
           
-          // 2. ล้างข้อมูลโต๊ะเดิมให้กลายเป็นโต๊ะว่าง
           updates['tables/' + tId + '/status'] = 'empty'; 
           updates['tables/' + tId + '/checkInTime'] = null; 
           updates['tables/' + tId + '/rateName'] = null; 
@@ -830,7 +906,6 @@
           
           Swal.fire({ title: 'กำลังย้ายโต๊ะ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
           
-          // 3. เปลี่ยนชื่อโต๊ะในออเดอร์ครัว (ใช้ข้อมูลจาก gOrders แทนการโหลดใหม่ ป้องกันระบบค้าง)
           Object.entries(gOrders).forEach(([oId, order]) => { 
             if (order.tableId === tId) { 
               updates['orders/' + oId + '/tableId'] = destId; 
@@ -838,7 +913,6 @@
             } 
           });
           
-          // อัปเดตข้อมูลทั้งหมดขึ้นฐานข้อมูล
           window.dbUpdate(window.dbRef(window.db), updates).then(() => { 
             if (modals.manage) modals.manage.hide(); 
             Swal.fire('สำเร็จ', 'ย้ายข้อมูลไปยังโต๊ะ ' + destName + ' เรียบร้อย', 'success'); 
@@ -860,108 +934,26 @@
         });
     }
 
-    // ==========================================
-    // ระบบแอดมิน CRUD
-    // ==========================================
     let currentAdminMode = '';
-    
     function openAdminModal(mode) {
       currentAdminMode = mode; 
-      const titleEl = document.getElementById('adminModalTitle'); 
-      const listEl = document.getElementById('adminListContent'); 
-      const btnEl = document.getElementById('adminBtnAdd'); 
-      listEl.innerHTML = '';
-      btnEl.style.display = 'inline-block';
+      const titleEl = document.getElementById('adminModalTitle'); const listEl = document.getElementById('adminListContent'); const btnEl = document.getElementById('adminBtnAdd'); listEl.innerHTML = ''; btnEl.style.display = 'inline-block';
       
-      if(mode === 'tables') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; 
-        btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); 
-        Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); 
-      } 
-      else if(mode === 'custTypes') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; 
-        btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); 
-        Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); 
-      }
-      else if(mode === 'soups') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; 
-        btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); 
-        Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); 
-      }
-      else if(mode === 'categories') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; 
-        btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); 
-        Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); 
-      }
-      else if(mode === 'menus') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; 
-        btnEl.onclick = () => addMenuAdmin(); 
-        Object.entries(gMenus).forEach(([id, item]) => { 
-          let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; 
-          listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
-        }); 
-      }
-      else if(mode === 'kitchens') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; 
-        btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); 
-        Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); 
-      }
-      else if(mode === 'extraMenus') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; 
-        btnEl.onclick = () => addExtraMenuAdmin(); 
-        Object.entries(gExtraMenus).forEach(([id, item]) => { 
-          listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}<div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
-        }); 
-      }
-      else if(mode === 'rates') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; 
-        btnEl.onclick = () => addRateAdmin(); 
-        Object.entries(gRates).forEach(([id, item]) => { 
-          let priceText = ''; 
-          if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } 
-          let menuCount = item.menus ? Object.keys(item.menus).length : 0; 
-          listEl.innerHTML += `<li class="list-group-item"><div class="d-flex justify-content-between align-items-center mb-2"><div><strong>${item.name}</strong><br>${priceText}</div><div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="d-grid"><button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button></div></li>`; 
-        }); 
-      }
-      else if(mode === 'promotions') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-bullhorn"></i> จัดการโปรโมชัน'; 
-        btnEl.onclick = () => addPromotionAdmin(); 
-        Object.entries(gPromotions).forEach(([id, item]) => { 
-          let typeStr = item.type === 'percent' ? `ลด ${item.value}%` : item.type === 'fixed' ? `ลดเงินสด ${item.value} ฿` : `กรอกยอดลดเอง (โครงการรัฐ)`;
-          let timeStr = item.startDate ? `<i class="fa-regular fa-clock"></i> ${item.startDate} ถึง ${item.endDate} (${item.startTime} - ${item.endTime})` : '<i class="fa-regular fa-clock"></i> ไม่จำกัดเวลา';
-          listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${item.name}</strong> <span class="badge bg-danger ms-1">${typeStr}</span><br><small class="text-muted">${timeStr}</small></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/promotions', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
-        }); 
-      }
+      if(mode === 'tables') { titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); } 
+      else if(mode === 'custTypes') { titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); }
+      else if(mode === 'soups') { titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); }
+      else if(mode === 'categories') { titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); }
+      else if(mode === 'menus') { titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; btnEl.onclick = () => addMenuAdmin(); Object.entries(gMenus).forEach(([id, item]) => { let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
+      else if(mode === 'kitchens') { titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); }
+      else if(mode === 'extraMenus') { titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; btnEl.onclick = () => addExtraMenuAdmin(); Object.entries(gExtraMenus).forEach(([id, item]) => { listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}<div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
+      else if(mode === 'rates') { titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; btnEl.onclick = () => addRateAdmin(); Object.entries(gRates).forEach(([id, item]) => { let priceText = ''; if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } let menuCount = item.menus ? Object.keys(item.menus).length : 0; listEl.innerHTML += `<li class="list-group-item"><div class="d-flex justify-content-between align-items-center mb-2"><div><strong>${item.name}</strong><br>${priceText}</div><div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="d-grid"><button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button></div></li>`; }); }
+      else if(mode === 'promotions') { titleEl.innerHTML = '<i class="fa-solid fa-bullhorn"></i> จัดการโปรโมชัน'; btnEl.onclick = () => addPromotionAdmin(); Object.entries(gPromotions).forEach(([id, item]) => { let typeStr = item.type === 'percent' ? `ลด ${item.value}%` : item.type === 'fixed' ? `ลดเงินสด ${item.value} ฿` : `กรอกยอดลดเอง (โครงการรัฐ)`; let timeStr = item.startDate ? `<i class="fa-regular fa-clock"></i> ${item.startDate} ถึง ${item.endDate} (${item.startTime} - ${item.endTime})` : '<i class="fa-regular fa-clock"></i> ไม่จำกัดเวลา'; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${item.name}</strong> <span class="badge bg-danger ms-1">${typeStr}</span><br><small class="text-muted">${timeStr}</small></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/promotions', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
+      else if(mode === 'shop') { titleEl.innerHTML = '<i class="fa-solid fa-store"></i> ตั้งค่าร้านค้า (ใบเสร็จ)'; btnEl.onclick = () => editShopSettings(); btnEl.innerHTML = '<i class="fa-solid fa-pen"></i> แก้ไขข้อมูล'; let p = gShop || {}; let logoHtml = (p.shopLogo && p.shopLogo.trim() !== '') ? `<img src="${p.shopLogo}" style="max-width: 120px; max-height: 120px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` : `<div class="mb-3 text-muted"><i class="fa-solid fa-store fa-3x mb-2"></i><br>ยังไม่มีโลโก้</div>`; listEl.innerHTML = `<div class="p-4 bg-white border rounded text-center shadow-sm">${logoHtml}<h4 class="text-primary fw-bold mb-2">${p.shopName || 'ยังไม่ได้ตั้งชื่อร้าน'}</h4><p class="mb-0 text-muted" style="white-space: pre-wrap;">${p.shopAddress || 'ยังไม่ได้ตั้งที่อยู่และเบอร์ติดต่อ'}</p></div>`; }
       else if(mode === 'payment') { titleEl.innerHTML = '<i class="fa-solid fa-qrcode"></i> ตั้งค่าบัญชีรับเงิน'; btnEl.onclick = () => editPaymentSettings(); btnEl.innerHTML = '<i class="fa-solid fa-pen"></i> แก้ไขข้อมูล'; let p = gPayment || {}; listEl.innerHTML = `<div class="p-3 bg-white border rounded text-center shadow-sm"><h5 class="text-primary fw-bold mb-3">ข้อมูลพร้อมเพย์สำหรับสแกนจ่าย</h5><p class="mb-1"><strong>เบอร์โทร/บัตรประชาชน (PromptPay):</strong> <span class="text-danger fs-5">${p.promptpay || 'ยังไม่ตั้งค่า'}</span></p><hr><h6 class="text-secondary fw-bold mb-2">บัญชีธนาคาร (สำหรับโอน)</h6><p class="mb-1"><strong>ธนาคาร:</strong> ${p.bankName || '-'}</p><p class="mb-1"><strong>ชื่อบัญชี:</strong> ${p.accountName || '-'}</p><p class="mb-0"><strong>เลขบัญชี:</strong> <span class="fs-5 text-dark fw-bold">${p.accountNumber || '-'}</span></p></div>`; }
-      else if(mode === 'inventory') { 
-        titleEl.innerHTML = '<i class="fa-solid fa-boxes-stacked"></i> จัดการสต๊อควัตถุดิบ'; 
-        btnEl.onclick = () => addInventoryItem(); 
-        
-        let sortedInv = Object.entries(gInventory).sort((a, b) => (parseFloat(a[1].qty) || 0) - (parseFloat(b[1].qty) || 0));
-        
-        sortedInv.forEach(([id, item]) => { 
-          let stockClass = item.qty <= 5 ? 'text-danger' : 'text-success'; 
-          listEl.innerHTML += `
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center">
-                ${item.image ? `<img src="${item.image}" style="width:45px; height:45px; object-fit:cover; border-radius:8px; margin-right:12px;" class="shadow-sm">` : `<div style="width:45px;height:45px;background:#eee;border-radius:8px;margin-right:12px;display:flex;align-items:center;justify-content:center;" class="shadow-sm"><i class="fa-solid fa-box text-muted"></i></div>`}
-                <div>
-                  <strong class="fs-6">${item.name}</strong> <small class="text-muted">(${item.cost} ฿/${item.unit})</small><br>
-                  คงเหลือ: <span class="fw-bold fs-5 ${stockClass}">${item.qty}</span> ${item.unit}
-                </div>
-              </div>
-              <div>
-                <button class="btn btn-sm btn-warning fw-bold text-dark me-1 shadow-sm" onclick="adjustStock('${id}')"><i class="fa-solid fa-calculator"></i> ตัด/เพิ่ม</button>
-                <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteData('settings/inventory', '${id}')"><i class="fa-solid fa-trash fs-5"></i></button>
-              </div>
-            </li>`; 
-        }); 
-      }
       modals.admin.show();
     }
     
     function renderListItem(id, name, path) { return `<li class="list-group-item d-flex justify-content-between align-items-center"><span>${name}</span><button class="btn btn-sm btn-outline-danger" onclick="deleteData('${path}', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }
-    
     function addSimpleData(path, title, placeholder) { Swal.fire({ title: title, input: 'text', inputPlaceholder: placeholder, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { if(res.isConfirmed && res.value) { const data = path === 'tables' ? {name: res.value, status: 'empty', currentTotal: 0} : {name: res.value}; window.dbSet(window.dbPush(window.dbRef(window.db, path)), data).then(() => openAdminModal(currentAdminMode)); } }); }
     
     let tempCompressedImage = "";
@@ -1087,88 +1079,39 @@
         return { name: name, type: type, value: val, startDate: document.getElementById('swal-promo-start-date').value, endDate: document.getElementById('swal-promo-end-date').value, startTime: document.getElementById('swal-promo-start-time').value, endTime: document.getElementById('swal-promo-end-time').value }; 
       } }).then(res => { if(res.isConfirmed) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/promotions')), res.value).then(() => openAdminModal('promotions')); } });
     }
-    function addInventoryItem() {
-      tempCompressedImage = ""; 
-      let html = `<input id="swal-inv-name" class="swal2-input mb-2" placeholder="ชื่อวัตถุดิบ (เช่น หมูสไลด์, ผักกาด)">
-                  <input id="swal-inv-unit" class="swal2-input mb-2" placeholder="หน่วยนับ (เช่น กิโลกรัม, แพ็ค, ถาด)">
-                  <input id="swal-inv-cost" type="number" class="swal2-input mb-2" placeholder="ต้นทุนเฉลี่ยต่อหน่วย (บาท)">
-                  <input id="swal-inv-qty" type="number" class="swal2-input mb-2" placeholder="จำนวนคงเหลือตั้งต้น">
-                  <div class="text-start small text-muted px-4 mt-2">รูปภาพวัตถุดิบ:</div>
-                  <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`;
-      Swal.fire({ title: 'เพิ่มรายการสต๊อค', html: html, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { 
-        if(res.isConfirmed) { 
-          const name = document.getElementById('swal-inv-name').value;
-          const unit = document.getElementById('swal-inv-unit').value || 'หน่วย';
-          const cost = parseFloat(document.getElementById('swal-inv-cost').value) || 0;
-          const qty = parseFloat(document.getElementById('swal-inv-qty').value) || 0;
-          if(!name) return Swal.fire('ผิดพลาด', 'กรุณาใส่ชื่อวัตถุดิบ', 'error');
-          
-          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-          window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/inventory')), {
-             name: name, unit: unit, cost: cost, qty: qty, image: tempCompressedImage || "", lastUpdate: Date.now()
-          }).then(() => { Swal.close(); openAdminModal('inventory'); });
-        } 
+    
+    let tempShopLogo = "";
+    function editShopSettings() {
+      let p = gShop || {};
+      tempShopLogo = p.shopLogo || ""; 
+      let html = `
+        <input id="swal-shop-name" class="swal2-input mt-2 mb-2" placeholder="ชื่อร้าน (เช่น ชาบูอร่อยจัง)" value="${p.shopName || ''}">
+        <textarea id="swal-shop-address" class="swal2-textarea mt-0 mb-2 p-2" placeholder="ที่อยู่ / เบอร์ติดต่อ" style="height: 80px; width: 75%; font-size: 1rem;">${p.shopAddress || ''}</textarea>
+        <div class="text-start small text-muted px-4 mb-1">โลโก้ร้าน (เว้นว่างไว้ถ้าไม่เปลี่ยน):</div>
+        <input type="file" accept="image/*" class="form-control mb-3 w-75 mx-auto" onchange="const fr=new FileReader();fr.onload=(e)=>{tempShopLogo=e.target.result;};fr.readAsDataURL(this.files[0]);">
+        <small class="text-danger d-block">ข้อมูลนี้จะถูกใช้พิมพ์บนหัวใบเสร็จ</small>`;
+        
+      Swal.fire({ title: 'ตั้งค่าข้อมูลร้านค้า', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', customClass: { popup: 'rounded-4' } }).then(res => {
+        if(res.isConfirmed) {
+          let data = { shopName: document.getElementById('swal-shop-name').value, shopAddress: document.getElementById('swal-shop-address').value, shopLogo: tempShopLogo };
+          window.dbSet(window.dbRef(window.db, 'settings/shop'), data).then(() => { gShop = data; openAdminModal('shop'); });
+        }
       });
     }
 
-    function adjustStock(id) {
-       const item = gInventory[id];
-       if(!item) return;
-       Swal.fire({
-          title: `จัดการสต๊อค: ${item.name}`,
-          html: `<div class="mb-3 mt-2">ยอดคงเหลือปัจจุบัน: <strong class="text-primary fs-3">${item.qty}</strong> ${item.unit}</div>
-                 <div class="d-flex justify-content-center gap-2 mb-3">
-                    <input type="radio" class="btn-check" name="adjType" id="adjAdd" value="add" checked>
-                    <label class="btn btn-outline-success fw-bold px-4" for="adjAdd"><i class="fa-solid fa-plus"></i> รับเข้า</label>
-                    <input type="radio" class="btn-check" name="adjType" id="adjMinus" value="minus">
-                    <label class="btn btn-outline-danger fw-bold px-4" for="adjMinus"><i class="fa-solid fa-minus"></i> ตัดยอด</label>
-                 </div>
-                 <input type="number" id="swal-adj-val" class="swal2-input mt-0 w-75" placeholder="จำนวนที่ต้องการทำรายการ" step="0.01">`,
-          showCancelButton: true, confirmButtonText: 'ยืนยัน',
-          preConfirm: () => {
-             const val = parseFloat(document.getElementById('swal-adj-val').value);
-             const type = document.querySelector('input[name="adjType"]:checked').value;
-             if(!val || val <= 0) { Swal.showValidationMessage('กรุณาใส่จำนวนที่มากกว่า 0'); return false; }
-             return { val, type };
-          }
-       }).then(res => {
-          if(res.isConfirmed) {
-             let newQty = item.qty;
-             if(res.value.type === 'add') newQty += res.value.val;
-             else newQty -= res.value.val;
-             
-             if(newQty < 0) newQty = 0;
-             window.dbUpdate(window.dbRef(window.db, `settings/inventory/${id}`), { qty: newQty, lastUpdate: Date.now() })
-             .then(() => openAdminModal('inventory'));
-          }
-       });
-    }
-    let tempShopLogo = "";
     function editPaymentSettings() {
       let p = gPayment || {};
-      tempShopLogo = p.shopLogo || ""; 
       let html = `
-        <div class="text-start small fw-bold text-primary mb-1 border-bottom pb-1"><i class="fa-solid fa-store"></i> ข้อมูลร้าน (แสดงบนใบเสร็จ)</div>
-        <input id="swal-shop-name" class="swal2-input mt-2 mb-2" placeholder="ชื่อร้าน (เช่น ชาบูอร่อยจัง)" value="${p.shopName || ''}">
-        <textarea id="swal-shop-address" class="swal2-textarea mt-0 mb-2 p-2" placeholder="ที่อยู่ / เบอร์ติดต่อ" style="height: 60px; width: 75%; font-size: 1rem;">${p.shopAddress || ''}</textarea>
-        <div class="text-start small text-muted px-4 mb-1">โลโก้ร้าน (เว้นว่างไว้ถ้าไม่เปลี่ยน):</div>
-        <input type="file" accept="image/*" class="form-control mb-3 w-75 mx-auto" onchange="const fr=new FileReader();fr.onload=(e)=>{tempShopLogo=e.target.result;};fr.readAsDataURL(this.files[0]);">
-        
-        <div class="text-start small fw-bold text-primary mb-1 mt-3 border-bottom pb-1"><i class="fa-solid fa-money-bill-transfer"></i> ข้อมูลรับเงิน</div>
         <div class="text-start small text-muted px-2 mb-1 mt-2">เบอร์โทรศัพท์ หรือ บัตรประชาชน (ผูกพร้อมเพย์):</div>
         <input id="swal-pay-pp" class="swal2-input mt-0 mb-3" placeholder="08xxxxxxxx" value="${p.promptpay || ''}">
         <div class="text-start small text-muted px-2 mb-1">ข้อมูลบัญชีธนาคาร (ทางเลือก):</div>
         <input id="swal-pay-bank" class="swal2-input mt-0 mb-2" placeholder="ชื่อธนาคาร (เช่น กสิกรไทย)" value="${p.bankName || ''}">
         <input id="swal-pay-name" class="swal2-input mt-0 mb-2" placeholder="ชื่อบัญชี" value="${p.accountName || ''}">
         <input id="swal-pay-num" class="swal2-input mt-0 mb-2" placeholder="เลขบัญชี" value="${p.accountNumber || ''}">`;
-        
-      Swal.fire({ title: 'ตั้งค่าร้าน & การรับเงิน', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', customClass: { popup: 'rounded-4' } }).then(res => {
+      Swal.fire({ title: 'ตั้งค่าการรับเงิน', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล' }).then(res => {
         if(res.isConfirmed) {
-          let data = { 
-            shopName: document.getElementById('swal-shop-name').value, shopAddress: document.getElementById('swal-shop-address').value, shopLogo: tempShopLogo,
-            promptpay: document.getElementById('swal-pay-pp').value, bankName: document.getElementById('swal-pay-bank').value, accountName: document.getElementById('swal-pay-name').value, accountNumber: document.getElementById('swal-pay-num').value 
-          };
-          window.dbSet(window.dbRef(window.db, 'settings/payment'), data).then(() => { gPayment = data; openAdminModal('payment'); });
+          let data = { promptpay: document.getElementById('swal-pay-pp').value, bankName: document.getElementById('swal-pay-bank').value, accountName: document.getElementById('swal-pay-name').value, accountNumber: document.getElementById('swal-pay-num').value };
+          window.dbSet(window.dbRef(window.db, 'settings/payment'), data).then(() => openAdminModal('payment'));
         }
       });
     }
@@ -1464,20 +1407,19 @@
       const tId = checkoutState.tableId;
       const t = gTables[tId];
       if (!t) return;
-      const p = gPayment || {};
+      const pPay = gPayment || {};
+      const pShop = gShop || {};
       
       let receiptHtml = '';
       
-      // โลโก้ และ ข้อมูลร้าน
-      if(p.shopLogo) {
-         receiptHtml += `<img src="${p.shopLogo}" style="max-width: 80px; max-height: 80px; margin-bottom: 5px;"><br>`;
+      if(pShop.shopLogo) {
+         receiptHtml += `<img src="${pShop.shopLogo}" style="max-width: 80px; max-height: 80px; margin-bottom: 5px;"><br>`;
       }
-      receiptHtml += `<h3 style="margin: 0 0 5px 0; font-weight: bold; font-size: 18px;">${p.shopName || 'Shabu POS'}</h3>`;
-      if(p.shopAddress) {
-         receiptHtml += `<div style="font-size: 12px; margin-bottom: 10px; white-space: pre-wrap;">${p.shopAddress}</div>`;
+      receiptHtml += `<h3 style="margin: 0 0 5px 0; font-weight: bold; font-size: 18px;">${pShop.shopName || 'Shabu POS'}</h3>`;
+      if(pShop.shopAddress) {
+         receiptHtml += `<div style="font-size: 12px; margin-bottom: 10px; white-space: pre-wrap;">${pShop.shopAddress}</div>`;
       }
       
-      // ข้อมูลบิล
       const now = new Date();
       receiptHtml += `
         <div style="text-align: left; font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px;">
@@ -1486,7 +1428,6 @@
         </div>
         <div style="text-align: left; font-size: 12px; width: 100%; border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 10px;">`;
       
-      // วนลูป อาหารบุฟเฟ่ต์
       if(t.customers) {
         const rate = Object.values(gRates).find(r => r.name === t.rateName);
         Object.entries(t.customers).forEach(([name, qty]) => {
@@ -1500,7 +1441,6 @@
         });
       }
       
-      // วนลูป อาหารครัวคิดเงินเพิ่ม
       const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === tId);
       tableOrders.forEach(([oId, o]) => {
         Object.entries(o.items).forEach(([itemId, item]) => {
@@ -1511,7 +1451,6 @@
         });
       });
       
-      // วนลูป สั่งเพิ่ม
       if (t.extraOrders) {
         Object.entries(t.extraOrders).forEach(([extId, ext]) => {
           if (ext.status !== 'canceled') {
@@ -1520,7 +1459,6 @@
         });
       }
       
-      // วนลูป ค่าปรับ
       if (t.fines) {
          Object.entries(t.fines).forEach(([fId, f]) => {
             receiptHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><div>ปรับ: ${f.reason}</div><div>${f.amount}</div></div>`;
@@ -1528,7 +1466,6 @@
       }
       receiptHtml += `</div>`;
       
-      // สรุปยอด
       receiptHtml += `
         <div style="text-align: left; font-size: 12px; margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
@@ -1545,8 +1482,7 @@
           </div>
         </div>`;
       
-      // QR Code พร้อมเพย์รับเงิน
-      if(p.promptpay && checkoutState.netTotal > 0) {
+      if(pPay.promptpay && checkoutState.netTotal > 0) {
          receiptHtml += `
            <hr style="border-top: 1px dashed #000;">
            <div style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">สแกนเพื่อชำระเงิน</div>
@@ -1558,13 +1494,11 @@
       const printSection = document.getElementById('print-receipt-section');
       printSection.innerHTML = receiptHtml;
       
-      // สร้าง QR ในใบเสร็จ
-      if(p.promptpay && checkoutState.netTotal > 0) {
-         const payload = generatePromptPayPayload(p.promptpay, checkoutState.netTotal);
+      if(pPay.promptpay && checkoutState.netTotal > 0) {
+         const payload = generatePromptPayPayload(pPay.promptpay, checkoutState.netTotal);
          new QRCode(document.getElementById('receipt-qrcode'), { text: payload, width: 120, height: 120, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
       }
       
-      // สลับหน้าจอเป็นโหมดพิมพ์ใบเสร็จ
       document.body.classList.add('print-mode-receipt');
       printSection.classList.remove('d-none');
       
@@ -1668,7 +1602,7 @@
     }
     
     // บังคับผูกฟังก์ชันกับ Global Window
-    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; wind
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;
   </script>
 </body>
 </html>
