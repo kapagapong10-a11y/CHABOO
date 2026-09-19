@@ -50,8 +50,11 @@
     
     @media print {
       body * { visibility: hidden; }
-      #print-section, #print-section * { visibility: visible; }
+      body.print-mode-table #print-section, body.print-mode-table #print-section * { visibility: visible; }
+      body.print-mode-receipt #print-receipt-section, body.print-mode-receipt #print-receipt-section * { visibility: visible; }
+      
       #print-section { position: absolute; left: 0; top: 0; width: 100%; text-align: center; font-family: sans-serif; color: black; }
+      #print-receipt-section { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; color: black; font-family: 'Prompt', sans-serif; }
       .no-print { display: none !important; }
     }
     
@@ -118,6 +121,10 @@
       <p style="margin: 2px 0; color: red;"><strong>หมดเวลา:</strong> <span id="print-out"></span></p>
     </div>
     <hr style="border-top: 1px dashed black;">
+  </div>
+  <!-- พื้นที่สำหรับพิมพ์ใบเสร็จ (ซ่อนไว้) -->
+  <div id="print-receipt-section" class="d-none" style="width: 100%; max-width: 300px; margin: 0 auto; text-align: center; background: white; padding: 10px;">
+    <!-- ข้อมูลใบเสร็จจะถูกสร้างอัตโนมัติด้วย JavaScript -->
   </div>
 
   <!-- Main Content -->
@@ -353,7 +360,14 @@
                     </div>
                   </div>
                   
-                  <button class="btn btn-info text-white fw-bold w-100 py-2 shadow-sm rounded-pill mb-2" id="btn-show-qr" onclick="showPaymentQR()"><i class="fa-solid fa-qrcode"></i> สร้าง QR รับเงิน</button>
+                  <div class="row g-2 mb-2" id="btn-row-qr-print">
+                    <div class="col-6">
+                      <button class="btn btn-info text-white fw-bold w-100 py-2 shadow-sm rounded-pill h-100" id="btn-show-qr" onclick="showPaymentQR()"><i class="fa-solid fa-qrcode"></i> สร้าง QR รับเงิน</button>
+                    </div>
+                    <div class="col-6">
+                      <button class="btn btn-secondary text-white fw-bold w-100 py-2 shadow-sm rounded-pill h-100" onclick="printReceipt()"><i class="fa-solid fa-print"></i> พิมพ์ใบเสร็จ</button>
+                    </div>
+                  </div>
                   <button class="btn btn-success fw-bold w-100 py-3 fs-5 rounded-pill shadow-sm" onclick="finalizeCheckout()"><i class="fa-solid fa-check-double"></i> ยืนยันรับเงิน & เคลียร์โต๊ะ</button>
               </div>
             </div>
@@ -1063,19 +1077,32 @@
       } }).then(res => { if(res.isConfirmed) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/promotions')), res.value).then(() => openAdminModal('promotions')); } });
     }
     
+    let tempShopLogo = "";
     function editPaymentSettings() {
       let p = gPayment || {};
+      tempShopLogo = p.shopLogo || ""; 
       let html = `
-        <div class="text-start small text-muted px-2 mb-1">เบอร์โทรศัพท์ หรือ บัตรประชาชน ที่ผูกพร้อมเพย์:</div>
+        <div class="text-start small fw-bold text-primary mb-1 border-bottom pb-1"><i class="fa-solid fa-store"></i> ข้อมูลร้าน (แสดงบนใบเสร็จ)</div>
+        <input id="swal-shop-name" class="swal2-input mt-2 mb-2" placeholder="ชื่อร้าน (เช่น ชาบูอร่อยจัง)" value="${p.shopName || ''}">
+        <textarea id="swal-shop-address" class="swal2-textarea mt-0 mb-2 p-2" placeholder="ที่อยู่ / เบอร์ติดต่อ" style="height: 60px; width: 75%; font-size: 1rem;">${p.shopAddress || ''}</textarea>
+        <div class="text-start small text-muted px-4 mb-1">โลโก้ร้าน (เว้นว่างไว้ถ้าไม่เปลี่ยน):</div>
+        <input type="file" accept="image/*" class="form-control mb-3 w-75 mx-auto" onchange="const fr=new FileReader();fr.onload=(e)=>{tempShopLogo=e.target.result;};fr.readAsDataURL(this.files[0]);">
+        
+        <div class="text-start small fw-bold text-primary mb-1 mt-3 border-bottom pb-1"><i class="fa-solid fa-money-bill-transfer"></i> ข้อมูลรับเงิน</div>
+        <div class="text-start small text-muted px-2 mb-1 mt-2">เบอร์โทรศัพท์ หรือ บัตรประชาชน (ผูกพร้อมเพย์):</div>
         <input id="swal-pay-pp" class="swal2-input mt-0 mb-3" placeholder="08xxxxxxxx" value="${p.promptpay || ''}">
         <div class="text-start small text-muted px-2 mb-1">ข้อมูลบัญชีธนาคาร (ทางเลือก):</div>
         <input id="swal-pay-bank" class="swal2-input mt-0 mb-2" placeholder="ชื่อธนาคาร (เช่น กสิกรไทย)" value="${p.bankName || ''}">
         <input id="swal-pay-name" class="swal2-input mt-0 mb-2" placeholder="ชื่อบัญชี" value="${p.accountName || ''}">
         <input id="swal-pay-num" class="swal2-input mt-0 mb-2" placeholder="เลขบัญชี" value="${p.accountNumber || ''}">`;
-      Swal.fire({ title: 'ตั้งค่าการรับเงิน', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล' }).then(res => {
+        
+      Swal.fire({ title: 'ตั้งค่าร้าน & การรับเงิน', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', customClass: { popup: 'rounded-4' } }).then(res => {
         if(res.isConfirmed) {
-          let data = { promptpay: document.getElementById('swal-pay-pp').value, bankName: document.getElementById('swal-pay-bank').value, accountName: document.getElementById('swal-pay-name').value, accountNumber: document.getElementById('swal-pay-num').value };
-          window.dbSet(window.dbRef(window.db, 'settings/payment'), data).then(() => openAdminModal('payment'));
+          let data = { 
+            shopName: document.getElementById('swal-shop-name').value, shopAddress: document.getElementById('swal-shop-address').value, shopLogo: tempShopLogo,
+            promptpay: document.getElementById('swal-pay-pp').value, bankName: document.getElementById('swal-pay-bank').value, accountName: document.getElementById('swal-pay-name').value, accountNumber: document.getElementById('swal-pay-num').value 
+          };
+          window.dbSet(window.dbRef(window.db, 'settings/payment'), data).then(() => { gPayment = data; openAdminModal('payment'); });
         }
       });
     }
@@ -1364,6 +1391,124 @@
        });
     }
 
+    // ==========================================
+    // พิมพ์ใบเสร็จ (Receipt)
+    // ==========================================
+    function printReceipt() {
+      const tId = checkoutState.tableId;
+      const t = gTables[tId];
+      if (!t) return;
+      const p = gPayment || {};
+      
+      let receiptHtml = '';
+      
+      // โลโก้ และ ข้อมูลร้าน
+      if(p.shopLogo) {
+         receiptHtml += `<img src="${p.shopLogo}" style="max-width: 80px; max-height: 80px; margin-bottom: 5px;"><br>`;
+      }
+      receiptHtml += `<h3 style="margin: 0 0 5px 0; font-weight: bold; font-size: 18px;">${p.shopName || 'Shabu POS'}</h3>`;
+      if(p.shopAddress) {
+         receiptHtml += `<div style="font-size: 12px; margin-bottom: 10px; white-space: pre-wrap;">${p.shopAddress}</div>`;
+      }
+      
+      // ข้อมูลบิล
+      const now = new Date();
+      receiptHtml += `
+        <div style="text-align: left; font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px;">
+          <div><strong>โต๊ะ:</strong> ${t.name}</div>
+          <div><strong>วันที่:</strong> ${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH')}</div>
+        </div>
+        <div style="text-align: left; font-size: 12px; width: 100%; border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 10px;">`;
+      
+      // วนลูป อาหารบุฟเฟ่ต์
+      if(t.customers) {
+        const rate = Object.values(gRates).find(r => r.name === t.rateName);
+        Object.entries(t.customers).forEach(([name, qty]) => {
+          let price = 0;
+          if(rate && rate.prices) {
+            let cId = Object.keys(gCustTypes).find(k => gCustTypes[k].name === name);
+            if(cId) price = rate.prices[cId] || 0;
+          }
+          let rowTotal = price * qty;
+          receiptHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><div>บุฟเฟ่ต์ ${name} x${qty}</div><div>${rowTotal}</div></div>`;
+        });
+      }
+      
+      // วนลูป อาหารครัวคิดเงินเพิ่ม
+      const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === tId);
+      tableOrders.forEach(([oId, o]) => {
+        Object.entries(o.items).forEach(([itemId, item]) => {
+          if (item.status !== 'canceled' && item.price > 0) {
+            let rowTotal = item.price * item.qty;
+            receiptHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><div>${item.name} x${item.qty}</div><div>${rowTotal}</div></div>`;
+          }
+        });
+      });
+      
+      // วนลูป สั่งเพิ่ม
+      if (t.extraOrders) {
+        Object.entries(t.extraOrders).forEach(([extId, ext]) => {
+          if (ext.status !== 'canceled') {
+            receiptHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><div>${ext.name} x${ext.qty}</div><div>${ext.total}</div></div>`;
+          }
+        });
+      }
+      
+      // วนลูป ค่าปรับ
+      if (t.fines) {
+         Object.entries(t.fines).forEach(([fId, f]) => {
+            receiptHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><div>ปรับ: ${f.reason}</div><div>${f.amount}</div></div>`;
+         });
+      }
+      receiptHtml += `</div>`;
+      
+      // สรุปยอด
+      receiptHtml += `
+        <div style="text-align: left; font-size: 12px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+            <span>ยอดรวม:</span><span>${checkoutState.subtotal.toLocaleString()} ฿</span>
+          </div>`;
+          
+      if (checkoutState.discount > 0) {
+         receiptHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px; color: red;"><span>ส่วนลด:</span><span>-${checkoutState.discount.toLocaleString()} ฿</span></div>`;
+      }
+      
+      receiptHtml += `
+          <div style="display: flex; justify-content: space-between; margin-top: 5px; font-weight: bold; font-size: 14px;">
+            <span>ยอดสุทธิ:</span><span>${checkoutState.netTotal.toLocaleString()} ฿</span>
+          </div>
+        </div>`;
+      
+      // QR Code พร้อมเพย์รับเงิน
+      if(p.promptpay && checkoutState.netTotal > 0) {
+         receiptHtml += `
+           <hr style="border-top: 1px dashed #000;">
+           <div style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">สแกนเพื่อชำระเงิน</div>
+           <div id="receipt-qrcode" style="display: flex; justify-content: center; margin-bottom: 5px;"></div>`;
+      }
+      
+      receiptHtml += `<div style="font-size: 11px; margin-top: 10px;">ขอบคุณที่ใช้บริการ</div>`;
+      
+      const printSection = document.getElementById('print-receipt-section');
+      printSection.innerHTML = receiptHtml;
+      
+      // สร้าง QR ในใบเสร็จ
+      if(p.promptpay && checkoutState.netTotal > 0) {
+         const payload = generatePromptPayPayload(p.promptpay, checkoutState.netTotal);
+         new QRCode(document.getElementById('receipt-qrcode'), { text: payload, width: 120, height: 120, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
+      }
+      
+      // สลับหน้าจอเป็นโหมดพิมพ์ใบเสร็จ
+      document.body.classList.add('print-mode-receipt');
+      printSection.classList.remove('d-none');
+      
+      setTimeout(() => { 
+         window.print(); 
+         printSection.classList.add('d-none'); 
+         document.body.classList.remove('print-mode-receipt');
+      }, 500);
+    }
+
     let historyModalInstance = null;
     function viewOrderHistory() {
       const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if (!t) return; 
@@ -1451,11 +1596,13 @@
       const qrContainer = document.getElementById('qrcode-container'); qrContainer.innerHTML = '';
       const currentUrl = window.location.href.split('?')[0]; const baseUrl = currentUrl.replace('index.html', ''); const orderLink = baseUrl + 'customer.html?table=' + tId;
       new QRCode(qrContainer, { text: orderLink, width: 150, height: 150 });
-      modals.manage.hide(); setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); }, 500);
+      
+      document.body.classList.add('print-mode-table');
+      modals.manage.hide(); setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); document.body.classList.remove('print-mode-table'); }, 500);
     }
     
     // บังคับผูกฟังก์ชันกับ Global Window
-    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR;
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR;
   </script>
 </body>
 </html>
