@@ -191,87 +191,77 @@
 
       <!-- Accounting Tab -->
       <div class="tab-pane fade" id="tab-accounting">
-        <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border gap-2">
           <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-chart-line"></i> ระบบบัญชีรายรับ-รายจ่าย</h4>
-          <div>
-            <button class="btn btn-outline-success fw-bold me-2" onclick="addManualIncome()"><i class="fa-solid fa-plus"></i> เพิ่มรายรับ</button>
-            <button class="btn btn-outline-danger fw-bold" onclick="addManualExpense()"><i class="fa-solid fa-minus"></i> เพิ่มรายจ่าย</button>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-secondary fw-bold" onclick="setInitialBalance()"><i class="fa-solid fa-coins"></i> ตั้งค่ายอดเริ่มต้น</button>
+            <button class="btn btn-outline-info fw-bold" onclick="addCashFlowTransfer()"><i class="fa-solid fa-money-bill-transfer"></i> โยกย้ายเงิน</button>
+            <button class="btn btn-success fw-bold text-white shadow-sm" onclick="addManualIncome()"><i class="fa-solid fa-plus"></i> เพิ่มรายรับ</button>
+            <button class="btn btn-danger fw-bold text-white shadow-sm" onclick="addManualExpense()"><i class="fa-solid fa-minus"></i> เพิ่มรายจ่าย</button>
           </div>
         </div>
-        
+
         <!-- ตัวกรองวันที่ -->
         <div class="bg-white p-3 rounded-4 shadow-sm border mb-4 d-flex flex-wrap gap-3 align-items-end">
-           <div>
-              <label class="small text-muted fw-bold">ตั้งแต่วันที่</label>
-              <input type="date" id="acc-date-start" class="form-control">
-           </div>
-           <div>
-              <label class="small text-muted fw-bold">ถึงวันที่</label>
-              <input type="date" id="acc-date-end" class="form-control">
-           </div>
-           <button class="btn btn-primary fw-bold" onclick="renderAccountingFront()"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
+           <div><label class="small text-muted fw-bold">ตั้งแต่วันที่</label><input type="date" id="acc-date-start" class="form-control"></div>
+           <div><label class="small text-muted fw-bold">ถึงวันที่</label><input type="date" id="acc-date-end" class="form-control"></div>
+           <button class="btn btn-primary fw-bold px-4" onclick="renderAccountingFront()"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
         </div>
 
-        <!-- แดชบอร์ดสรุปยอด -->
-        <div class="row g-3 mb-4">
-           <div class="col-12 col-md-4">
-              <div class="bg-success text-white p-4 rounded-4 shadow-sm h-100">
-                 <h6 class="fw-bold mb-2">รายรับรวม (Income)</h6>
-                 <h2 class="fw-bold mb-0" id="acc-sum-income">0 ฿</h2>
-              </div>
-           </div>
-           <div class="col-12 col-md-4">
-              <div class="bg-danger text-white p-4 rounded-4 shadow-sm h-100">
-                 <h6 class="fw-bold mb-2">รายจ่ายรวม (Expense)</h6>
-                 <h2 class="fw-bold mb-0" id="acc-sum-expense">0 ฿</h2>
-              </div>
-           </div>
-           <div class="col-12 col-md-4">
-              <div class="bg-primary text-white p-4 rounded-4 shadow-sm h-100">
-                 <h6 class="fw-bold mb-2">กำไรสุทธิ (Net Profit)</h6>
-                 <h2 class="fw-bold mb-0" id="acc-sum-profit">0 ฿</h2>
-              </div>
-           </div>
-        </div>
-        
-        
-        <!-- กราฟ และ ตาราง -->
-        <div class="row g-4 align-items-start">
-           <!-- ฝั่งซ้าย: กราฟ -->
-           <div class="col-12 col-lg-5">
-              <div class="bg-white p-3 rounded-4 shadow-sm border">
-                 <h5 class="fw-bold text-dark mb-3">กราฟสรุปบัญชี</h5>
-                 <!-- ล็อกความสูงเด็ดขาด แก้บัคกราฟยืดไม่หยุด -->
-                 <div style="height: 300px; position: relative;">
-                    <canvas id="accountingChart"></canvas>
+        <ul class="nav nav-pills mb-3" id="accounting-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" role="tab"><i class="fa-solid fa-table-cells"></i> สรุปรายวัน (Matrix)</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#pills-statement" type="button" role="tab"><i class="fa-solid fa-list-ul"></i> รายการเดินบัญชี (Statement)</button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- Tab 1: สรุปรายวัน (Matrix) -->
+          <div class="tab-pane fade show active" id="pills-summary" role="tabpanel">
+             <div class="row g-3 mb-4">
+                 <div class="col-12 col-md-3"><div class="bg-white p-3 rounded-4 shadow-sm border text-center"><div class="text-muted small fw-bold">💵 เงินสด (ลิ้นชัก)</div><h3 class="text-dark fw-bold mb-0 mt-2" id="asset-cash">0</h3></div></div>
+                 <div class="col-12 col-md-3"><div class="bg-white p-3 rounded-4 shadow-sm border text-center"><div class="text-muted small fw-bold">🏦 เงินโอน (ธนาคาร)</div><h3 class="text-primary fw-bold mb-0 mt-2" id="asset-transfer">0</h3></div></div>
+                 <div class="col-12 col-md-3"><div class="bg-white p-3 rounded-4 shadow-sm border text-center"><div class="text-muted small fw-bold">🏛️ เงินโครงการรัฐ</div><h3 class="text-warning fw-bold mb-0 mt-2 text-dark" id="asset-gov">0</h3></div></div>
+                 <div class="col-12 col-md-3"><div class="bg-dark text-white p-3 rounded-4 shadow-sm border text-center"><div class="small fw-bold opacity-75">⭐ สินทรัพย์รวมกิจการ</div><h3 class="text-warning fw-bold mb-0 mt-2" id="asset-total">0</h3></div></div>
+             </div>
+             <div class="bg-white rounded-4 shadow-sm border p-3">
+                 <h5 class="fw-bold mb-3 text-success"><i class="fa-solid fa-money-bill-trend-up"></i> กระแสเงินสดในรอบวันที่เลือก (Cash Flow Matrix)</h5>
+                 <div class="table-responsive">
+                   <table class="table table-bordered text-end mb-0">
+                      <thead class="table-light text-center">
+                         <tr><th class="text-start">รายการความเคลื่อนไหว</th><th>💵 เงินสด</th><th>🏦 เงินโอน</th><th>🏛️ โครงการรัฐ</th><th class="bg-secondary text-white">ยอดรวมทั้งหมด</th></tr>
+                      </thead>
+                      <tbody id="matrix-body"></tbody>
+                   </table>
                  </div>
-              </div>
-           </div>
-           
-           <!-- ฝั่งขวา: ตาราง -->
-           <div class="col-12 col-lg-7">
-              <!-- ล็อกความสูงตาราง ให้เกิดสกอร์บาร์ด้านในแทนการดันหน้าจอ -->
-              <div class="bg-white p-3 rounded-4 shadow-sm border" style="height: 375px; overflow-y: auto;">
-                 <h5 class="fw-bold text-dark mb-3">รายการเดินบัญชี</h5>
-                 <table class="table table-hover table-sm">
-                    <thead class="table-light sticky-top" style="z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                       <tr>
-                          <th>วันที่-เวลา</th>
-                          <th>รายการ</th>
-                          <th>โอน</th>
-                          <th>เงินสด</th>
-                          <th>รัฐฯ</th>
-                          <th class="text-success">รายรับ</th>
-                          <th class="text-danger">รายจ่าย</th>
-                          <th>สลิป</th>
-                       </tr>
-                    </thead>
-                    <tbody id="acc-table-body">
-                       <!-- Data generated by JS -->
-                    </tbody>
-                 </table>
-              </div>
-           </div>
+             </div>
+          </div>
+
+          <!-- Tab 2: รายการเดินบัญชี -->
+          <div class="tab-pane fade" id="pills-statement" role="tabpanel">
+             <div class="bg-white rounded-4 shadow-sm border" style="overflow: hidden;">
+                <div style="max-height: 450px; overflow-y: auto;">
+                   <table class="table table-hover table-sm mb-0">
+                      <thead class="table-light sticky-top shadow-sm" style="z-index: 1;">
+                         <tr><th>เวลา</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายการ</th><th>กระเป๋าเงิน</th><th class="text-end text-success">เงินเข้า (In)</th><th class="text-end text-danger">เงินออก (Out)</th><th class="text-center">สลิป</th></tr>
+                      </thead>
+                      <tbody id="acc-table-body"></tbody>
+                   </table>
+                </div>
+                <!-- Sticky Footer -->
+                <div class="bg-light p-3 border-top shadow-sm">
+                   <div class="row text-center fw-bold align-items-center">
+                      <div class="col"><span class="text-muted small d-block">รวมรายรับ (In)</span><span class="text-success fs-5" id="sum-in">0.00</span></div>
+                      <div class="col"><span class="text-muted small d-block">รวมรายจ่าย (Out)</span><span class="text-danger fs-5" id="sum-out">0.00</span></div>
+                      <div class="col border-end"><span class="text-muted small d-block">กำไรสุทธิ (Net)</span><span class="text-primary fs-5" id="sum-net">0.00</span></div>
+                      <div class="col"><span class="text-muted small d-block">ยอดลิ้นชักตอนนี้</span><span class="text-dark fs-5" id="sum-cash">0.00</span></div>
+                      <div class="col"><span class="text-muted small d-block">ยอดแบงก์ตอนนี้</span><span class="text-dark fs-5" id="sum-transfer">0.00</span></div>
+                   </div>
+                </div>
+             </div>
+          </div>
         </div>
       </div>
       
@@ -528,7 +518,18 @@
   <script>
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
     let gPromotions = {}, gPayment = {}, gShop = {}, gInventory = {}, gAccounting = {};
+    let gInitialBalance = { cash: 0, transfer: 0, gov: 0, date: 0 };
     let accountingChartInstance = null; // ตัวแปรเก็บกราฟ
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyit_KpZDMmWtw-JgHH7Nuf2p-3yKIkn0uLRYENlhMbm5VP0kFWmk97ySjzlk6vCN4I/exec";
+
+    function sendToGoogleSheet(data) {
+       fetch(GAS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+       }).catch(err => console.error('GAS Connect Error:', err));
+    }
     let currentKitchenId = ""; 
     let kitchenPingInterval = null;
     const modals = { checkIn: null, manage: null, admin: null, checkout: null };
@@ -550,6 +551,10 @@
       window.dbOnValue(window.dbRef(window.db, 'settings/payment'), s => { gPayment = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/shop'), s => { gShop = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { gInventory = s.val() || {}; renderInventoryFront(); });
+      window.dbOnValue(window.dbRef(window.db, 'settings/initialBalance'), s => { 
+        gInitialBalance = s.val() || { cash: 0, transfer: 0, gov: 0, date: 0 }; 
+        if(Object.keys(gAccounting).length > 0) renderAccountingFront(); 
+      });
       window.dbOnValue(window.dbRef(window.db, 'accounting'), s => { gAccounting = s.val() || {}; renderAccountingFront(); });
       window.dbOnValue(window.dbRef(window.db, 'kitchenPings'), s => { gPings = s.val() || {}; rescueOrphanedOrders(); });
       
@@ -1493,16 +1498,13 @@
     function finalizeCheckout() {
        let method = document.getElementById('payment-method-select').value;
        let payText = document.getElementById('payment-method-select').options[document.getElementById('payment-method-select').selectedIndex].text;
-       
        let transferAmt = 0, cashAmt = 0, govAmt = 0;
        
        if(method === 'split') {
           transferAmt = parseFloat(document.getElementById('split-transfer').value) || 0;
           cashAmt = parseFloat(document.getElementById('split-cash').value) || 0;
           govAmt = parseFloat(document.getElementById('split-gov').value) || 0;
-          if(Math.abs((transferAmt + cashAmt + govAmt) - checkoutState.netTotal) > 0.01) {
-             return Swal.fire('ยอดเงินไม่ถูกต้อง', 'ยอดแบ่งจ่ายรวมกันไม่ตรงกับยอดสุทธิที่ต้องชำระ', 'error');
-          }
+          if(Math.abs((transferAmt + cashAmt + govAmt) - checkoutState.netTotal) > 0.01) { return Swal.fire('ยอดเงินไม่ถูกต้อง', 'ยอดแบ่งจ่ายรวมกันไม่ตรงกับยอดสุทธิ', 'error'); }
        } else if (method === 'transfer') { transferAmt = checkoutState.netTotal; }
        else if (method === 'cash') { cashAmt = checkoutState.netTotal; }
        else if (method === 'gov') { govAmt = checkoutState.netTotal; }
@@ -1510,17 +1512,25 @@
        Swal.fire({ title: 'ยืนยันรับเงินเสร็จสิ้น?', html: `ยอดรับเงิน <b>${checkoutState.netTotal.toLocaleString()}</b> บาท<br><span class="text-success small">${payText}</span>`, icon: 'success', showCancelButton: true, confirmButtonText: 'ใช่, รับเงินแล้ว' }).then((res) => {
           if(res.isConfirmed) {
              const updates = {};
-             // 1. เคลียร์โต๊ะ
              updates['tables/' + checkoutState.tableId] = { name: document.getElementById('co-table-name').innerText, status:'empty', checkInTime:null, rateName:null, customers:null, soups:null, currentTotal:0, extraOrders:null, fines:null };
-             // 2. บันทึกบัญชีรายรับอัตโนมัติ
+             
              const accId = Date.now().toString();
+             const descStr = `ชำระเงินโต๊ะ: ${document.getElementById('co-table-name').innerText}`;
              updates[`accounting/${accId}`] = {
-                type: 'income', source: 'pos', date: Date.now(),
-                description: `ชำระเงินโต๊ะ: ${document.getElementById('co-table-name').innerText}`,
+                type: 'income', source: 'pos', date: Date.now(), description: descStr, category: 'รายได้จากการขายหน้าร้าน',
                 amount: checkoutState.netTotal, breakdown: { transfer: transferAmt, cash: cashAmt, gov: govAmt }
              };
              
              window.dbUpdate(window.dbRef(window.db), updates).then(() => {
+                let d = new Date(); let dateStr = d.toLocaleDateString('th-TH'); let timeStr = d.toLocaleString('th-TH');
+                if(method === 'split') {
+                   if(transferAmt > 0) sendToGoogleSheet({ action: 'addTransaction', id: accId+'_T', datetime: timeStr, date: dateStr, type: 'รายรับ', category: 'รายได้จากการขายหน้าร้าน', description: descStr, wallet: 'โอน', amountIn: transferAmt, amountOut: 0 });
+                   if(cashAmt > 0) sendToGoogleSheet({ action: 'addTransaction', id: accId+'_C', datetime: timeStr, date: dateStr, type: 'รายรับ', category: 'รายได้จากการขายหน้าร้าน', description: descStr, wallet: 'เงินสด', amountIn: cashAmt, amountOut: 0 });
+                   if(govAmt > 0) sendToGoogleSheet({ action: 'addTransaction', id: accId+'_G', datetime: timeStr, date: dateStr, type: 'รายรับ', category: 'รายได้จากการขายหน้าร้าน', description: descStr, wallet: 'รัฐ', amountIn: govAmt, amountOut: 0 });
+                } else {
+                   let walletName = method === 'transfer' ? 'โอน' : method === 'cash' ? 'เงินสด' : 'รัฐ';
+                   sendToGoogleSheet({ action: 'addTransaction', id: accId, datetime: timeStr, date: dateStr, type: 'รายรับ', category: 'รายได้จากการขายหน้าร้าน', description: descStr, wallet: walletName, amountIn: checkoutState.netTotal, amountOut: 0 });
+                }
                 modals.checkout.hide(); Swal.fire({icon: 'success', title: 'รับเงินและลงบัญชีเรียบร้อย', timer: 1500, showConfirmButton: false});
              });
           }
@@ -1734,121 +1744,142 @@
     function renderAccountingFront() {
        let startInput = document.getElementById('acc-date-start');
        let endInput = document.getElementById('acc-date-end');
-       
-       // ตั้งค่าเริ่มต้นให้เป็น "วันที่ปัจจุบัน" โดยอัตโนมัติเมื่อเปิดหน้าต่าง
        if (!startInput.value || !endInput.value) {
-          const today = new Date();
-          // แปลงเวลาให้ตรงกับ Local Timezone ก่อนยัดลงช่อง Input
-          const localDateStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+          const today = new Date(); const localDateStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
           if(!startInput.value) startInput.value = localDateStr;
           if(!endInput.value) endInput.value = localDateStr;
        }
+       let startTs = new Date(startInput.value); startTs.setHours(0,0,0,0); startTs = startTs.getTime();
+       let endTs = new Date(endInput.value); endTs.setHours(23,59,59,999); endTs = endTs.getTime();
+       
+       let bf = { cash: parseFloat(gInitialBalance.cash)||0, transfer: parseFloat(gInitialBalance.transfer)||0, gov: parseFloat(gInitialBalance.gov)||0 };
+       let cur = { inCash: 0, inTransfer: 0, inGov: 0, outCash: 0, outTransfer: 0, outGov: 0, tfCash: 0, tfTransfer: 0 };
+       let tbodyStatement = ''; let statementRecords = [];
 
-       let startDate = startInput.value;
-       let endDate = endInput.value;
-       
-       let startTs = 0; let endTs = Number.MAX_SAFE_INTEGER;
-       if(startDate) { const d = new Date(startDate); d.setHours(0,0,0,0); startTs = d.getTime(); }
-       if(endDate) { const d = new Date(endDate); d.setHours(23,59,59,999); endTs = d.getTime(); }
-       
-       let totalIncome = 0, totalExpense = 0;
-       let incTransfer = 0, incCash = 0, incGov = 0;
-       let tbodyHtml = '';
-       
-       // กรองข้อมูลและเรียงจากใหม่ไปเก่า
-       const filteredData = Object.entries(gAccounting)
-          .filter(([id, data]) => data.date >= startTs && data.date <= endTs)
-          .sort((a, b) => b[1].date - a[1].date);
-          
-       filteredData.forEach(([id, item]) => {
-          const dateStr = new Date(item.date).toLocaleString('th-TH');
-          let iTrans = 0, iCash = 0, iGov = 0, iTot = 0, eTot = 0, slipHtml = '-';
+       Object.entries(gAccounting).forEach(([id, item]) => {
+          let iCash = 0, iTransfer = 0, iGov = 0, oCash = 0, oTransfer = 0, oGov = 0, tfCash = 0, tfTransfer = 0;
+          let walletBadge = ''; let badgeColor = '';
           
           if(item.type === 'income') {
-             iTot = item.amount || 0;
-             iTrans = item.breakdown?.transfer || 0;
-             iCash = item.breakdown?.cash || 0;
-             iGov = item.breakdown?.gov || 0;
-             
-             totalIncome += iTot; incTransfer += iTrans; incCash += iCash; incGov += iGov;
-          } else {
-             eTot = item.amount || 0;
-             totalExpense += eTot;
-             if(item.slipImage) {
-                slipHtml = `<button class="btn btn-sm btn-outline-info py-0" onclick="Swal.fire({imageUrl: '${item.slipImage}'})">ดูสลิป</button>`;
+             if(item.breakdown) { 
+               iCash = parseFloat(item.breakdown.cash)||0; iTransfer = parseFloat(item.breakdown.transfer)||0; iGov = parseFloat(item.breakdown.gov)||0; 
+               if(iCash>0 && iTransfer>0) walletBadge = '⚖️ แบ่งจ่าย'; else if(iCash>0) walletBadge = '💵 เงินสด'; else if(iTransfer>0) walletBadge = '📱 โอน'; else walletBadge = '🏛️ รัฐ';
+             } else {
+               if(item.wallet === 'cash') { iCash = item.amount; walletBadge = '💵 เงินสด'; }
+               else if(item.wallet === 'transfer') { iTransfer = item.amount; walletBadge = '📱 โอน'; }
+               else if(item.wallet === 'gov') { iGov = item.amount; walletBadge = '🏛️ รัฐ'; }
              }
+             badgeColor = 'bg-success';
+          } 
+          else if (item.type === 'expense') {
+             if(item.wallet === 'cash') { oCash = item.amount; walletBadge = '💵 เงินสด'; }
+             else if(item.wallet === 'transfer') { oTransfer = item.amount; walletBadge = '📱 โอน'; }
+             badgeColor = 'bg-danger';
+          } 
+          else if (item.type === 'transfer') {
+             if(item.from === 'cash' && item.to === 'transfer') { tfCash -= item.amount; tfTransfer += item.amount; walletBadge = '💵 ➡️ 📱'; }
+             else if(item.from === 'transfer' && item.to === 'cash') { tfTransfer -= item.amount; tfCash += item.amount; walletBadge = '📱 ➡️ 💵'; }
+             badgeColor = 'bg-info text-dark';
           }
-          
-          tbodyHtml += `
-             <tr>
-                <td class="small">${dateStr}</td>
-                <td class="small fw-bold">${item.description}</td>
-                <td class="small text-primary">${iTrans > 0 ? iTrans.toLocaleString() : '-'}</td>
-                <td class="small text-success">${iCash > 0 ? iCash.toLocaleString() : '-'}</td>
-                <td class="small text-warning">${iGov > 0 ? iGov.toLocaleString() : '-'}</td>
-                <td class="fw-bold text-success">${iTot > 0 ? iTot.toLocaleString() : '-'}</td>
-                <td class="fw-bold text-danger">${eTot > 0 ? eTot.toLocaleString() : '-'}</td>
-                <td>${slipHtml}</td>
-             </tr>`;
+
+          if(item.date < startTs) {
+             bf.cash += (iCash - oCash + tfCash); bf.transfer += (iTransfer - oTransfer + tfTransfer); bf.gov += (iGov - oGov);
+          } else if (item.date >= startTs && item.date <= endTs) {
+             cur.inCash += iCash; cur.inTransfer += iTransfer; cur.inGov += iGov;
+             cur.outCash += oCash; cur.outTransfer += oTransfer; cur.outGov += oGov;
+             cur.tfCash += tfCash; cur.tfTransfer += tfTransfer;
+             
+             let typeStr = item.type === 'income' ? 'รายรับ' : item.type === 'expense' ? 'รายจ่าย' : 'โยกย้ายเงิน';
+             let catStr = item.category || '-';
+             let inTotal = iCash + iTransfer + iGov;
+             let outTotal = oCash + oTransfer + oGov;
+             if(item.type === 'transfer') outTotal = item.amount;
+
+             statementRecords.push({
+                date: item.date,
+                html: `<tr><td class="small">${new Date(item.date).toLocaleString('th-TH')}</td><td><span class="badge ${badgeColor}">${typeStr}</span></td><td class="small">${catStr}</td><td class="small fw-bold">${item.description}</td><td class="small">${walletBadge}</td><td class="fw-bold text-success text-end">${item.type === 'income' ? inTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="fw-bold text-danger text-end">${item.type !== 'income' ? outTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="text-center">${item.slipImage ? `<button class="btn btn-sm btn-outline-info py-0" onclick="Swal.fire({imageUrl: '${item.slipImage}'})">ดูสลิป</button>` : '-'}</td></tr>`
+             });
+          }
        });
        
-       if(filteredData.length === 0) tbodyHtml = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีรายการบัญชีในช่วงเวลานี้</td></tr>`;
+       statementRecords.sort((a,b) => b.date - a.date);
+       statementRecords.forEach(r => tbodyStatement += r.html);
+       if(statementRecords.length === 0) tbodyStatement = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีรายการบัญชีในช่วงเวลานี้</td></tr>`;
+       document.getElementById('acc-table-body').innerHTML = tbodyStatement;
+
+       let totalIn = cur.inCash + cur.inTransfer + cur.inGov;
+       let totalOut = cur.outCash + cur.outTransfer + cur.outGov;
+       let endCash = bf.cash + cur.inCash - cur.outCash + cur.tfCash;
+       let endTransfer = bf.transfer + cur.inTransfer - cur.outTransfer + cur.tfTransfer;
+       let endGov = bf.gov + cur.inGov - cur.outGov;
+
+       document.getElementById('sum-in').innerText = totalIn.toLocaleString(undefined, {minimumFractionDigits:2});
+       document.getElementById('sum-out').innerText = totalOut.toLocaleString(undefined, {minimumFractionDigits:2});
+       document.getElementById('sum-net').innerText = (totalIn - totalOut).toLocaleString(undefined, {minimumFractionDigits:2});
+       document.getElementById('sum-cash').innerText = endCash.toLocaleString(undefined, {minimumFractionDigits:2});
+       document.getElementById('sum-transfer').innerText = endTransfer.toLocaleString(undefined, {minimumFractionDigits:2});
        
-       document.getElementById('acc-table-body').innerHTML = tbodyHtml;
-       document.getElementById('acc-sum-income').innerText = totalIncome.toLocaleString() + ' ฿';
-       document.getElementById('acc-sum-expense').innerText = totalExpense.toLocaleString() + ' ฿';
-       document.getElementById('acc-sum-profit').innerText = (totalIncome - totalExpense).toLocaleString() + ' ฿';
-       
-       // สร้างกราฟวงกลมสรุป
-       const ctx = document.getElementById('accountingChart').getContext('2d');
-       if(accountingChartInstance) accountingChartInstance.destroy(); // เคลียร์กราฟเก่า
-       accountingChartInstance = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-             labels: ['รายรับ (โอน)', 'รายรับ (เงินสด)', 'รายรับ (รัฐ)', 'รายจ่าย'],
-             datasets: [{
-                data: [incTransfer, incCash, incGov, totalExpense],
-                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545'],
-                borderWidth: 2
-             }]
-          },
-          options: { responsive: true, maintainAspectRatio: false }
+       document.getElementById('asset-cash').innerText = endCash.toLocaleString();
+       document.getElementById('asset-transfer').innerText = endTransfer.toLocaleString();
+       document.getElementById('asset-gov').innerText = endGov.toLocaleString();
+       document.getElementById('asset-total').innerText = (endCash + endTransfer + endGov).toLocaleString();
+
+       let bfTotal = bf.cash + bf.transfer + bf.gov; let endTotal = endCash + endTransfer + endGov;
+       document.getElementById('matrix-body').innerHTML = `
+          <tr><td class="fw-bold bg-light">1. ยอดยกมา (ตั้งต้น)</td><td>${bf.cash.toLocaleString()}</td><td>${bf.transfer.toLocaleString()}</td><td>${bf.gov.toLocaleString()}</td><td class="fw-bold bg-light">${bfTotal.toLocaleString()}</td></tr>
+          <tr><td class="fw-bold">2. รวมรับ</td><td class="text-success">+ ${cur.inCash.toLocaleString()}</td><td class="text-success">+ ${cur.inTransfer.toLocaleString()}</td><td class="text-success">+ ${cur.inGov.toLocaleString()}</td><td class="fw-bold text-success bg-light">+ ${totalIn.toLocaleString()}</td></tr>
+          <tr><td class="fw-bold">3. รวมจ่าย</td><td class="text-danger">- ${cur.outCash.toLocaleString()}</td><td class="text-danger">- ${cur.outTransfer.toLocaleString()}</td><td class="text-danger">- ${cur.outGov.toLocaleString()}</td><td class="fw-bold text-danger bg-light">- ${totalOut.toLocaleString()}</td></tr>
+          <tr><td class="fw-bold text-muted">4. โยกย้าย (ฝาก/ถอน)</td><td class="${cur.tfCash > 0 ? 'text-success' : cur.tfCash < 0 ? 'text-danger' : ''}">${cur.tfCash > 0 ? '+ ' : ''}${cur.tfCash !== 0 ? cur.tfCash.toLocaleString() : '-'}</td><td class="${cur.tfTransfer > 0 ? 'text-success' : cur.tfTransfer < 0 ? 'text-danger' : ''}">${cur.tfTransfer > 0 ? '+ ' : ''}${cur.tfTransfer !== 0 ? cur.tfTransfer.toLocaleString() : '-'}</td><td>-</td><td class="fw-bold bg-light">0</td></tr>
+          <tr class="fs-5"><td class="fw-bold bg-light">5. คงเหลือจริง</td><td class="fw-bold text-dark">${endCash.toLocaleString()}</td><td class="fw-bold text-primary">${endTransfer.toLocaleString()}</td><td class="fw-bold text-warning text-dark">${endGov.toLocaleString()}</td><td class="fw-bold bg-warning">${endTotal.toLocaleString()}</td></tr>
+       `;
+    }
+
+    function setInitialBalance() {
+       Swal.fire({
+          title: 'ตั้งค่ายอดเงินเริ่มต้นของร้าน',
+          html: `<div class="text-start small fw-bold px-2 mb-2 text-muted">ณ วันที่เริ่มใช้งานระบบนี้ คุณมีเงินอยู่ตามนี้ใช่หรือไม่?</div>
+            <div class="d-flex align-items-center mb-2 px-2"><i class="fa-solid fa-money-bill-wave text-success fs-4 me-3"></i> <input type="number" id="init-cash" class="swal2-input mt-0 w-100" placeholder="เงินสดในลิ้นชัก (บาท)" value="${gInitialBalance.cash||0}"></div>
+            <div class="d-flex align-items-center mb-2 px-2"><i class="fa-solid fa-building-columns text-primary fs-4 me-3"></i> <input type="number" id="init-transfer" class="swal2-input mt-0 w-100" placeholder="เงินในธนาคาร (บาท)" value="${gInitialBalance.transfer||0}"></div>
+            <div class="d-flex align-items-center mb-2 px-2"><i class="fa-solid fa-landmark-flag text-warning fs-4 me-3"></i> <input type="number" id="init-gov" class="swal2-input mt-0 w-100" placeholder="โครงการรัฐ (บาท)" value="${gInitialBalance.gov||0}"></div>`,
+          showCancelButton: true, confirmButtonText: 'บันทึกยอดเริ่มต้น',
+          preConfirm: () => { return { cash: parseFloat(document.getElementById('init-cash').value) || 0, transfer: parseFloat(document.getElementById('init-transfer').value) || 0, gov: parseFloat(document.getElementById('init-gov').value) || 0 } }
+       }).then(res => {
+          if (res.isConfirmed) {
+             let data = { ...res.value, date: Date.now() };
+             window.dbSet(window.dbRef(window.db, 'settings/initialBalance'), data).then(() => {
+                sendToGoogleSheet({ action: 'updateInitialBalance', date: new Date().toLocaleString('th-TH'), cash: data.cash, transfer: data.transfer, gov: data.gov });
+                Swal.fire({icon: 'success', title: 'ตั้งค่ายอดตั้งต้นเรียบร้อย', timer: 1500, showConfirmButton: false});
+             });
+          }
        });
     }
 
     function addManualIncome() {
        Swal.fire({
           title: 'เพิ่มรายรับด้วยตนเอง',
-          html: `
-             <input type="date" id="man-inc-date" class="swal2-input w-75" value="${new Date().toISOString().split('T')[0]}">
-             <input type="text" id="man-inc-desc" class="swal2-input w-75" placeholder="รายการรายรับ (เช่น ขายน้ำเศษ)">
-             <hr>
-             <div class="text-start small fw-bold px-4 mb-1 text-primary">ยอดเงินโอน (ถ้ามี):</div>
-             <input type="number" id="man-inc-trans" class="swal2-input mt-0 w-75" placeholder="0">
-             <div class="text-start small fw-bold px-4 mb-1 text-success">ยอดเงินสด (ถ้ามี):</div>
-             <input type="number" id="man-inc-cash" class="swal2-input mt-0 w-75" placeholder="0">
-             <div class="text-start small fw-bold px-4 mb-1 text-warning">ยอดโครงการรัฐ (ถ้ามี):</div>
-             <input type="number" id="man-inc-gov" class="swal2-input mt-0 w-75" placeholder="0">`,
+          html: `<input type="date" id="man-inc-date" class="swal2-input w-75" value="${new Date().toISOString().split('T')[0]}">
+             <input type="text" id="man-inc-desc" class="swal2-input w-75" placeholder="รายการ (เช่น ลูกค้าเหมาจัดเลี้ยง)">
+             <select id="man-inc-cat" class="swal2-select w-75 mt-2" style="display:flex;"><option value="ขายทั่วไป">ขายทั่วไป</option><option value="รายรับอื่นๆ">รายรับอื่นๆ</option></select>
+             <hr class="w-75 mx-auto">
+             <div class="text-start small fw-bold px-5 mb-1 text-primary">ยอดเงินโอน (ถ้ามี):</div><input type="number" id="man-inc-trans" class="swal2-input mt-0 w-75" placeholder="0">
+             <div class="text-start small fw-bold px-5 mb-1 text-success">ยอดเงินสด (ถ้ามี):</div><input type="number" id="man-inc-cash" class="swal2-input mt-0 w-75" placeholder="0">
+             <div class="text-start small fw-bold px-5 mb-1 text-warning">ยอดโครงการรัฐ (ถ้ามี):</div><input type="number" id="man-inc-gov" class="swal2-input mt-0 w-75" placeholder="0">`,
           showCancelButton: true, confirmButtonText: 'บันทึกรายรับ',
           preConfirm: () => {
-             const date = document.getElementById('man-inc-date').value;
-             const desc = document.getElementById('man-inc-desc').value;
-             const trans = parseFloat(document.getElementById('man-inc-trans').value) || 0;
-             const cash = parseFloat(document.getElementById('man-inc-cash').value) || 0;
-             const gov = parseFloat(document.getElementById('man-inc-gov').value) || 0;
-             const total = trans + cash + gov;
-             if(!desc) { Swal.showValidationMessage('กรุณาระบุชื่อรายการ'); return false; }
-             if(total <= 0) { Swal.showValidationMessage('กรุณาระบุยอดเงินอย่างน้อย 1 ช่อง'); return false; }
-             return { date, desc, trans, cash, gov, total };
+             const date = document.getElementById('man-inc-date').value; const desc = document.getElementById('man-inc-desc').value; const cat = document.getElementById('man-inc-cat').value;
+             const trans = parseFloat(document.getElementById('man-inc-trans').value) || 0; const cash = parseFloat(document.getElementById('man-inc-cash').value) || 0; const gov = parseFloat(document.getElementById('man-inc-gov').value) || 0; const total = trans + cash + gov;
+             if(!desc) { Swal.showValidationMessage('กรุณาระบุชื่อรายการ'); return false; } if(total <= 0) { Swal.showValidationMessage('กรุณาระบุยอดเงินอย่างน้อย 1 ช่อง'); return false; }
+             return { date, desc, cat, trans, cash, gov, total };
           }
        }).then(res => {
           if(res.isConfirmed) {
-             const d = new Date(res.value.date); d.setHours(new Date().getHours());
-             const accId = Date.now().toString();
-             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), {
-                type: 'income', source: 'manual', date: d.getTime(), description: res.value.desc,
-                amount: res.value.total, breakdown: { transfer: res.value.trans, cash: res.value.cash, gov: res.value.gov }
-             }).then(() => Swal.fire({icon: 'success', title: 'บันทึกรายรับสำเร็จ', timer: 1500, showConfirmButton: false}));
+             const d = new Date(res.value.date); d.setHours(new Date().getHours()); const accId = Date.now().toString();
+             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), { type: 'income', source: 'manual', date: d.getTime(), description: res.value.desc, category: res.value.cat, amount: res.value.total, breakdown: { transfer: res.value.trans, cash: res.value.cash, gov: res.value.gov } }).then(() => {
+                if(res.value.trans > 0) sendToGoogleSheet({ action: 'addTransaction', id: accId+'_T', datetime: d.toLocaleString('th-TH'), date: d.toLocaleDateString('th-TH'), type: 'รายรับ', category: res.value.cat, description: res.value.desc, wallet: 'โอน', amountIn: res.value.trans, amountOut: 0 });
+                if(res.value.cash > 0) sendToGoogleSheet({ action: 'addTransaction', id: accId+'_C', datetime: d.toLocaleString('th-TH'), date: d.toLocaleDateString('th-TH'), type: 'รายรับ', category: res.value.cat, description: res.value.desc, wallet: 'เงินสด', amountIn: res.value.cash, amountOut: 0 });
+                if(res.value.gov > 0) sendToGoogleSheet({ action: 'addTransaction', id: accId+'_G', datetime: d.toLocaleString('th-TH'), date: d.toLocaleDateString('th-TH'), type: 'รายรับ', category: res.value.cat, description: res.value.desc, wallet: 'รัฐ', amountIn: res.value.gov, amountOut: 0 });
+                Swal.fire({icon: 'success', title: 'บันทึกรายรับสำเร็จ', timer: 1500, showConfirmButton: false});
+             });
           }
        });
     }
@@ -1856,37 +1887,61 @@
     function addManualExpense() {
        tempCompressedImage = "";
        Swal.fire({
-          title: 'เพิ่มรายจ่ายด้วยตนเอง',
-          html: `
-             <input type="date" id="man-exp-date" class="swal2-input w-75" value="${new Date().toISOString().split('T')[0]}">
-             <input type="text" id="man-exp-desc" class="swal2-input w-75" placeholder="รายการรายจ่าย (เช่น ค่าไฟ, ค่าจ้าง)">
-             <input type="number" id="man-exp-amt" class="swal2-input w-75 border-danger" placeholder="ยอดเงินรายจ่ายรวม (บาท)">
-             <div class="text-start small fw-bold px-4 mt-3 mb-1 text-muted">แนบสลิป / ใบเสร็จ (ถ้ามี):</div>
-             <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`,
+          title: 'เพิ่มรายจ่ายร้าน',
+          html: `<input type="date" id="man-exp-date" class="swal2-input w-75" value="${new Date().toISOString().split('T')[0]}">
+             <input type="text" id="man-exp-desc" class="swal2-input w-75" placeholder="รายการ (เช่น ค่าผัก, ค่าไฟ)">
+             <select id="man-exp-cat" class="swal2-select w-75 mt-2" style="display:flex;"><option value="วัตถุดิบ/สินค้า">ซืัอวัตถุดิบ/สินค้า</option><option value="เงินเดือน/ค่าจ้าง">เงินเดือน/ค่าจ้าง</option><option value="ค่าน้ำไฟ/สาธารณูปโภค">ค่าน้ำไฟ/สาธารณูปโภค</option><option value="จิปาถะ/อื่นๆ">จิปาถะ/อื่นๆ</option><option value="เงินสดสูญหาย/ส่วนต่าง">เงินสดสูญหาย/ปรับปรุงยอด</option></select>
+             <select id="man-exp-wallet" class="swal2-select w-75 mt-2 border-danger text-danger fw-bold" style="display:flex;"><option value="">-- จ่ายเงินออกจากกระเป๋าไหน? --</option><option value="cash">💵 จ่ายจากเงินสดในลิ้นชัก</option><option value="transfer">📱 โอนจ่ายจากบัญชีธนาคาร</option></select>
+             <input type="number" id="man-exp-amt" class="swal2-input w-75 border-danger" placeholder="ยอดเงินรายจ่าย (บาท)">
+             <div class="text-start small fw-bold px-4 mt-3 mb-1 text-muted">แนบสลิป/บิล (ถ้ามี):</div><input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`,
           showCancelButton: true, confirmButtonText: 'บันทึกรายจ่าย',
           preConfirm: () => {
-             const date = document.getElementById('man-exp-date').value;
-             const desc = document.getElementById('man-exp-desc').value;
-             const amt = parseFloat(document.getElementById('man-exp-amt').value) || 0;
-             if(!desc) { Swal.showValidationMessage('กรุณาระบุชื่อรายการรายจ่าย'); return false; }
-             if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุยอดเงินรายจ่าย'); return false; }
-             return { date, desc, amt };
+             const date = document.getElementById('man-exp-date').value; const desc = document.getElementById('man-exp-desc').value; const cat = document.getElementById('man-exp-cat').value; const wallet = document.getElementById('man-exp-wallet').value; const amt = parseFloat(document.getElementById('man-exp-amt').value) || 0;
+             if(!desc) { Swal.showValidationMessage('กรุณาระบุชื่อรายการ'); return false; } if(!wallet) { Swal.showValidationMessage('กรุณาเลือกว่าจ่ายเงินจากไหน'); return false; } if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุยอดเงิน'); return false; }
+             return { date, desc, cat, wallet, amt };
           }
        }).then(res => {
           if(res.isConfirmed) {
              Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-             const d = new Date(res.value.date); d.setHours(new Date().getHours());
-             const accId = Date.now().toString();
-             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), {
-                type: 'expense', source: 'manual', date: d.getTime(), description: res.value.desc,
-                amount: res.value.amt, slipImage: tempCompressedImage || ""
-             }).then(() => { Swal.close(); Swal.fire({icon: 'success', title: 'บันทึกรายจ่ายสำเร็จ', timer: 1500, showConfirmButton: false}); });
+             const d = new Date(res.value.date); d.setHours(new Date().getHours()); const accId = Date.now().toString();
+             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), { type: 'expense', source: 'manual', date: d.getTime(), description: res.value.desc, category: res.value.cat, wallet: res.value.wallet, amount: res.value.amt, slipImage: tempCompressedImage || "" }).then(() => {
+                let walletName = res.value.wallet === 'cash' ? 'เงินสด' : 'โอน';
+                sendToGoogleSheet({ action: 'addTransaction', id: accId, datetime: d.toLocaleString('th-TH'), date: d.toLocaleDateString('th-TH'), type: 'รายจ่าย', category: res.value.cat, description: res.value.desc, wallet: walletName, amountIn: 0, amountOut: res.value.amt, slipUrl: tempCompressedImage ? "Attached" : "" });
+                Swal.close(); Swal.fire({icon: 'success', title: 'บันทึกรายจ่ายสำเร็จ', timer: 1500, showConfirmButton: false});
+             });
+          }
+       });
+    }
+
+    function addCashFlowTransfer() {
+       Swal.fire({
+          title: '🔄 โยกย้ายเงิน (ไม่กระทบกำไร)',
+          html: `<div class="text-start text-muted small px-4 mb-3">ใช้สำหรับนำเงินสดฝากเข้าธนาคาร หรือ ถอนเงินมาเป็นเงินทอน</div>
+             <select id="man-tf-type" class="swal2-select w-75 mt-0 mb-3" style="display:flex;"><option value="deposit">💵 นำเงินสดฝากเข้าบัญชีธนาคาร</option><option value="withdraw">🏧 ถอนเงินจากธนาคารมาไว้ลิ้นชัก</option></select>
+             <input type="number" id="man-tf-amt" class="swal2-input w-75" placeholder="จำนวนเงินที่โยกย้าย (บาท)">
+             <input type="date" id="man-tf-date" class="swal2-input w-75 mt-3" value="${new Date().toISOString().split('T')[0]}">`,
+          showCancelButton: true, confirmButtonText: 'ยืนยันการทำรายการ',
+          preConfirm: () => {
+             const type = document.getElementById('man-tf-type').value; const amt = parseFloat(document.getElementById('man-tf-amt').value) || 0; const date = document.getElementById('man-tf-date').value;
+             if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุจำนวนเงินให้ถูกต้อง'); return false; } return { type, amt, date };
+          }
+       }).then(res => {
+          if(res.isConfirmed) {
+             const d = new Date(res.value.date); d.setHours(new Date().getHours()); const accId = Date.now().toString();
+             let fromWallet = res.value.type === 'deposit' ? 'cash' : 'transfer'; let toWallet = res.value.type === 'deposit' ? 'transfer' : 'cash'; let desc = res.value.type === 'deposit' ? 'นำเงินสดฝากธนาคาร' : 'ถอนเงินเป็นเงินทอน';
+             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), { type: 'transfer', date: d.getTime(), description: desc, category: 'โยกย้ายเงินภายใน', from: fromWallet, to: toWallet, amount: res.value.amt }).then(() => {
+                let dateStr = d.toLocaleDateString('th-TH'); let timeStr = d.toLocaleString('th-TH');
+                let fromName = fromWallet === 'cash' ? 'เงินสด' : 'โอน'; let toName = toWallet === 'cash' ? 'เงินสด' : 'โอน';
+                sendToGoogleSheet({ action: 'addTransaction', id: accId+'_OUT', datetime: timeStr, date: dateStr, type: 'โยกย้ายเงิน', category: 'ตัดเงินออก', description: desc, wallet: fromName, amountIn: 0, amountOut: res.value.amt });
+                setTimeout(() => sendToGoogleSheet({ action: 'addTransaction', id: accId+'_IN', datetime: timeStr, date: dateStr, type: 'โยกย้ายเงิน', category: 'รับเงินเข้า', description: desc, wallet: toName, amountIn: res.value.amt, amountOut: 0 }), 1000);
+                Swal.fire({icon: 'success', title: 'โยกย้ายเงินสำเร็จ', timer: 1500, showConfirmButton: false});
+             });
           }
        });
     }
     
     // บังคับผูกฟังก์ชันกับ Global Window
-    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense;
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer;
   </script>
 </body>
 </html>
