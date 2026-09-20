@@ -192,7 +192,7 @@
       <!-- Accounting Tab -->
       <div class="tab-pane fade" id="tab-accounting">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border gap-2">
-          <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-chart-line"></i> ระบบบัญชีรายรับ-รายจ่าย</h4>
+          <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-chart-line"></i> ระบบบัญชีร้าน</h4>
           <div class="d-flex flex-wrap gap-2">
             <button class="btn btn-outline-secondary fw-bold" onclick="setInitialBalance()"><i class="fa-solid fa-coins"></i> ตั้งค่ายอดเริ่มต้น</button>
             <button class="btn btn-outline-info fw-bold" onclick="addCashFlowTransfer()"><i class="fa-solid fa-money-bill-transfer"></i> โยกย้ายเงิน</button>
@@ -210,16 +210,54 @@
 
         <ul class="nav nav-pills mb-3" id="accounting-tabs" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" role="tab"><i class="fa-solid fa-table-cells"></i> สรุปรายวัน (Matrix)</button>
+            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#pills-statement" type="button" role="tab"><i class="fa-solid fa-list-ul"></i> รายการเดินบัญชี</button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#pills-statement" type="button" role="tab"><i class="fa-solid fa-list-ul"></i> รายการเดินบัญชี (Statement)</button>
+            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" role="tab"><i class="fa-solid fa-table-cells"></i> สรุปรายวัน (Matrix)</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#pills-overview" type="button" role="tab"><i class="fa-solid fa-calendar-days"></i> สรุปภาพรวม</button>
           </li>
         </ul>
 
         <div class="tab-content">
-          <!-- Tab 1: สรุปรายวัน (Matrix) -->
-          <div class="tab-pane fade show active" id="pills-summary" role="tabpanel">
+          <!-- Tab 1: รายการเดินบัญชี (แบบแยกกระเป๋าเหมือนเดิม) -->
+          <div class="tab-pane fade show active" id="pills-statement" role="tabpanel">
+             <div class="bg-white rounded-4 shadow-sm border" style="overflow: hidden;">
+                <div style="max-height: 450px; overflow-y: auto;">
+                   <table class="table table-hover table-sm mb-0">
+                      <thead class="table-light sticky-top shadow-sm" style="z-index: 1;">
+                         <tr>
+                            <th>เวลา</th>
+                            <th>ประเภท</th>
+                            <th>รายการ</th>
+                            <th class="text-end">โอน</th>
+                            <th class="text-end">เงินสด</th>
+                            <th class="text-end">รัฐฯ</th>
+                            <th class="text-end text-success">รายรับ (In)</th>
+                            <th class="text-end text-danger">รายจ่าย (Out)</th>
+                            <th class="text-center">สลิป</th>
+                         </tr>
+                      </thead>
+                      <tbody id="acc-table-body"></tbody>
+                   </table>
+                </div>
+                <!-- Sticky Footer -->
+                <div class="bg-light p-3 border-top shadow-sm">
+                   <div class="row text-center fw-bold align-items-center">
+                      <div class="col"><span class="text-muted small d-block">ความเคลื่อนไหว (โอน)</span><span class="text-primary fs-5" id="sum-col-transfer">0</span></div>
+                      <div class="col"><span class="text-muted small d-block">ความเคลื่อนไหว (เงินสด)</span><span class="text-success fs-5" id="sum-col-cash">0</span></div>
+                      <div class="col border-end"><span class="text-muted small d-block">ความเคลื่อนไหว (รัฐฯ)</span><span class="text-warning text-dark fs-5" id="sum-col-gov">0</span></div>
+                      <div class="col"><span class="text-muted small d-block">รวมรายรับสุทธิ</span><span class="text-success fs-5" id="sum-in">0.00</span></div>
+                      <div class="col"><span class="text-muted small d-block">รวมรายจ่ายสุทธิ</span><span class="text-danger fs-5" id="sum-out">0.00</span></div>
+                      <div class="col"><span class="text-muted small d-block">กำไรสุทธิช่วงเวลานี้</span><span class="text-dark fs-5" id="sum-net">0.00</span></div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <!-- Tab 2: สรุปรายวัน (Matrix) -->
+          <div class="tab-pane fade" id="pills-summary" role="tabpanel">
              <div class="row g-3 mb-4">
                  <div class="col-12 col-md-3"><div class="bg-white p-3 rounded-4 shadow-sm border text-center"><div class="text-muted small fw-bold">💵 เงินสด (ลิ้นชัก)</div><h3 class="text-dark fw-bold mb-0 mt-2" id="asset-cash">0</h3></div></div>
                  <div class="col-12 col-md-3"><div class="bg-white p-3 rounded-4 shadow-sm border text-center"><div class="text-muted small fw-bold">🏦 เงินโอน (ธนาคาร)</div><h3 class="text-primary fw-bold mb-0 mt-2" id="asset-transfer">0</h3></div></div>
@@ -239,27 +277,27 @@
              </div>
           </div>
 
-          <!-- Tab 2: รายการเดินบัญชี -->
-          <div class="tab-pane fade" id="pills-statement" role="tabpanel">
-             <div class="bg-white rounded-4 shadow-sm border" style="overflow: hidden;">
-                <div style="max-height: 450px; overflow-y: auto;">
-                   <table class="table table-hover table-sm mb-0">
-                      <thead class="table-light sticky-top shadow-sm" style="z-index: 1;">
-                         <tr><th>เวลา</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายการ</th><th>กระเป๋าเงิน</th><th class="text-end text-success">เงินเข้า (In)</th><th class="text-end text-danger">เงินออก (Out)</th><th class="text-center">สลิป</th></tr>
+          <!-- Tab 3: สรุปภาพรวม -->
+          <div class="tab-pane fade" id="pills-overview" role="tabpanel">
+             <div class="bg-white rounded-4 shadow-sm border p-3">
+                 <h5 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-calendar-days"></i> สรุปภาพรวม (แบ่งตามรายวัน)</h5>
+                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                   <table class="table table-hover table-bordered text-end mb-0">
+                      <thead class="table-light text-center sticky-top shadow-sm">
+                         <tr>
+                            <th class="text-start">วันที่</th>
+                            <th class="text-success">รายรับ</th>
+                            <th class="text-danger">รายจ่าย</th>
+                            <th>คงเหลือ(เงินสด)</th>
+                            <th>คงเหลือ(ธนาคาร)</th>
+                            <th>คงเหลือ(โครงการรัฐ)</th>
+                            <th class="text-primary">รวม (Net วันนี้)</th>
+                            <th class="bg-dark text-white">รวมทั้งหมด (สะสม)</th>
+                         </tr>
                       </thead>
-                      <tbody id="acc-table-body"></tbody>
+                      <tbody id="overview-body"></tbody>
                    </table>
-                </div>
-                <!-- Sticky Footer -->
-                <div class="bg-light p-3 border-top shadow-sm">
-                   <div class="row text-center fw-bold align-items-center">
-                      <div class="col"><span class="text-muted small d-block">รวมรายรับ (In)</span><span class="text-success fs-5" id="sum-in">0.00</span></div>
-                      <div class="col"><span class="text-muted small d-block">รวมรายจ่าย (Out)</span><span class="text-danger fs-5" id="sum-out">0.00</span></div>
-                      <div class="col border-end"><span class="text-muted small d-block">กำไรสุทธิ (Net)</span><span class="text-primary fs-5" id="sum-net">0.00</span></div>
-                      <div class="col"><span class="text-muted small d-block">ยอดลิ้นชักตอนนี้</span><span class="text-dark fs-5" id="sum-cash">0.00</span></div>
-                      <div class="col"><span class="text-muted small d-block">ยอดแบงก์ตอนนี้</span><span class="text-dark fs-5" id="sum-transfer">0.00</span></div>
-                   </div>
-                </div>
+                 </div>
              </div>
           </div>
         </div>
@@ -1752,86 +1790,174 @@
        let startTs = new Date(startInput.value); startTs.setHours(0,0,0,0); startTs = startTs.getTime();
        let endTs = new Date(endInput.value); endTs.setHours(23,59,59,999); endTs = endTs.getTime();
        
-       let bf = { cash: parseFloat(gInitialBalance.cash)||0, transfer: parseFloat(gInitialBalance.transfer)||0, gov: parseFloat(gInitialBalance.gov)||0 };
-       let cur = { inCash: 0, inTransfer: 0, inGov: 0, outCash: 0, outTransfer: 0, outGov: 0, tfCash: 0, tfTransfer: 0 };
-       let tbodyStatement = ''; let statementRecords = [];
+       let initCash = parseFloat(gInitialBalance.cash)||0;
+       let initTransfer = parseFloat(gInitialBalance.transfer)||0;
+       let initGov = parseFloat(gInitialBalance.gov)||0;
 
-       Object.entries(gAccounting).forEach(([id, item]) => {
+       // ตัวแปรสำหรับ Tab 1 และ Tab 2 (วิเคราะห์เฉพาะกรอบเวลาที่เลือก)
+       let cur = { inCash: 0, inTransfer: 0, inGov: 0, outCash: 0, outTransfer: 0, outGov: 0, tfCash: 0, tfTransfer: 0 };
+       let bf = { cash: initCash, transfer: initTransfer, gov: initGov };
+       let tbodyStatement = ''; let statementRecords = [];
+       
+       // ตัวแปรสำหรับ Tab 3 (ประมวลผลเป็นรายวัน)
+       let dailyData = {}; 
+       
+       // เรียงลำดับ Transaction ทั้งหมดตามเวลา เพื่อสะสมยอดรวมทั้งหมดให้แม่นยำ
+       let allTx = Object.entries(gAccounting).map(([id, data]) => ({id, ...data})).sort((a, b) => a.date - b.date);
+
+       let runningCash = initCash;
+       let runningTransfer = initTransfer;
+       let runningGov = initGov;
+
+       allTx.forEach(item => {
+          // ดึงวันที่ (YYYY-MM-DD) ตาม Timezone เครื่อง
+          let dateStr = new Date(item.date - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]; 
+          
+          if (!dailyData[dateStr]) {
+              dailyData[dateStr] = { income: 0, expense: 0, net: 0, cash: 0, transfer: 0, gov: 0, totalAccum: 0 };
+          }
+          
           let iCash = 0, iTransfer = 0, iGov = 0, oCash = 0, oTransfer = 0, oGov = 0, tfCash = 0, tfTransfer = 0;
-          let walletBadge = ''; let badgeColor = '';
           
           if(item.type === 'income') {
              if(item.breakdown) { 
                iCash = parseFloat(item.breakdown.cash)||0; iTransfer = parseFloat(item.breakdown.transfer)||0; iGov = parseFloat(item.breakdown.gov)||0; 
-               if(iCash>0 && iTransfer>0) walletBadge = '⚖️ แบ่งจ่าย'; else if(iCash>0) walletBadge = '💵 เงินสด'; else if(iTransfer>0) walletBadge = '📱 โอน'; else walletBadge = '🏛️ รัฐ';
              } else {
-               if(item.wallet === 'cash') { iCash = item.amount; walletBadge = '💵 เงินสด'; }
-               else if(item.wallet === 'transfer') { iTransfer = item.amount; walletBadge = '📱 โอน'; }
-               else if(item.wallet === 'gov') { iGov = item.amount; walletBadge = '🏛️ รัฐ'; }
+               if(item.wallet === 'cash') iCash = item.amount;
+               else if(item.wallet === 'transfer') iTransfer = item.amount;
+               else if(item.wallet === 'gov') iGov = item.amount;
              }
-             badgeColor = 'bg-success';
           } 
           else if (item.type === 'expense') {
-             if(item.wallet === 'cash') { oCash = item.amount; walletBadge = '💵 เงินสด'; }
-             else if(item.wallet === 'transfer') { oTransfer = item.amount; walletBadge = '📱 โอน'; }
-             badgeColor = 'bg-danger';
+             if(item.wallet === 'cash') oCash = item.amount;
+             else if(item.wallet === 'transfer') oTransfer = item.amount;
           } 
           else if (item.type === 'transfer') {
-             if(item.from === 'cash' && item.to === 'transfer') { tfCash -= item.amount; tfTransfer += item.amount; walletBadge = '💵 ➡️ 📱'; }
-             else if(item.from === 'transfer' && item.to === 'cash') { tfTransfer -= item.amount; tfCash += item.amount; walletBadge = '📱 ➡️ 💵'; }
-             badgeColor = 'bg-info text-dark';
+             if(item.from === 'cash' && item.to === 'transfer') { tfCash -= item.amount; tfTransfer += item.amount; }
+             else if(item.from === 'transfer' && item.to === 'cash') { tfTransfer -= item.amount; tfCash += item.amount; }
           }
 
+          // ปรับปรุงยอดสะสมในกระเป๋าต่างๆ
+          runningCash += (iCash - oCash + tfCash);
+          runningTransfer += (iTransfer - oTransfer + tfTransfer);
+          runningGov += (iGov - oGov);
+
+          let inTotal = iCash + iTransfer + iGov;
+          let outTotal = oCash + oTransfer + oGov;
+
+          // บันทึกข้อมูลสำหรับสรุปภาพรวมรายวัน (Tab 3)
+          dailyData[dateStr].income += inTotal;
+          dailyData[dateStr].expense += outTotal;
+          dailyData[dateStr].net += (inTotal - outTotal);
+          dailyData[dateStr].cash = runningCash;
+          dailyData[dateStr].transfer = runningTransfer;
+          dailyData[dateStr].gov = runningGov;
+          dailyData[dateStr].totalAccum = runningCash + runningTransfer + runningGov;
+
+          // คำนวณยอดยกมาสำหรับหน้า Matrix (เฉพาะบิลที่เกิดก่อนเวลาที่เลือก)
           if(item.date < startTs) {
-             bf.cash += (iCash - oCash + tfCash); bf.transfer += (iTransfer - oTransfer + tfTransfer); bf.gov += (iGov - oGov);
-          } else if (item.date >= startTs && item.date <= endTs) {
+             bf.cash += (iCash - oCash + tfCash); 
+             bf.transfer += (iTransfer - oTransfer + tfTransfer); 
+             bf.gov += (iGov - oGov);
+          } 
+          // เตรียมข้อมูลลงตารางรายการเดินบัญชี (เฉพาะบิลที่อยู่ในช่วงเวลาที่เลือก)
+          else if (item.date >= startTs && item.date <= endTs) {
              cur.inCash += iCash; cur.inTransfer += iTransfer; cur.inGov += iGov;
              cur.outCash += oCash; cur.outTransfer += oTransfer; cur.outGov += oGov;
              cur.tfCash += tfCash; cur.tfTransfer += tfTransfer;
              
              let typeStr = item.type === 'income' ? 'รายรับ' : item.type === 'expense' ? 'รายจ่าย' : 'โยกย้ายเงิน';
-             let catStr = item.category || '-';
-             let inTotal = iCash + iTransfer + iGov;
-             let outTotal = oCash + oTransfer + oGov;
-             if(item.type === 'transfer') outTotal = item.amount;
+             let badgeColor = item.type === 'income' ? 'bg-success' : item.type === 'expense' ? 'bg-danger' : 'bg-info text-dark';
+             let desc = (item.category ? `<span class="badge bg-secondary opacity-75 me-1">${item.category}</span>` : '') + item.description;
+
+             // แยกแสดงผลคอลัมน์ โอน / เงินสด / รัฐฯ ให้ชัดเจน
+             let colTransfer = item.type === 'transfer' ? (tfTransfer > 0 ? '+'+tfTransfer.toLocaleString() : tfTransfer.toLocaleString()) : (iTransfer > 0 ? '+'+iTransfer.toLocaleString() : oTransfer > 0 ? '-'+oTransfer.toLocaleString() : '-');
+             let colCash = item.type === 'transfer' ? (tfCash > 0 ? '+'+tfCash.toLocaleString() : tfCash.toLocaleString()) : (iCash > 0 ? '+'+iCash.toLocaleString() : oCash > 0 ? '-'+oCash.toLocaleString() : '-');
+             let colGov = (iGov > 0 ? '+'+iGov.toLocaleString() : oGov > 0 ? '-'+oGov.toLocaleString() : '-');
+             
+             let trClass = item.type === 'transfer' ? 'table-light text-muted' : '';
 
              statementRecords.push({
                 date: item.date,
-                html: `<tr><td class="small">${new Date(item.date).toLocaleString('th-TH')}</td><td><span class="badge ${badgeColor}">${typeStr}</span></td><td class="small">${catStr}</td><td class="small fw-bold">${item.description}</td><td class="small">${walletBadge}</td><td class="fw-bold text-success text-end">${item.type === 'income' ? inTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="fw-bold text-danger text-end">${item.type !== 'income' ? outTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="text-center">${item.slipImage ? `<button class="btn btn-sm btn-outline-info py-0" onclick="Swal.fire({imageUrl: '${item.slipImage}'})">ดูสลิป</button>` : '-'}</td></tr>`
+                html: `<tr class="${trClass}"><td class="small">${new Date(item.date).toLocaleString('th-TH')}</td><td><span class="badge ${badgeColor}">${typeStr}</span></td><td class="small fw-bold">${desc}</td><td class="text-end text-primary">${colTransfer}</td><td class="text-end text-success">${colCash}</td><td class="text-end text-warning text-dark">${colGov}</td><td class="fw-bold text-success text-end">${item.type === 'income' ? inTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="fw-bold text-danger text-end">${item.type !== 'income' && item.type !== 'transfer' ? outTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="text-center">${item.slipImage ? `<button class="btn btn-sm btn-outline-info py-0" onclick="Swal.fire({imageUrl: '${item.slipImage}'})">สลิป</button>` : '-'}</td></tr>`
              });
           }
        });
        
+       // แสดงผล Tab 1 (รายการเดินบัญชี)
        statementRecords.sort((a,b) => b.date - a.date);
        statementRecords.forEach(r => tbodyStatement += r.html);
-       if(statementRecords.length === 0) tbodyStatement = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีรายการบัญชีในช่วงเวลานี้</td></tr>`;
+       if(statementRecords.length === 0) tbodyStatement = `<tr><td colspan="9" class="text-center text-muted py-4">ไม่มีรายการบัญชีในช่วงเวลานี้</td></tr>`;
        document.getElementById('acc-table-body').innerHTML = tbodyStatement;
 
+       // สรุปยอดท้ายตาราง Tab 1
        let totalIn = cur.inCash + cur.inTransfer + cur.inGov;
        let totalOut = cur.outCash + cur.outTransfer + cur.outGov;
-       let endCash = bf.cash + cur.inCash - cur.outCash + cur.tfCash;
-       let endTransfer = bf.transfer + cur.inTransfer - cur.outTransfer + cur.tfTransfer;
-       let endGov = bf.gov + cur.inGov - cur.outGov;
-
+       
+       let moveTransfer = cur.inTransfer - cur.outTransfer + cur.tfTransfer;
+       let moveCash = cur.inCash - cur.outCash + cur.tfCash;
+       let moveGov = cur.inGov - cur.outGov;
+       
+       document.getElementById('sum-col-transfer').innerText = (moveTransfer > 0 ? '+'+moveTransfer.toLocaleString() : moveTransfer.toLocaleString());
+       document.getElementById('sum-col-cash').innerText = (moveCash > 0 ? '+'+moveCash.toLocaleString() : moveCash.toLocaleString());
+       document.getElementById('sum-col-gov').innerText = (moveGov > 0 ? '+'+moveGov.toLocaleString() : moveGov.toLocaleString());
+       
        document.getElementById('sum-in').innerText = totalIn.toLocaleString(undefined, {minimumFractionDigits:2});
        document.getElementById('sum-out').innerText = totalOut.toLocaleString(undefined, {minimumFractionDigits:2});
        document.getElementById('sum-net').innerText = (totalIn - totalOut).toLocaleString(undefined, {minimumFractionDigits:2});
-       document.getElementById('sum-cash').innerText = endCash.toLocaleString(undefined, {minimumFractionDigits:2});
-       document.getElementById('sum-transfer').innerText = endTransfer.toLocaleString(undefined, {minimumFractionDigits:2});
        
+       // แสดงผล Tab 2 (Matrix สรุปรายวัน)
+       let endCash = bf.cash + cur.inCash - cur.outCash + cur.tfCash;
+       let endTransfer = bf.transfer + cur.inTransfer - cur.outTransfer + cur.tfTransfer;
+       let endGov = bf.gov + cur.inGov - cur.outGov;
+       let bfTotal = bf.cash + bf.transfer + bf.gov; 
+       let endTotal = endCash + endTransfer + endGov;
+
+       document.getElementById('matrix-body').innerHTML = `
+          <tr><td class="fw-bold bg-light">1. ยอดยกมา (ตั้งต้นของรอบ)</td><td>${bf.cash.toLocaleString()}</td><td>${bf.transfer.toLocaleString()}</td><td>${bf.gov.toLocaleString()}</td><td class="fw-bold bg-light">${bfTotal.toLocaleString()}</td></tr>
+          <tr><td class="fw-bold">2. รวมรับ</td><td class="text-success">+ ${cur.inCash.toLocaleString()}</td><td class="text-success">+ ${cur.inTransfer.toLocaleString()}</td><td class="text-success">+ ${cur.inGov.toLocaleString()}</td><td class="fw-bold text-success bg-light">+ ${totalIn.toLocaleString()}</td></tr>
+          <tr><td class="fw-bold">3. รวมจ่าย</td><td class="text-danger">- ${cur.outCash.toLocaleString()}</td><td class="text-danger">- ${cur.outTransfer.toLocaleString()}</td><td class="text-danger">- ${cur.outGov.toLocaleString()}</td><td class="fw-bold text-danger bg-light">- ${totalOut.toLocaleString()}</td></tr>
+          <tr><td class="fw-bold text-muted">4. โยกย้าย (ฝาก/ถอน)</td><td class="${cur.tfCash > 0 ? 'text-success' : (cur.tfCash < 0 ? 'text-danger' : '')}">${cur.tfCash > 0 ? '+ ' : ''}${cur.tfCash !== 0 ? cur.tfCash.toLocaleString() : '-'}</td><td class="${cur.tfTransfer > 0 ? 'text-success' : (cur.tfTransfer < 0 ? 'text-danger' : '')}">${cur.tfTransfer > 0 ? '+ ' : ''}${cur.tfTransfer !== 0 ? cur.tfTransfer.toLocaleString() : '-'}</td><td>-</td><td class="fw-bold bg-light">0</td></tr>
+          <tr class="fs-5"><td class="fw-bold bg-light">5. คงเหลือสิ้นรอบ</td><td class="fw-bold text-dark">${endCash.toLocaleString()}</td><td class="fw-bold text-primary">${endTransfer.toLocaleString()}</td><td class="fw-bold text-warning text-dark">${endGov.toLocaleString()}</td><td class="fw-bold bg-warning">${endTotal.toLocaleString()}</td></tr>
+       `;
+
+       // อัปเดต Card 4 ใบด้านบนสุด (ใช้ยอดเงินปัจจุบัน)
        document.getElementById('asset-cash').innerText = endCash.toLocaleString();
        document.getElementById('asset-transfer').innerText = endTransfer.toLocaleString();
        document.getElementById('asset-gov').innerText = endGov.toLocaleString();
-       document.getElementById('asset-total').innerText = (endCash + endTransfer + endGov).toLocaleString();
+       document.getElementById('asset-total').innerText = endTotal.toLocaleString();
 
-       let bfTotal = bf.cash + bf.transfer + bf.gov; let endTotal = endCash + endTransfer + endGov;
-       document.getElementById('matrix-body').innerHTML = `
-          <tr><td class="fw-bold bg-light">1. ยอดยกมา (ตั้งต้น)</td><td>${bf.cash.toLocaleString()}</td><td>${bf.transfer.toLocaleString()}</td><td>${bf.gov.toLocaleString()}</td><td class="fw-bold bg-light">${bfTotal.toLocaleString()}</td></tr>
-          <tr><td class="fw-bold">2. รวมรับ</td><td class="text-success">+ ${cur.inCash.toLocaleString()}</td><td class="text-success">+ ${cur.inTransfer.toLocaleString()}</td><td class="text-success">+ ${cur.inGov.toLocaleString()}</td><td class="fw-bold text-success bg-light">+ ${totalIn.toLocaleString()}</td></tr>
-          <tr><td class="fw-bold">3. รวมจ่าย</td><td class="text-danger">- ${cur.outCash.toLocaleString()}</td><td class="text-danger">- ${cur.outTransfer.toLocaleString()}</td><td class="text-danger">- ${cur.outGov.toLocaleString()}</td><td class="fw-bold text-danger bg-light">- ${totalOut.toLocaleString()}</td></tr>
-          <tr><td class="fw-bold text-muted">4. โยกย้าย (ฝาก/ถอน)</td><td class="${cur.tfCash > 0 ? 'text-success' : cur.tfCash < 0 ? 'text-danger' : ''}">${cur.tfCash > 0 ? '+ ' : ''}${cur.tfCash !== 0 ? cur.tfCash.toLocaleString() : '-'}</td><td class="${cur.tfTransfer > 0 ? 'text-success' : cur.tfTransfer < 0 ? 'text-danger' : ''}">${cur.tfTransfer > 0 ? '+ ' : ''}${cur.tfTransfer !== 0 ? cur.tfTransfer.toLocaleString() : '-'}</td><td>-</td><td class="fw-bold bg-light">0</td></tr>
-          <tr class="fs-5"><td class="fw-bold bg-light">5. คงเหลือจริง</td><td class="fw-bold text-dark">${endCash.toLocaleString()}</td><td class="fw-bold text-primary">${endTransfer.toLocaleString()}</td><td class="fw-bold text-warning text-dark">${endGov.toLocaleString()}</td><td class="fw-bold bg-warning">${endTotal.toLocaleString()}</td></tr>
-       `;
+       // แสดงผล Tab 3 (สรุปภาพรวมรายวัน ย้อนหลัง)
+       let overviewHtml = '';
+       // กรองให้แสดงเฉพาะวันที่อยู่ในช่วงการค้นหา
+       let filteredDays = Object.keys(dailyData).filter(d => {
+          let [y, m, day] = d.split('-');
+          let dTsLocal = new Date(y, m-1, day).getTime();
+          return dTsLocal >= startTs && dTsLocal <= endTs;
+       }).sort((a,b) => b.localeCompare(a)); // เรียงจากวันล่าสุดไปอดีต
+
+       filteredDays.forEach(dateStr => {
+          let day = dailyData[dateStr];
+          let dateDisplay = new Date(dateStr).toLocaleDateString('th-TH', {year: 'numeric', month: 'short', day: 'numeric'});
+          let netColor = day.net > 0 ? 'text-success' : (day.net < 0 ? 'text-danger' : '');
+          let netSign = day.net > 0 ? '+' : '';
+          
+          overviewHtml += `
+             <tr>
+                <td class="text-start fw-bold">${dateDisplay}</td>
+                <td class="text-success">${day.income.toLocaleString()}</td>
+                <td class="text-danger">${day.expense.toLocaleString()}</td>
+                <td>${day.cash.toLocaleString()}</td>
+                <td>${day.transfer.toLocaleString()}</td>
+                <td>${day.gov.toLocaleString()}</td>
+                <td class="fw-bold ${netColor}">${netSign}${day.net.toLocaleString()}</td>
+                <td class="fw-bold bg-light text-dark">${day.totalAccum.toLocaleString()}</td>
+             </tr>
+          `;
+       });
+       
+       if(filteredDays.length === 0) overviewHtml = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลสรุปในช่วงเวลานี้</td></tr>`;
+       document.getElementById('overview-body').innerHTML = overviewHtml;
     }
 
     function setInitialBalance() {
