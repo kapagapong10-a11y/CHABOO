@@ -561,14 +561,17 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyit_KpZDMmWtw-JgHH7Nuf2p-3yKIkn0uLRYENlhMbm5VP0kFWmk97ySjzlk6vCN4I/exec";
 
     function sendToGoogleSheet(data) {
-       console.log("กำลังส่งข้อมูลไป Google Sheet:", data); // เพิ่ม Log ให้ตรวจสอบได้
+       console.log("กำลังยิงข้อมูลไป Google Sheets:", data);
+       
        fetch(GAS_URL, {
           method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // แก้ตรงนี้ให้ส่งผ่าน
           body: JSON.stringify(data)
-       }).catch(err => console.error('GAS Connect Error:', err));
+       })
+       .then(response => response.text())
+       .then(result => console.log("Google Sheets ตอบกลับ:", result))
+       .catch(err => console.error('เชื่อมต่อ Google Sheets ไม่สำเร็จ:', err));
     }
+    
     let currentKitchenId = ""; 
     let kitchenPingInterval = null;
     const modals = { checkIn: null, manage: null, admin: null, checkout: null };
