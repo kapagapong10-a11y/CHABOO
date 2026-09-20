@@ -2065,6 +2065,62 @@
           }
        });
     }
+
+    function confirmCheckIn() {
+      const id = document.getElementById('ci-table-id').value; 
+      const rateId = document.getElementById('ci-rate').value; 
+      if(!rateId) return Swal.fire('ผิดพลาด', 'กรุณาเลือกเรทราคา', 'warning');
+      
+      let customers = {}; 
+      let totalPeople = 0; 
+      document.querySelectorAll('.ci-cust-input').forEach(inp => { 
+        const qty = parseInt(inp.value) || 0; 
+        if(qty > 0) { 
+          customers[inp.dataset.name] = qty; 
+          totalPeople += qty; 
+        } 
+      });
+      
+      if(totalPeople === 0) return Swal.fire('ผิดพลาด', 'กรุณาระบุจำนวนลูกค้าอย่างน้อย 1 คน', 'warning');
+      
+      let soups = []; 
+      document.querySelectorAll('.ci-soup-cb:checked').forEach(cb => soups.push(cb.value)); 
+      if(soups.length === 0) return Swal.fire('ผิดพลาด', 'กรุณาเลือกน้ำซุปอย่างน้อย 1 อย่าง', 'warning');
+      
+      let currentTotal = parseFloat(document.getElementById('ci-total').innerText.replace(/[^0-9.-]+/g,""));
+      
+      Swal.fire({ title: 'กำลังเปิดโต๊ะ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      window.dbUpdate(window.dbRef(window.db, 'tables/' + id), { 
+        status: 'eating', 
+        checkInTime: Date.now(), 
+        rateName: gRates[rateId].name, 
+        customers: customers, 
+        soups: soups.join(', '), 
+        currentTotal: currentTotal 
+      }).then(() => { 
+        Swal.close();
+        modals.checkIn.hide(); 
+      });
+    }
+
+    function deleteData(path, id) {
+      Swal.fire({
+        title: 'ยืนยันการลบ?',
+        text: "หากลบทิ้งแล้วจะไม่สามารถกู้คืนได้!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่, ลบเลย',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#d33'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.dbRemove(window.dbRef(window.db, path + '/' + id)).then(() => {
+            Swal.fire({icon: 'success', title: 'ลบข้อมูลเรียบร้อย', timer: 1500, showConfirmButton: false});
+            if(modals.admin) modals.admin.hide();
+          });
+        }
+      });
+    }
     
     // บังคับผูกฟังก์ชันกับ Global Window
     window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer;
