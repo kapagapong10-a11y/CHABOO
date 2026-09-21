@@ -224,34 +224,35 @@
           <!-- Tab 1: รายการเดินบัญชี (แบบแยกกระเป๋าเหมือนเดิม) -->
           <div class="tab-pane fade show active" id="pills-statement" role="tabpanel">
              <div class="bg-white rounded-4 shadow-sm border" style="overflow: hidden;">
-                <div style="max-height: 450px; overflow-y: auto;">
-                   <table class="table table-hover table-sm mb-0">
-                      <thead class="table-light sticky-top shadow-sm" style="z-index: 1;">
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                   <table class="table table-hover table-bordered table-sm mb-0 align-middle">
+                      <thead class="table-light sticky-top shadow-sm text-center" style="z-index: 1;">
                          <tr>
                             <th>เวลา</th>
                             <th>ประเภท</th>
-                            <th>รายการ</th>
-                            <th class="text-end">โอน</th>
-                            <th class="text-end">เงินสด</th>
-                            <th class="text-end">รัฐฯ</th>
-                            <th class="text-end text-success">รายรับ (In)</th>
-                            <th class="text-end text-danger">รายจ่าย (Out)</th>
+                            <th>หมวดหมู่</th>
+                            <th class="text-start">รายการ</th>
+                            <th class="text-end bg-primary bg-opacity-10" style="width: 10%;">โอน</th>
+                            <th class="text-end bg-success bg-opacity-10" style="width: 10%;">เงินสด</th>
+                            <th class="text-end bg-warning bg-opacity-10" style="width: 10%;">รัฐฯ</th>
+                            <th class="text-end text-success" style="width: 12%;">รายรับ (In)</th>
+                            <th class="text-end text-danger" style="width: 12%;">รายจ่าย (Out)</th>
                             <th class="text-center">สลิป</th>
                          </tr>
                       </thead>
                       <tbody id="acc-table-body"></tbody>
+                      <tfoot class="sticky-bottom bg-light shadow-sm fw-bold text-end" style="z-index: 1;">
+                         <tr>
+                            <td colspan="4" class="text-center text-muted">รวมความเคลื่อนไหวช่วงเวลานี้</td>
+                            <td class="text-primary fs-6 bg-primary bg-opacity-10" id="sum-col-transfer">0</td>
+                            <td class="text-success fs-6 bg-success bg-opacity-10" id="sum-col-cash">0</td>
+                            <td class="text-warning text-dark fs-6 bg-warning bg-opacity-10" id="sum-col-gov">0</td>
+                            <td class="text-success fs-6" id="sum-in">0.00</td>
+                            <td class="text-danger fs-6" id="sum-out">0.00</td>
+                            <td></td>
+                         </tr>
+                      </tfoot>
                    </table>
-                </div>
-                <!-- Sticky Footer -->
-                <div class="bg-light p-3 border-top shadow-sm">
-                   <div class="row text-center fw-bold align-items-center">
-                      <div class="col"><span class="text-muted small d-block">ความเคลื่อนไหว (โอน)</span><span class="text-primary fs-5" id="sum-col-transfer">0</span></div>
-                      <div class="col"><span class="text-muted small d-block">ความเคลื่อนไหว (เงินสด)</span><span class="text-success fs-5" id="sum-col-cash">0</span></div>
-                      <div class="col border-end"><span class="text-muted small d-block">ความเคลื่อนไหว (รัฐฯ)</span><span class="text-warning text-dark fs-5" id="sum-col-gov">0</span></div>
-                      <div class="col"><span class="text-muted small d-block">รวมรายรับสุทธิ</span><span class="text-success fs-5" id="sum-in">0.00</span></div>
-                      <div class="col"><span class="text-muted small d-block">รวมรายจ่ายสุทธิ</span><span class="text-danger fs-5" id="sum-out">0.00</span></div>
-                      <div class="col"><span class="text-muted small d-block">กำไรสุทธิช่วงเวลานี้</span><span class="text-dark fs-5" id="sum-net">0.00</span></div>
-                   </div>
                 </div>
              </div>
           </div>
@@ -1872,7 +1873,8 @@
              
              let typeStr = item.type === 'income' ? 'รายรับ' : item.type === 'expense' ? 'รายจ่าย' : 'โยกย้ายเงิน';
              let badgeColor = item.type === 'income' ? 'bg-success' : item.type === 'expense' ? 'bg-danger' : 'bg-info text-dark';
-             let desc = (item.category ? `<span class="badge bg-secondary opacity-75 me-1">${item.category}</span>` : '') + item.description;
+             let catBadge = item.category ? `<span class="badge bg-secondary opacity-75">${item.category}</span>` : '-';
+             let descText = item.description;
 
              // แยกแสดงผลคอลัมน์ โอน / เงินสด / รัฐฯ ให้ชัดเจน
              let colTransfer = item.type === 'transfer' ? (tfTransfer > 0 ? '+'+tfTransfer.toLocaleString() : tfTransfer.toLocaleString()) : (iTransfer > 0 ? '+'+iTransfer.toLocaleString() : oTransfer > 0 ? '-'+oTransfer.toLocaleString() : '-');
@@ -1883,7 +1885,18 @@
 
              statementRecords.push({
                 date: item.date,
-                html: `<tr class="${trClass}"><td class="small">${new Date(item.date).toLocaleString('th-TH')}</td><td><span class="badge ${badgeColor}">${typeStr}</span></td><td class="small fw-bold">${desc}</td><td class="text-end text-primary">${colTransfer}</td><td class="text-end text-success">${colCash}</td><td class="text-end text-warning text-dark">${colGov}</td><td class="fw-bold text-success text-end">${item.type === 'income' ? inTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="fw-bold text-danger text-end">${item.type !== 'income' && item.type !== 'transfer' ? outTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td><td class="text-center">${item.slipImage ? `<button class="btn btn-sm btn-outline-info py-0" onclick="Swal.fire({imageUrl: '${item.slipImage}'})">สลิป</button>` : '-'}</td></tr>`
+                html: `<tr class="${trClass}">
+                    <td class="small text-center">${new Date(item.date).toLocaleString('th-TH')}</td>
+                    <td class="text-center"><span class="badge ${badgeColor}">${typeStr}</span></td>
+                    <td class="text-center">${catBadge}</td>
+                    <td class="small fw-bold text-start">${descText}</td>
+                    <td class="text-end text-primary bg-primary bg-opacity-10">${colTransfer}</td>
+                    <td class="text-end text-success bg-success bg-opacity-10">${colCash}</td>
+                    <td class="text-end text-warning text-dark bg-warning bg-opacity-10">${colGov}</td>
+                    <td class="fw-bold text-success text-end">${item.type === 'income' ? inTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td>
+                    <td class="fw-bold text-danger text-end">${item.type !== 'income' && item.type !== 'transfer' ? outTotal.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td>
+                    <td class="text-center">${item.slipImage ? `<button class="btn btn-sm btn-outline-info py-0" onclick="Swal.fire({imageUrl: '${item.slipImage}'})">สลิป</button>` : '-'}</td>
+                </tr>`
              });
           }
        });
@@ -1891,7 +1904,7 @@
        // แสดงผล Tab 1 (รายการเดินบัญชี)
        statementRecords.sort((a,b) => b.date - a.date);
        statementRecords.forEach(r => tbodyStatement += r.html);
-       if(statementRecords.length === 0) tbodyStatement = `<tr><td colspan="9" class="text-center text-muted py-4">ไม่มีรายการบัญชีในช่วงเวลานี้</td></tr>`;
+       if(statementRecords.length === 0) tbodyStatement = `<tr><td colspan="10" class="text-center text-muted py-4">ไม่มีรายการบัญชีในช่วงเวลานี้</td></tr>`;
        document.getElementById('acc-table-body').innerHTML = tbodyStatement;
 
        // สรุปยอดท้ายตาราง Tab 1
@@ -1908,7 +1921,6 @@
        
        document.getElementById('sum-in').innerText = totalIn.toLocaleString(undefined, {minimumFractionDigits:2});
        document.getElementById('sum-out').innerText = totalOut.toLocaleString(undefined, {minimumFractionDigits:2});
-       document.getElementById('sum-net').innerText = (totalIn - totalOut).toLocaleString(undefined, {minimumFractionDigits:2});
        
        // แสดงผล Tab 2 (Matrix สรุปรายวัน)
        let endCash = bf.cash + cur.inCash - cur.outCash + cur.tfCash;
