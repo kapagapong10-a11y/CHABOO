@@ -1907,86 +1907,64 @@
        let initGov = parseFloat(gInitialBalance.gov)||0;
 
        // ตัวแปรสำหรับ Tab 1 และ Tab 2 (วิเคราะห์เฉพาะกรอบเวลาที่เลือก)
-       let cur = { inCash: 0, inTransfer: 0, inGov: 0, outCash: 0, outTransfer: 0, outGov: 0, tfCash: 0, tfTransfer: 0 };
+       let cur = { inCash: 0, inTransfer: 0, inGov: 0, outCash: 0, outTransfer: 0, outGov: 0, tfCash: 0, tfTransfer: 0, tfGov: 0 };
        let bf = { cash: initCash, transfer: initTransfer, gov: initGov };
        let tbodyStatement = ''; let statementRecords = [];
        
-       // ตัวแปรสำหรับ Tab 3 (ประมวลผลเป็นรายวัน)
        let dailyData = {}; 
-       
-       // เรียงลำดับ Transaction ทั้งหมดตามเวลา เพื่อสะสมยอดรวมทั้งหมดให้แม่นยำ
        let allTx = Object.entries(gAccounting).map(([id, data]) => ({id, ...data})).sort((a, b) => a.date - b.date);
 
-       let runningCash = initCash;
-       let runningTransfer = initTransfer;
-       let runningGov = initGov;
+       let runningCash = initCash; let runningTransfer = initTransfer; let runningGov = initGov;
 
        allTx.forEach(item => {
-          // ดึงวันที่ (YYYY-MM-DD) ตาม Timezone เครื่อง
           let dateStr = new Date(item.date - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0]; 
+          if (!dailyData[dateStr]) dailyData[dateStr] = { income: 0, expense: 0, net: 0, cash: 0, transfer: 0, gov: 0, totalAccum: 0 };
           
-          if (!dailyData[dateStr]) {
-              dailyData[dateStr] = { income: 0, expense: 0, net: 0, cash: 0, transfer: 0, gov: 0, totalAccum: 0 };
-          }
-          
-          let iCash = 0, iTransfer = 0, iGov = 0, oCash = 0, oTransfer = 0, oGov = 0, tfCash = 0, tfTransfer = 0;
+          let iCash = 0, iTransfer = 0, iGov = 0, oCash = 0, oTransfer = 0, oGov = 0, tfCash = 0, tfTransfer = 0, tfGov = 0;
+          let badgeColor = ''; let typeStr = '';
           
           if(item.type === 'income') {
-             if(item.breakdown) { 
-               iCash = parseFloat(item.breakdown.cash)||0; iTransfer = parseFloat(item.breakdown.transfer)||0; iGov = parseFloat(item.breakdown.gov)||0; 
-             } else {
-               if(item.wallet === 'cash') iCash = item.amount;
-               else if(item.wallet === 'transfer') iTransfer = item.amount;
-               else if(item.wallet === 'gov') iGov = item.amount;
-             }
+             if(item.breakdown) { iCash = parseFloat(item.breakdown.cash)||0; iTransfer = parseFloat(item.breakdown.transfer)||0; iGov = parseFloat(item.breakdown.gov)||0; } 
+             else { if(item.wallet === 'cash') iCash = item.amount; else if(item.wallet === 'transfer') iTransfer = item.amount; else if(item.wallet === 'gov') iGov = item.amount; }
+             badgeColor = 'bg-success'; typeStr = 'รายรับ';
           } 
           else if (item.type === 'expense') {
-             if(item.wallet === 'cash') oCash = item.amount;
-             else if(item.wallet === 'transfer') oTransfer = item.amount;
+             if(item.wallet === 'cash') oCash = item.amount; else if(item.wallet === 'transfer') oTransfer = item.amount; else if(item.wallet === 'gov') oGov = item.amount;
+             badgeColor = 'bg-danger'; typeStr = 'รายจ่าย';
           } 
           else if (item.type === 'transfer') {
-             if(item.from === 'cash' && item.to === 'transfer') { tfCash -= item.amount; tfTransfer += item.amount; }
-             else if(item.from === 'transfer' && item.to === 'cash') { tfTransfer -= item.amount; tfCash += item.amount; }
+             if(item.from === 'cash') tfCash -= item.amount; else if(item.from === 'transfer') tfTransfer -= item.amount; else if(item.from === 'gov') tfGov -= item.amount;
+             if(item.to === 'cash') tfCash += item.amount; else if(item.to === 'transfer') tfTransfer += item.amount; else if(item.to === 'gov') tfGov += item.amount;
+             badgeColor = 'bg-info text-dark'; typeStr = 'โยกย้ายเงิน';
           }
 
-          // ปรับปรุงยอดสะสมในกระเป๋าต่างๆ
           runningCash += (iCash - oCash + tfCash);
           runningTransfer += (iTransfer - oTransfer + tfTransfer);
-          runningGov += (iGov - oGov);
+          runningGov += (iGov - oGov + tfGov);
 
           let inTotal = iCash + iTransfer + iGov;
           let outTotal = oCash + oTransfer + oGov;
+          if(item.type === 'transfer') outTotal = item.amount;
 
-          // บันทึกข้อมูลสำหรับสรุปภาพรวมรายวัน (Tab 3)
-          dailyData[dateStr].income += inTotal;
-          dailyData[dateStr].expense += outTotal;
-          dailyData[dateStr].net += (inTotal - outTotal);
-          dailyData[dateStr].cash = runningCash;
-          dailyData[dateStr].transfer = runningTransfer;
-          dailyData[dateStr].gov = runningGov;
+          dailyData[dateStr].income += inTotal; dailyData[dateStr].expense += (item.type === 'transfer' ? 0 : outTotal);
+          dailyData[dateStr].net += (inTotal - (item.type === 'transfer' ? 0 : outTotal));
+          dailyData[dateStr].cash = runningCash; dailyData[dateStr].transfer = runningTransfer; dailyData[dateStr].gov = runningGov;
           dailyData[dateStr].totalAccum = runningCash + runningTransfer + runningGov;
 
-          // คำนวณยอดยกมาสำหรับหน้า Matrix (เฉพาะบิลที่เกิดก่อนเวลาที่เลือก)
           if(item.date < startTs) {
-             bf.cash += (iCash - oCash + tfCash); 
-             bf.transfer += (iTransfer - oTransfer + tfTransfer); 
-             bf.gov += (iGov - oGov);
+             bf.cash += (iCash - oCash + tfCash); bf.transfer += (iTransfer - oTransfer + tfTransfer); bf.gov += (iGov - oGov + tfGov);
           } 
-          // เตรียมข้อมูลลงตารางรายการเดินบัญชี (เฉพาะบิลที่อยู่ในช่วงเวลาที่เลือก)
           else if (item.date >= startTs && item.date <= endTs) {
              cur.inCash += iCash; cur.inTransfer += iTransfer; cur.inGov += iGov;
              cur.outCash += oCash; cur.outTransfer += oTransfer; cur.outGov += oGov;
-             cur.tfCash += tfCash; cur.tfTransfer += tfTransfer;
+             cur.tfCash += tfCash; cur.tfTransfer += tfTransfer; cur.tfGov += tfGov;
              
-             let typeStr = item.type === 'income' ? 'รายรับ' : item.type === 'expense' ? 'รายจ่าย' : 'โยกย้ายเงิน';
-             let badgeColor = item.type === 'income' ? 'bg-success' : item.type === 'expense' ? 'bg-danger' : 'bg-info text-dark';
              let catBadge = item.category ? `<span class="badge bg-secondary opacity-75">${item.category}</span>` : '-';
              let descText = item.description;
 
-             // แยกแสดงผลคอลัมน์ โอน / เงินสด / รัฐฯ ให้ชัดเจน
-             let colTransfer = item.type === 'transfer' ? (tfTransfer > 0 ? '+'+tfTransfer.toLocaleString() : tfTransfer.toLocaleString()) : (iTransfer > 0 ? '+'+iTransfer.toLocaleString() : oTransfer > 0 ? '-'+oTransfer.toLocaleString() : '-');
-             let colCash = item.type === 'transfer' ? (tfCash > 0 ? '+'+tfCash.toLocaleString() : tfCash.toLocaleString()) : (iCash > 0 ? '+'+iCash.toLocaleString() : oCash > 0 ? '-'+oCash.toLocaleString() : '-');
-             let colGov = (iGov > 0 ? '+'+iGov.toLocaleString() : oGov > 0 ? '-'+oGov.toLocaleString() : '-');
+             let colTransfer = item.type === 'transfer' ? (tfTransfer !== 0 ? (tfTransfer > 0 ? '+'+tfTransfer.toLocaleString() : tfTransfer.toLocaleString()) : '-') : (iTransfer > 0 ? '+'+iTransfer.toLocaleString() : oTransfer > 0 ? '-'+oTransfer.toLocaleString() : '-');
+             let colCash = item.type === 'transfer' ? (tfCash !== 0 ? (tfCash > 0 ? '+'+tfCash.toLocaleString() : tfCash.toLocaleString()) : '-') : (iCash > 0 ? '+'+iCash.toLocaleString() : oCash > 0 ? '-'+oCash.toLocaleString() : '-');
+             let colGov = item.type === 'transfer' ? (tfGov !== 0 ? (tfGov > 0 ? '+'+tfGov.toLocaleString() : tfGov.toLocaleString()) : '-') : (iGov > 0 ? '+'+iGov.toLocaleString() : oGov > 0 ? '-'+oGov.toLocaleString() : '-');
              
              let trClass = item.type === 'transfer' ? 'table-light text-muted' : '';
 
@@ -2040,7 +2018,13 @@
           <tr><td class="fw-bold bg-light">1. ยอดยกมา (ตั้งต้นของรอบ)</td><td>${bf.cash.toLocaleString()}</td><td>${bf.transfer.toLocaleString()}</td><td>${bf.gov.toLocaleString()}</td><td class="fw-bold bg-light">${bfTotal.toLocaleString()}</td></tr>
           <tr><td class="fw-bold">2. รวมรับ</td><td class="text-success">+ ${cur.inCash.toLocaleString()}</td><td class="text-success">+ ${cur.inTransfer.toLocaleString()}</td><td class="text-success">+ ${cur.inGov.toLocaleString()}</td><td class="fw-bold text-success bg-light">+ ${totalIn.toLocaleString()}</td></tr>
           <tr><td class="fw-bold">3. รวมจ่าย</td><td class="text-danger">- ${cur.outCash.toLocaleString()}</td><td class="text-danger">- ${cur.outTransfer.toLocaleString()}</td><td class="text-danger">- ${cur.outGov.toLocaleString()}</td><td class="fw-bold text-danger bg-light">- ${totalOut.toLocaleString()}</td></tr>
-          <tr><td class="fw-bold text-muted">4. โยกย้าย (ฝาก/ถอน)</td><td class="${cur.tfCash > 0 ? 'text-success' : (cur.tfCash < 0 ? 'text-danger' : '')}">${cur.tfCash > 0 ? '+ ' : ''}${cur.tfCash !== 0 ? cur.tfCash.toLocaleString() : '-'}</td><td class="${cur.tfTransfer > 0 ? 'text-success' : (cur.tfTransfer < 0 ? 'text-danger' : '')}">${cur.tfTransfer > 0 ? '+ ' : ''}${cur.tfTransfer !== 0 ? cur.tfTransfer.toLocaleString() : '-'}</td><td>-</td><td class="fw-bold bg-light">0</td></tr>
+          <tr>
+            <td class="fw-bold text-muted">4. โยกย้าย (ฝาก/ถอน)</td>
+            <td class="${cur.tfCash > 0 ? 'text-success' : (cur.tfCash < 0 ? 'text-danger' : '')}">${cur.tfCash > 0 ? '+ ' : ''}${cur.tfCash !== 0 ? cur.tfCash.toLocaleString() : '-'}</td>
+            <td class="${cur.tfTransfer > 0 ? 'text-success' : (cur.tfTransfer < 0 ? 'text-danger' : '')}">${cur.tfTransfer > 0 ? '+ ' : ''}${cur.tfTransfer !== 0 ? cur.tfTransfer.toLocaleString() : '-'}</td>
+            <td class="${cur.tfGov > 0 ? 'text-success' : (cur.tfGov < 0 ? 'text-danger' : '')}">${cur.tfGov > 0 ? '+ ' : ''}${cur.tfGov !== 0 ? cur.tfGov.toLocaleString() : '-'}</td>
+            <td class="fw-bold bg-light">0</td>
+          </tr>
           <tr class="fs-5"><td class="fw-bold bg-light">5. คงเหลือสิ้นรอบ</td><td class="fw-bold text-dark">${endCash.toLocaleString()}</td><td class="fw-bold text-primary">${endTransfer.toLocaleString()}</td><td class="fw-bold text-warning text-dark">${endGov.toLocaleString()}</td><td class="fw-bold bg-warning">${endTotal.toLocaleString()}</td></tr>
        `;
 
@@ -2086,10 +2070,23 @@
     function setInitialBalance() {
        Swal.fire({
           title: 'ตั้งค่ายอดเงินเริ่มต้นของร้าน',
-          html: `<div class="text-start small fw-bold px-2 mb-2 text-muted">ณ วันที่เริ่มใช้งานระบบนี้ คุณมีเงินอยู่ตามนี้ใช่หรือไม่?</div>
-            <div class="d-flex align-items-center mb-2 px-2"><i class="fa-solid fa-money-bill-wave text-success fs-4 me-3"></i> <input type="number" id="init-cash" class="swal2-input mt-0 w-100" placeholder="เงินสดในลิ้นชัก (บาท)" value="${gInitialBalance.cash||0}"></div>
-            <div class="d-flex align-items-center mb-2 px-2"><i class="fa-solid fa-building-columns text-primary fs-4 me-3"></i> <input type="number" id="init-transfer" class="swal2-input mt-0 w-100" placeholder="เงินในธนาคาร (บาท)" value="${gInitialBalance.transfer||0}"></div>
-            <div class="d-flex align-items-center mb-2 px-2"><i class="fa-solid fa-landmark-flag text-warning fs-4 me-3"></i> <input type="number" id="init-gov" class="swal2-input mt-0 w-100" placeholder="โครงการรัฐ (บาท)" value="${gInitialBalance.gov||0}"></div>`,
+          html: `
+            <div class="text-start small fw-bold px-2 mb-4 text-muted">ณ วันที่เริ่มใช้งานระบบนี้ คุณมีเงินอยู่ตามนี้ใช่หรือไม่?</div>
+            <div class="d-flex align-items-center mb-3 px-2">
+               <div style="width: 140px;" class="text-start fw-bold text-success"><i class="fa-solid fa-money-bill-wave fs-5 me-2"></i> เงินสด</div>
+               <input type="number" id="init-cash" class="form-control text-end fw-bold fs-5" placeholder="0" value="${gInitialBalance.cash||0}">
+               <span class="ms-2 fw-bold text-muted">บาท</span>
+            </div>
+            <div class="d-flex align-items-center mb-3 px-2">
+               <div style="width: 140px;" class="text-start fw-bold text-primary"><i class="fa-solid fa-building-columns fs-5 me-2"></i> บัญชีธนาคาร</div>
+               <input type="number" id="init-transfer" class="form-control text-end fw-bold fs-5" placeholder="0" value="${gInitialBalance.transfer||0}">
+               <span class="ms-2 fw-bold text-muted">บาท</span>
+            </div>
+            <div class="d-flex align-items-center mb-3 px-2">
+               <div style="width: 140px;" class="text-start fw-bold text-warning text-dark"><i class="fa-solid fa-landmark-flag fs-5 me-2"></i> โครงการรัฐ</div>
+               <input type="number" id="init-gov" class="form-control text-end fw-bold fs-5" placeholder="0" value="${gInitialBalance.gov||0}">
+               <span class="ms-2 fw-bold text-muted">บาท</span>
+            </div>`,
           showCancelButton: true, confirmButtonText: 'บันทึกยอดเริ่มต้น',
           preConfirm: () => { return { cash: parseFloat(document.getElementById('init-cash').value) || 0, transfer: parseFloat(document.getElementById('init-transfer').value) || 0, gov: parseFloat(document.getElementById('init-gov').value) || 0 } }
        }).then(res => {
@@ -2165,24 +2162,52 @@
     function addCashFlowTransfer() {
        Swal.fire({
           title: '🔄 โยกย้ายเงิน (ไม่กระทบกำไร)',
-          html: `<div class="text-start text-muted small px-4 mb-3">ใช้สำหรับนำเงินสดฝากเข้าธนาคาร หรือ ถอนเงินมาเป็นเงินทอน</div>
-             <select id="man-tf-type" class="swal2-select w-75 mt-0 mb-3" style="display:flex;"><option value="deposit">💵 นำเงินสดฝากเข้าบัญชีธนาคาร</option><option value="withdraw">🏧 ถอนเงินจากธนาคารมาไว้ลิ้นชัก</option></select>
-             <input type="number" id="man-tf-amt" class="swal2-input w-75" placeholder="จำนวนเงินที่โยกย้าย (บาท)">
+          html: `
+             <div class="text-start text-muted small px-4 mb-3">ย้ายเงินระหว่างกระเป๋า เช่น นำเงินสดฝากธนาคาร หรือ โอนเงินรัฐเข้าธนาคาร</div>
+             <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                 <select id="man-tf-from" class="form-select border-danger text-danger fw-bold w-50">
+                    <option value="">-- จาก --</option>
+                    <option value="cash">💵 เงินสด</option>
+                    <option value="transfer">📱 ธนาคาร</option>
+                    <option value="gov">🏛️ รัฐ</option>
+                 </select>
+                 <i class="fa-solid fa-arrow-right text-muted"></i>
+                 <select id="man-tf-to" class="form-select border-success text-success fw-bold w-50">
+                    <option value="">-- ไปยัง --</option>
+                    <option value="cash">💵 เงินสด</option>
+                    <option value="transfer">📱 ธนาคาร</option>
+                    <option value="gov">🏛️ รัฐ</option>
+                 </select>
+             </div>
+             <input type="number" id="man-tf-amt" class="swal2-input w-75 mt-0" placeholder="จำนวนเงินที่โยกย้าย (บาท)">
              <input type="date" id="man-tf-date" class="swal2-input w-75 mt-3" value="${new Date().toISOString().split('T')[0]}">`,
           showCancelButton: true, confirmButtonText: 'ยืนยันการทำรายการ',
           preConfirm: () => {
-             const type = document.getElementById('man-tf-type').value; const amt = parseFloat(document.getElementById('man-tf-amt').value) || 0; const date = document.getElementById('man-tf-date').value;
-             if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุจำนวนเงินให้ถูกต้อง'); return false; } return { type, amt, date };
+             const fromWallet = document.getElementById('man-tf-from').value;
+             const toWallet = document.getElementById('man-tf-to').value;
+             const amt = parseFloat(document.getElementById('man-tf-amt').value) || 0;
+             const date = document.getElementById('man-tf-date').value;
+             
+             if(!fromWallet || !toWallet) { Swal.showValidationMessage('กรุณาเลือกกระเป๋าต้นทางและปลายทาง'); return false; }
+             if(fromWallet === toWallet) { Swal.showValidationMessage('ต้นทางและปลายทางต้องไม่ซ้ำกัน'); return false; }
+             if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุจำนวนเงินให้ถูกต้อง'); return false; }
+             
+             return { fromWallet, toWallet, amt, date };
           }
        }).then(res => {
           if(res.isConfirmed) {
              const d = new Date(res.value.date); d.setHours(new Date().getHours()); const accId = Date.now().toString();
-             let fromWallet = res.value.type === 'deposit' ? 'cash' : 'transfer'; let toWallet = res.value.type === 'deposit' ? 'transfer' : 'cash'; let desc = res.value.type === 'deposit' ? 'นำเงินสดฝากธนาคาร' : 'ถอนเงินเป็นเงินทอน';
-             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), { type: 'transfer', date: d.getTime(), description: desc, category: 'โยกย้ายเงินภายใน', from: fromWallet, to: toWallet, amount: res.value.amt }).then(() => {
+             
+             const walletNames = { 'cash': 'เงินสด', 'transfer': 'โอน', 'gov': 'รัฐ' };
+             let desc = `โยกเงินจาก [${walletNames[res.value.fromWallet]}] ไป [${walletNames[res.value.toWallet]}]`;
+             
+             window.dbSet(window.dbRef(window.db, `accounting/${accId}`), { 
+                type: 'transfer', date: d.getTime(), description: desc, category: 'โยกย้ายเงินภายใน', 
+                from: res.value.fromWallet, to: res.value.toWallet, amount: res.value.amt 
+             }).then(() => {
                 let dateStr = d.toLocaleDateString('th-TH'); let timeStr = d.toLocaleString('th-TH');
-                let fromName = fromWallet === 'cash' ? 'เงินสด' : 'โอน'; let toName = toWallet === 'cash' ? 'เงินสด' : 'โอน';
-                sendToGoogleSheet({ action: 'addTransaction', id: accId+'_OUT', datetime: timeStr, date: dateStr, type: 'โยกย้ายเงิน', category: 'ตัดเงินออก', description: desc, wallet: fromName, amountIn: 0, amountOut: res.value.amt });
-                setTimeout(() => sendToGoogleSheet({ action: 'addTransaction', id: accId+'_IN', datetime: timeStr, date: dateStr, type: 'โยกย้ายเงิน', category: 'รับเงินเข้า', description: desc, wallet: toName, amountIn: res.value.amt, amountOut: 0 }), 1000);
+                sendToGoogleSheet({ action: 'addTransaction', id: accId+'_OUT', datetime: timeStr, date: dateStr, type: 'โยกย้ายเงิน', category: 'ตัดเงินออก', description: desc, wallet: walletNames[res.value.fromWallet], amountIn: 0, amountOut: res.value.amt });
+                setTimeout(() => sendToGoogleSheet({ action: 'addTransaction', id: accId+'_IN', datetime: timeStr, date: dateStr, type: 'โยกย้ายเงิน', category: 'รับเงินเข้า', description: desc, wallet: walletNames[res.value.toWallet], amountIn: res.value.amt, amountOut: 0 }), 1000);
                 Swal.fire({icon: 'success', title: 'โยกย้ายเงินสำเร็จ', timer: 1500, showConfirmButton: false});
              });
           }
