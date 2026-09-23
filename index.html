@@ -318,7 +318,8 @@
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('rates')"><i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('promotions')"><i class="fa-solid fa-bullhorn admin-icon"></i><h5 class="fw-bold">จัดการโปรโมชัน</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('shop')"><i class="fa-solid fa-store admin-icon"></i><h5 class="fw-bold">ตั้งค่าร้านค้า</h5></div></div>
-          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('payment')"><i class="fa-solid fa-qrcode admin-icon"></i><h5 class="fw-bold">ตั้งค่ารับเงิน</h5></div></div>
+          <div class="col-6 col-md-3"><div class="card admin-menu-card" onclick="openAdminModal('payment')"><i class="fa-solid fa-qrcode admin-icon"></i><h5 class="fw-bold">ตั้งค่ารับเงิน</h5></div></div>
+          <div class="col-6 col-md-3"><div class="card admin-menu-card bg-primary bg-opacity-10" onclick="openPrinterSettings()"><i class="fa-brands fa-usb admin-icon text-primary"></i><h5 class="fw-bold text-primary">ตั้งค่าเครื่องพิมพ์</h5></div></div>
         </div>
       </div>
 
@@ -558,6 +559,7 @@
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
     let gPromotions = {}, gPayment = {}, gShop = {}, gInventory = {}, gAccounting = {};
     let gInitialBalance = { cash: 0, transfer: 0, gov: 0, date: 0 };
+    let posPrinterDevice = null; // เก็บสถานะเครื่องพิมพ์ USB
     let accountingChartInstance = null; // ตัวแปรเก็บกราฟ
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyit_KpZDMmWtw-JgHH7Nuf2p-3yKIkn0uLRYENlhMbm5VP0kFWmk97ySjzlk6vCN4I/exec";
 
@@ -1584,6 +1586,12 @@
     // พิมพ์ใบเสร็จ (Receipt)
     // ==========================================
     function printReceipt() {
+      // ถ้าเชื่อมต่อ USB ไว้ ให้พิมพ์แบบยิงตรง (เงียบ) แล้วจบการทำงาน
+      if (posPrinterDevice) {
+         printViaWebUSB();
+         return;
+      }
+      
       const tId = checkoutState.tableId;
       const t = gTables[tId];
       if (!t) return;
@@ -2137,9 +2145,164 @@
         }
       });
     }
+
+    // ==========================================
+    // 🖨️ ระบบพิมพ์ใบเสร็จผ่าน WebUSB (Direct Print)
+    // ==========================================
+    function openPrinterSettings() {
+      let statusHtml = posPrinterDevice 
+          ? `<div class="alert alert-success fw-bold"><i class="fa-solid fa-check-circle"></i> เชื่อมต่อแล้ว:<br>${posPrinterDevice.productName}</div>`
+          : `<div class="alert alert-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> ยังไม่ได้เชื่อมต่อเครื่องพิมพ์ USB</div>`;
+          
+      Swal.fire({
+        title: 'ตั้งค่าเครื่องพิมพ์ (WebUSB)',
+        html: `
+          ${statusHtml}
+          <div class="text-start small text-muted mb-3 p-2 bg-light border rounded">
+             <strong>ข้อควรรู้:</strong><br>
+             1. ใช้ได้เฉพาะ Google Chrome หรือ Edge<br>
+             2. ไดรเวอร์เครื่องพิมพ์ต้องถูกแปลงเป็น <b>WinUSB</b> (ผ่านโปรแกรม Zadig) เพื่อให้เบราว์เซอร์มองเห็น
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary fw-bold py-2" onclick="connectUSBPrinter()"><i class="fa-brands fa-usb"></i> ค้นหาเครื่องพิมพ์</button>
+            <button class="btn btn-outline-success fw-bold py-2" onclick="testPrintUSB()"><i class="fa-solid fa-print"></i> ทดสอบพิมพ์ 1 แผ่น</button>
+          </div>
+        `,
+        showConfirmButton: false, showCancelButton: true, cancelButtonText: 'ปิดหน้าต่าง'
+      });
+    }
+
+    async function connectUSBPrinter() {
+      try {
+        // ขอสิทธิ์เข้าถึงอุปกรณ์ USB ทั้งหมด
+        let device = await navigator.usb.requestDevice({ filters: [] });
+        await device.open();
+        if (device.configuration === null) await device.selectConfiguration(1);
+        await device.claimInterface(0);
+        
+        posPrinterDevice = device;
+        Swal.fire('สำเร็จ', `เชื่อมต่อเครื่องพิมพ์: <b>${device.productName}</b> แล้ว`, 'success');
+      } catch (err) {
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อได้: ' + err.message, 'error');
+      }
+    }
+
+    async function sendToUSBPrinter(bufferArray) {
+      if (!posPrinterDevice) return Swal.fire('แจ้งเตือน', 'กรุณาเชื่อมต่อเครื่องพิมพ์ก่อน', 'warning');
+      try {
+        let endpointOut = null;
+        // ค้นหาช่องทางส่งข้อมูล (OUT Endpoint) ของเครื่องพิมพ์
+        for (let endpoint of posPrinterDevice.configuration.interfaces[0].alternate.endpoints) {
+          if (endpoint.direction === 'out') { endpointOut = endpoint.endpointNumber; break; }
+        }
+        if(!endpointOut) throw new Error("ไม่พบช่องทางส่งข้อมูล (Endpoint OUT)");
+        
+        const data = new Uint8Array(bufferArray);
+        await posPrinterDevice.transferOut(endpointOut, data);
+      } catch (err) {
+        Swal.fire('พิมพ์ไม่สำเร็จ', err.message, 'error');
+      }
+    }
+
+    async function testPrintUSB() {
+      if(!posPrinterDevice) return Swal.fire('แจ้งเตือน', 'กรุณาเชื่อมต่อเครื่องพิมพ์ก่อน', 'warning');
+      let buffer = [];
+      const addCmd = (cmd) => buffer = buffer.concat(cmd);
+      // แปลงภาษาไทยเป็นรหัสเครื่องพิมพ์ (CP874)
+      const addText = (text) => {
+        for(let i=0; i<text.length; i++) {
+           let code = text.charCodeAt(i);
+           if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
+        }
+        buffer.push(0x0A); // ขึ้นบรรทัดใหม่
+      };
+      
+      addCmd([0x1B, 0x40]); // Reset Printer
+      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+      addText('ทดสอบเครื่องพิมพ์ Shabu POS');
+      addText('เชื่อมต่อ WebUSB สำเร็จ!');
+      addText('-------------------------');
+      addCmd([0x1B, 0x61, 0]); // จัดชิดซ้าย
+      addCmd([0x1D, 0x56, 0x41, 0x10]); // ตัดกระดาษ
+      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); // เปิดลิ้นชักเก็บเงิน
+      
+      await sendToUSBPrinter(buffer);
+    }
+
+    async function printViaWebUSB() {
+      const tId = checkoutState.tableId; const t = gTables[tId]; if (!t) return;
+      const pShop = gShop || {};
+      let buffer = [];
+      const addCmd = (cmd) => buffer = buffer.concat(cmd);
+      const addText = (text) => {
+        for(let i=0; i<text.length; i++) {
+           let code = text.charCodeAt(i);
+           if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
+        }
+        buffer.push(0x0A);
+      };
+
+      addCmd([0x1B, 0x40]); // Init
+      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); // สั่งลิ้นชักเด้งทันทีที่พิมพ์บิล
+      
+      // หัวใบเสร็จ
+      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+      addCmd([0x1B, 0x45, 1]); // ตัวหนา
+      addText(pShop.shopName || 'Shabu POS');
+      addCmd([0x1B, 0x45, 0]); // เลิกตัวหนา
+      if(pShop.shopAddress) addText(pShop.shopAddress);
+      addText('--------------------------------');
+      
+      // ข้อมูลบิล
+      addCmd([0x1B, 0x61, 0]); // ชิดซ้าย
+      addText(`โต๊ะ: ${t.name}`);
+      addText(`วันที่: ${new Date().toLocaleString('th-TH')}`);
+      addText('--------------------------------');
+
+      // 1. ค่าบุฟเฟ่ต์
+      if(t.customers) {
+        const rate = Object.values(gRates).find(r => r.name === t.rateName);
+        Object.entries(t.customers).forEach(([name, qty]) => {
+          let price = 0;
+          if(rate && rate.prices) { let cId = Object.keys(gCustTypes).find(k => gCustTypes[k].name === name); if(cId) price = rate.prices[cId] || 0; }
+          addText(`บุฟเฟ่ต์ ${name} x${qty}   ${price * qty}บ.`);
+        });
+      }
+      
+      // 2. เมนูครัวที่มีราคา
+      const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === tId);
+      tableOrders.forEach(([oId, o]) => {
+        Object.entries(o.items).forEach(([itemId, item]) => {
+          if (item.status !== 'canceled' && item.price > 0) addText(`${item.name} x${item.qty}   ${item.price * item.qty}บ.`);
+        });
+      });
+      
+      // 3. สั่งเพิ่ม / ค่าปรับ
+      if (t.extraOrders) Object.entries(t.extraOrders).forEach(([extId, ext]) => { if (ext.status !== 'canceled') addText(`${ext.name} x${ext.qty}   ${ext.total}บ.`); });
+      if (t.fines) Object.entries(t.fines).forEach(([fId, f]) => { addText(`ปรับ: ${f.reason}   ${f.amount}บ.`); });
+      
+      // สรุปยอด
+      addText('--------------------------------');
+      addCmd([0x1B, 0x61, 2]); // ชิดขวา
+      addText(`ยอดรวม: ${checkoutState.subtotal.toLocaleString()} บาท`);
+      if (checkoutState.discount > 0) addText(`ส่วนลด: -${checkoutState.discount.toLocaleString()} บาท`);
+      
+      addCmd([0x1B, 0x45, 1]); // ตัวหนา
+      addText(`ยอดสุทธิ: ${checkoutState.netTotal.toLocaleString()} บาท`);
+      addCmd([0x1B, 0x45, 0]); 
+
+      addCmd([0x1B, 0x61, 1]); // กึ่งกลาง
+      addText(' '); addText('ขอบคุณที่ใช้บริการ'); addText(' '); addText(' ');
+      
+      // สั่งตัดกระดาษ
+      addCmd([0x1D, 0x56, 0x41, 0x10]);
+      
+      // ยิงข้อมูลเข้า USB
+      await sendToUSBPrinter(buffer);
+    }
     
     // บังคับผูกฟังก์ชันกับ Global Window
-    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer;
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer; window.openPrinterSettings=openPrinterSettings; window.connectUSBPrinter=connectUSBPrinter; window.testPrintUSB=testPrintUSB;
   </script>
 </body>
 </html>
