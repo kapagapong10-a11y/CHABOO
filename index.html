@@ -2234,6 +2234,8 @@
     async function printViaWebUSB() {
       const tId = checkoutState.tableId; const t = gTables[tId]; if (!t) return;
       const pShop = gShop || {};
+      const pPay = gPayment || {};
+      
       let buffer = [];
       const addCmd = (cmd) => buffer = buffer.concat(cmd);
       const addText = (text) => {
@@ -2241,14 +2243,66 @@
            let code = text.charCodeAt(i);
            if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
         }
-        buffer.push(0x0A);
+        buffer.push(0x0A); // ขึ้นบรรทัดใหม่
       };
 
-      addCmd([0x1B, 0x40]); // Init
-      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน (Disable Chinese mode)
-      addCmd([0x1B, 0x74, 26]); // 🌟 เปลี่ยนเป็น 26 เช่นเดียวกันครับ
-      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); // สั่งลิ้นชักเด้งทันทีที่พิมพ์บิล
-      
+      addCmd([0x1B, 0x40]); // Init printer
+
+      // ==========================================
+      // 1. ระบบแปลงรูปโลโก้ร้าน (Monochrome Bitmap)
+      // ==========================================
+      if (pShop.shopLogo) {
+          let imgBuffer = await new Promise((resolve) => {
+              let img = new Image();
+              img.onload = () => {
+                  let canvas = document.createElement('canvas');
+                  let ctx = canvas.getContext('2d');
+                  let width = 200; // ความกว้างโลโก้
+                  let scale = width / img.width;
+                  let height = Math.floor(img.height * scale);
+                  canvas.width = width; canvas.height = height;
+                  ctx.fillStyle = 'white'; ctx.fillRect(0, 0, width, height);
+                  ctx.drawImage(img, 0, 0, width, height);
+                  let imgData = ctx.getImageData(0, 0, width, height).data;
+                  
+                  let bytesWidth = Math.ceil(width / 8);
+                  let b = [0x1D, 0x76, 0x30, 0, bytesWidth & 0xFF, (bytesWidth >> 8) & 0xFF, height & 0xFF, (height >> 8) & 0xFF];
+                  for (let y = 0; y < height; y++) {
+                      for (let x = 0; x < bytesWidth; x++) {
+                          let byte = 0;
+                          for (let bit = 0; bit < 8; bit++) {
+                              let px = x * 8 + bit;
+                              if (px < width) {
+                                  let idx = (y * width + px) * 4;
+                                  let luminance = (imgData[idx]*0.3 + imgData[idx+1]*0.59 + imgData[idx+2]*0.11);
+                                  // แปลงเป็นพิกเซลขาว-ดำ
+                                  if (luminance < 128 && imgData[idx+3] > 128) byte |= (1 << (7 - bit));
+                              }
+                          }
+                          b.push(byte);
+                      }
+                  }
+                  resolve(b);
+              };
+              img.onerror = () => resolve([]);
+              img.src = pShop.shopLogo;
+          });
+          
+          if (imgBuffer.length > 0) {
+              addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+              addCmd(imgBuffer);       // พิมพ์รูปภาพโลโก้
+              addCmd([0x0A]);
+          }
+      }
+
+      // ==========================================
+      // 2. ตั้งค่าภาษาไทย และ สั่งลิ้นชัก
+      // ==========================================
+      addCmd([0x1B, 0x40]); // Init อีกรอบป้องกันฟอร์แมตโลโก้ค้าง
+      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน
+      addCmd([0x1B, 0x74, 26]); // Code Page ภาษาไทย
+      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); // สั่งลิ้นชักเด้งทันที
+
       // หัวใบเสร็จ
       addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
       addCmd([0x1B, 0x45, 1]); // ตัวหนา
@@ -2263,7 +2317,7 @@
       addText(`วันที่: ${new Date().toLocaleString('th-TH')}`);
       addText('--------------------------------');
 
-      // 1. ค่าบุฟเฟ่ต์
+      // ค่าอาหาร
       if(t.customers) {
         const rate = Object.values(gRates).find(r => r.name === t.rateName);
         Object.entries(t.customers).forEach(([name, qty]) => {
@@ -2272,16 +2326,12 @@
           addText(`บุฟเฟ่ต์ ${name} x${qty}   ${price * qty}บ.`);
         });
       }
-      
-      // 2. เมนูครัวที่มีราคา
       const tableOrders = Object.entries(gOrders).filter(([id, o]) => o.tableId === tId);
       tableOrders.forEach(([oId, o]) => {
         Object.entries(o.items).forEach(([itemId, item]) => {
           if (item.status !== 'canceled' && item.price > 0) addText(`${item.name} x${item.qty}   ${item.price * item.qty}บ.`);
         });
       });
-      
-      // 3. สั่งเพิ่ม / ค่าปรับ
       if (t.extraOrders) Object.entries(t.extraOrders).forEach(([extId, ext]) => { if (ext.status !== 'canceled') addText(`${ext.name} x${ext.qty}   ${ext.total}บ.`); });
       if (t.fines) Object.entries(t.fines).forEach(([fId, f]) => { addText(`ปรับ: ${f.reason}   ${f.amount}บ.`); });
       
@@ -2290,18 +2340,40 @@
       addCmd([0x1B, 0x61, 2]); // ชิดขวา
       addText(`ยอดรวม: ${checkoutState.subtotal.toLocaleString()} บาท`);
       if (checkoutState.discount > 0) addText(`ส่วนลด: -${checkoutState.discount.toLocaleString()} บาท`);
-      
       addCmd([0x1B, 0x45, 1]); // ตัวหนา
       addText(`ยอดสุทธิ: ${checkoutState.netTotal.toLocaleString()} บาท`);
       addCmd([0x1B, 0x45, 0]); 
 
+      // ==========================================
+      // 3. ระบบวาด QR Code สแกนจ่าย (PromptPay)
+      // ==========================================
+      if (pPay.promptpay && checkoutState.netTotal > 0) {
+          let payload = generatePromptPayPayload(pPay.promptpay, checkoutState.netTotal);
+          addText('--------------------------------');
+          addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+          addText('สแกนเพื่อชำระเงิน');
+
+          // คำสั่ง ESC/POS สำหรับวาด QR Code (Model 2)
+          let len = payload.length + 3;
+          let pL = len & 0xFF; 
+          let pH = (len >> 8) & 0xFF;
+          
+          addCmd([0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]); // ตั้งเป็น Model 2
+          addCmd([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x06]); // ขนาด QR Code (ไซส์ 6)
+          addCmd([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x44, 0x30]); // ระดับการแก้ไขข้อผิดพลาด (Level L)
+          addCmd([0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30]); // ส่งข้อมูล Payload
+          for (let i = 0; i < payload.length; i++) addCmd([payload.charCodeAt(i)]);
+          addCmd([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]); // สั่งพิมพ์ QR Code ทันที
+          addCmd([0x0A]);
+      }
+
       addCmd([0x1B, 0x61, 1]); // กึ่งกลาง
-      addText(' '); addText('ขอบคุณที่ใช้บริการ'); addText(' '); addText(' ');
+      addText(' '); addText('ขอบคุณที่ใช้บริการ'); addText(' '); addText(' '); addText(' ');
       
       // สั่งตัดกระดาษ
       addCmd([0x1D, 0x56, 0x41, 0x10]);
       
-      // ยิงข้อมูลเข้า USB
+      // ส่งข้อมูลเข้าเครื่องพิมพ์ผ่าน USB
       await sendToUSBPrinter(buffer);
     }
     
