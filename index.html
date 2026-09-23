@@ -803,23 +803,51 @@
       }
     }
     
+    let kitchenPrinterDevice = null; // เก็บอุปกรณ์ USB ของฝั่งครัว
+
     function renderKDS() {
       const container = document.getElementById('kds-container'); 
       if(!container) return;
       if(!currentKitchenId) { container.innerHTML = '<div class="col-12 text-center py-5"><h5 class="text-muted">กรุณาเลือกสถานีครัวด้านบน</h5></div>'; return; }
-      if(gKitchens[currentKitchenId]?.status !== 'open') { container.innerHTML = '<div class="col-12 text-center py-5"><h4 class="text-danger fw-bold"><i class="fa-solid fa-power-off"></i> จอนี้ถูกปิดรับออเดอร์อยู่</h4></div>'; return; }
       
+      const myK = gKitchens[currentKitchenId];
+      if(!myK || myK.status !== 'open') { container.innerHTML = '<div class="col-12 text-center py-5"><h4 class="text-danger fw-bold"><i class="fa-solid fa-power-off"></i> จอนี้ถูกปิดรับออเดอร์อยู่</h4></div>'; return; }
+      
+      // ==========================================
+      // โหมดที่ 1: เครื่องปริ้นอัตโนมัติ (Printer Mode)
+      // ==========================================
+      if (myK.mode === 'printer') {
+         container.innerHTML = `
+            <div class="col-12 text-center py-5">
+               <h3 class="text-primary fw-bold mb-3"><i class="fa-solid fa-print fa-2x"></i><br>โหมดเครื่องปริ้นอัตโนมัติ</h3>
+               <p class="text-muted">สถานี: <b>${myK.name}</b> | รับออเดอร์หมวด: <b>${myK.categories ? Object.keys(myK.categories).join(', ') : 'ทั้งหมด'}</b></p>
+               ${myK.connection === 'usb' ? `<button class="btn btn-primary fw-bold px-4 py-2 mt-3" onclick="connectKitchenUSB()"><i class="fa-brands fa-usb"></i> เชื่อมต่อเครื่องปริ้น USB</button>` : `<div class="badge bg-info text-dark fs-6 mt-3">ระบบเชื่อมต่อ LAN: ${myK.ipAddress}</div>`}
+               <div id="printer-status" class="mt-3 fw-bold ${kitchenPrinterDevice || myK.connection === 'lan' ? 'text-success' : 'text-danger'}">สถานะ: ${kitchenPrinterDevice || myK.connection === 'lan' ? 'พร้อมพิมพ์ออเดอร์' : 'รอการเชื่อมต่อ USB...'}</div>
+            </div>`;
+         
+         // ค้นหาออเดอร์ค้าง และปริ้นทันที
+         if(kitchenPrinterDevice || myK.connection === 'lan') autoPrintPendingOrders(myK, currentKitchenId);
+         return;
+      }
+
+      // ==========================================
+      // โหมดที่ 2: หน้าจอสัมผัส (Screen Mode ปกติ)
+      // ==========================================
       container.innerHTML = '';
-      const myOrders = Object.entries(gOrders).filter(([id, o]) => o.status === 'pending' && o.kitchenId === currentKitchenId).sort((a, b) => a[1].timestamp - b[1].timestamp);
-      if(myOrders.length === 0) { container.innerHTML = '<div class="col-12 text-center py-5"><h3 class="text-success fw-bold"><i class="fa-solid fa-check-circle"></i> ไม่มีออเดอร์ค้าง (เคลียร์แล้ว)</h3></div>'; return; }
+      const myOrders = Object.entries(gOrders).filter(([id, o]) => o.status === 'pending').sort((a, b) => a[1].timestamp - b[1].timestamp);
       
+      let hasJobs = false;
       myOrders.forEach(([oId, o]) => {
         let itemsHtml = ''; 
-        let allServed = true;
+        let allServedInThisStation = true;
         
         Object.entries(o.items).forEach(([iId, item]) => {
-          if(!item.served && item.status !== 'canceled') {
-            allServed = false;
+          let itemCat = item.category || 'ทั่วไป';
+          // กรองว่าเมนูนี้อยู่ในหมวดที่สถานีนี้รับหรือไม่
+          let isMyCategory = myK.categories && (myK.categories['ทั้งหมด'] || myK.categories[itemCat]);
+          
+          if(isMyCategory && !item.served && item.status !== 'canceled') {
+            hasJobs = true; allServedInThisStation = false;
             itemsHtml += `
               <div class="kds-item d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
                 <div class="d-flex align-items-center gap-3">
@@ -831,10 +859,9 @@
           }
         });
         
-        if(!allServed) {
+        if(!allServedInThisStation) {
           const timeStr = new Date(o.timestamp).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit', second:'2-digit'}); 
           const colSize = document.getElementById('kds-col-select')?.value || '6';
-          
           container.innerHTML += `
             <div class="col-12 col-lg-${colSize} kds-card-container">
               <div class="card border-0 shadow h-100" style="border-radius: 16px;">
@@ -843,13 +870,106 @@
                   <span class="badge bg-light text-dark fs-5"><i class="fa-regular fa-clock"></i> ${timeStr} น.</span>
                 </div>
                 <div class="card-body p-4 bg-white">${itemsHtml}</div>
-                <div class="card-footer bg-white border-0 pt-0 pb-4 px-4">
-                  <button class="btn btn-primary fw-bold w-100 py-3 fs-4 shadow-sm" onclick="serveAll('${oId}', this)"><i class="fa-solid fa-check-double"></i> ส่งครบแล้วทั้งโต๊ะ</button>
-                </div>
               </div>
             </div>`;
-        } else { window.dbUpdate(window.dbRef(window.db, 'orders/' + oId), { status: 'served' }); }
+        }
       });
+      if(!hasJobs) { container.innerHTML = '<div class="col-12 text-center py-5"><h3 class="text-success fw-bold"><i class="fa-solid fa-check-circle"></i> ไม่มีออเดอร์ค้าง (เคลียร์แล้ว)</h3></div>'; }
+    }
+
+    // ฟังก์ชันย่อยสำหรับเชื่อมต่อ USB ฝั่งครัว
+    async function connectKitchenUSB() {
+      try {
+        let device = await navigator.usb.requestDevice({ filters: [] });
+        await device.open();
+        if (device.configuration === null) await device.selectConfiguration(1);
+        await device.claimInterface(0);
+        kitchenPrinterDevice = device;
+        renderKDS(); // รีเฟรชหน้าให้แสดงว่าพร้อมปริ้น
+      } catch (err) { Swal.fire('ข้อผิดพลาด', err.message, 'error'); }
+    }
+
+    // ฟังก์ชันค้นหาและปริ้นออเดอร์อัตโนมัติ
+    async function autoPrintPendingOrders(kitchenConfig, kId) {
+       const myOrders = Object.entries(gOrders).filter(([id, o]) => o.status === 'pending');
+       let updates = {};
+       
+       for (const [oId, o] of myOrders) {
+          let itemsToPrint = [];
+          Object.entries(o.items).forEach(([iId, item]) => {
+             let itemCat = item.category || 'ทั่วไป';
+             let isMyCategory = kitchenConfig.categories && (kitchenConfig.categories['ทั้งหมด'] || kitchenConfig.categories[itemCat]);
+             
+             // ถ้าใช่หมวดของฉัน และยังไม่ได้เสิร์ฟ
+             if (isMyCategory && !item.served && item.status !== 'canceled') {
+                itemsToPrint.push({ iId, ...item });
+                updates[`orders/${oId}/items/${iId}/served`] = true; // มาร์คว่าพิมพ์/เสิร์ฟแล้วทันที
+             }
+          });
+
+          if (itemsToPrint.length > 0) {
+             await printKitchenTicket(o.tableName, itemsToPrint, kitchenConfig);
+          }
+       }
+       
+       if (Object.keys(updates).length > 0) {
+          window.dbUpdate(window.dbRef(window.db), updates); // อัปเดตฐานข้อมูลว่าพิมพ์เสร็จแล้ว
+       }
+    }
+
+    // สร้างตั๋วปริ้นเข้าครัว
+    async function printKitchenTicket(tableName, items, kitchenConfig) {
+      let buffer = [];
+      const addCmd = (cmd) => buffer = buffer.concat(cmd);
+      const addText = (text) => {
+        for(let i=0; i<text.length; i++) {
+           let code = text.charCodeAt(i);
+           if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
+        }
+        buffer.push(0x0A);
+      };
+
+      addCmd([0x1B, 0x40]); // Init Printer
+      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน
+      addCmd([0x1B, 0x74, 26]); // ภาษาไทย CP874
+
+      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+      addCmd([0x1D, 0x21, 0x11]); // ขยายตัวอักษร 2 เท่า
+      addText(`** โต๊ะ: ${tableName} **`);
+      addCmd([0x1D, 0x21, 0x00]); // ขนาดอักษรปกติ
+      addText(`เวลา: ${new Date().toLocaleTimeString('th-TH')}`);
+      addText(`สถานี: ${kitchenConfig.name}`);
+      addText('--------------------------------');
+
+      addCmd([0x1B, 0x61, 0]); // ชิดซ้าย
+      addCmd([0x1B, 0x45, 1]); // ตัวหนา
+      items.forEach(item => {
+         addCmd([0x1D, 0x21, 0x01]); // ความสูง 2 เท่า
+         addText(`${item.name} x${item.qty}`);
+      });
+      addCmd([0x1B, 0x45, 0]); // ยกเลิกตัวหนา
+      addCmd([0x1D, 0x21, 0x00]); 
+      addText('--------------------------------');
+      addText(' '); addText(' '); addText(' ');
+      addCmd([0x1D, 0x56, 0x41, 0x10]); // ตัดกระดาษ
+
+      // ส่งพิมพ์
+      if (kitchenConfig.connection === 'usb' && kitchenPrinterDevice) {
+         try {
+           let endpointOut = null;
+           for (let endpoint of kitchenPrinterDevice.configuration.interfaces[0].alternate.endpoints) {
+             if (endpoint.direction === 'out') { endpointOut = endpoint.endpointNumber; break; }
+           }
+           await kitchenPrinterDevice.transferOut(endpointOut, new Uint8Array(buffer));
+         } catch (err) { console.error("USB Print Error:", err); }
+      } 
+      else if (kitchenConfig.connection === 'lan' && kitchenConfig.ipAddress) {
+         // ยิงผ่าน HTTP POST (สำหรับเครื่องปริ้น LAN ที่รองรับ Web Server)
+         fetch(`http://${kitchenConfig.ipAddress}/print`, {
+            method: 'POST', mode: 'no-cors',
+            body: new Uint8Array(buffer)
+         }).catch(err => console.error('LAN Print Error:', err));
+      }
     }
     
     function serveItem(orderId, itemId, btnEl) { 
@@ -1106,7 +1226,15 @@
       else if(mode === 'soups') { titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); }
       else if(mode === 'categories') { titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); }
       else if(mode === 'menus') { titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; btnEl.onclick = () => addMenuAdmin(); Object.entries(gMenus).forEach(([id, item]) => { let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
-      else if(mode === 'kitchens') { titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีจอครัว (User)'; btnEl.onclick = () => addSimpleData('settings/kitchens', 'เพิ่มสถานีครัว', 'ชื่อสถานี (เช่น ครัว 1, ครัว 2)'); Object.entries(gKitchens).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/kitchens'); }); }
+      else if(mode === 'kitchens') { 
+          titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีครัว / เครื่องปริ้น'; 
+          btnEl.onclick = () => addKitchenAdmin(); 
+          Object.entries(gKitchens).forEach(([id, item]) => { 
+             let modeBadge = item.mode === 'printer' ? '<span class="badge bg-primary">เครื่องปริ้น</span>' : '<span class="badge bg-info text-dark">หน้าจอ KDS</span>';
+             let catText = item.categories ? Object.keys(item.categories).join(', ') : 'ทั้งหมด';
+             listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${item.name}</strong> ${modeBadge}<br><small class="text-muted">หมวดหมู่: ${catText}</small></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/kitchens', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; 
+          }); 
+      }
       else if(mode === 'extraMenus') { titleEl.innerHTML = '<i class="fa-solid fa-wine-glass"></i> จัดการรายการสั่งเพิ่ม (คิดเงินแยก)'; btnEl.onclick = () => addExtraMenuAdmin(); Object.entries(gExtraMenus).forEach(([id, item]) => { listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px;height:40px;background:#eee;border-radius:8px;margin-right:10px;"></div>`}<div><strong>${item.name}</strong><br><span class="text-danger">${item.price} ฿</span></div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/extraMenus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
       else if(mode === 'rates') { titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> เรทราคา'; btnEl.onclick = () => addRateAdmin(); Object.entries(gRates).forEach(([id, item]) => { let priceText = ''; if(item.prices) { Object.entries(item.prices).forEach(([cid, p]) => { if(gCustTypes[cid]) priceText += `<small class="me-2 text-muted">${gCustTypes[cid].name}: ${p}฿</small>`; }); } let menuCount = item.menus ? Object.keys(item.menus).length : 0; listEl.innerHTML += `<li class="list-group-item"><div class="d-flex justify-content-between align-items-center mb-2"><div><strong>${item.name}</strong><br>${priceText}</div><div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/rates', '${id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="d-grid"><button class="btn btn-sm btn-warning fw-bold text-dark" onclick="manageRateMenus('${id}')"><i class="fa-solid fa-burger"></i> เลือกอาหารให้เรทนี้ (${menuCount} รายการ)</button></div></li>`; }); }
       else if(mode === 'promotions') { titleEl.innerHTML = '<i class="fa-solid fa-bullhorn"></i> จัดการโปรโมชัน'; btnEl.onclick = () => addPromotionAdmin(); Object.entries(gPromotions).forEach(([id, item]) => { let typeStr = item.type === 'percent' ? `ลด ${item.value}%` : item.type === 'fixed' ? `ลดเงินสด ${item.value} ฿` : `กรอกยอดลดเอง (โครงการรัฐ)`; let timeStr = item.startDate ? `<i class="fa-regular fa-clock"></i> ${item.startDate} ถึง ${item.endDate} (${item.startTime} - ${item.endTime})` : '<i class="fa-regular fa-clock"></i> ไม่จำกัดเวลา'; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><strong>${item.name}</strong> <span class="badge bg-danger ms-1">${typeStr}</span><br><small class="text-muted">${timeStr}</small></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/promotions', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
@@ -1117,6 +1245,45 @@
     
     function renderListItem(id, name, path) { return `<li class="list-group-item d-flex justify-content-between align-items-center"><span>${name}</span><button class="btn btn-sm btn-outline-danger" onclick="deleteData('${path}', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }
     function addSimpleData(path, title, placeholder) { Swal.fire({ title: title, input: 'text', inputPlaceholder: placeholder, showCancelButton: true, confirmButtonText: 'บันทึก' }).then(res => { if(res.isConfirmed && res.value) { const data = path === 'tables' ? {name: res.value, status: 'empty', currentTotal: 0} : {name: res.value}; window.dbSet(window.dbPush(window.dbRef(window.db, path)), data).then(() => openAdminModal(currentAdminMode)); } }); }
+      window.addKitchenAdmin = () => {
+      let catHtml = '';
+      Object.entries(gCategories).forEach(([id, c]) => {
+         catHtml += `<div class="form-check form-check-inline"><input class="form-check-input k-cat-cb" type="checkbox" value="${c.name}" id="kc_${id}"><label class="form-check-label" for="kc_${id}">${c.name}</label></div>`;
+      });
+      let html = `
+        <input id="swal-k-name" class="swal2-input mb-2" placeholder="ชื่อสถานี (เช่น บาร์น้ำ, ครัวทอด)">
+        <select id="swal-k-mode" class="swal2-select mb-2" style="display:flex; width:75%; font-size:1rem;" onchange="document.getElementById('printer-options').style.display = this.value === 'printer' ? 'block' : 'none'">
+          <option value="screen">🖥️ ใช้เป็นหน้าจอ (KDS)</option>
+          <option value="printer">🖨️ ใช้เครื่องปริ้นอัตโนมัติ</option>
+        </select>
+        <div id="printer-options" style="display:none; text-align:left; padding: 10px; background:#f8f9fa; border-radius:8px; border:1px solid #ddd;">
+           <label class="fw-bold small text-primary">ตั้งค่าการเชื่อมต่อเครื่องปริ้น</label>
+           <select id="swal-k-conn" class="form-select mb-2"><option value="usb">สาย USB</option><option value="lan">สาย LAN (IP Address)</option></select>
+           <input id="swal-k-ip" class="form-control" placeholder="ระบุ IP (เช่น 192.168.1.100)">
+        </div>
+        <div class="text-start mt-3 mb-1 fw-bold small text-danger">เลือกหมวดหมู่อาหารที่จะให้เข้าสถานีนี้:</div>
+        <div class="text-start p-2 border rounded bg-white" style="max-height:150px; overflow-y:auto;">${catHtml}</div>
+        <small class="text-muted d-block mt-2">ถ้าไม่เลือกหมวดหมู่เลย ระบบจะส่งอาหารทุกประเภทเข้าสถานีนี้</small>
+      `;
+      Swal.fire({
+         title: 'เพิ่มสถานีครัว', html: html, showCancelButton: true, confirmButtonText: 'บันทึก',
+         preConfirm: () => {
+            const name = document.getElementById('swal-k-name').value;
+            const mode = document.getElementById('swal-k-mode').value;
+            const conn = document.getElementById('swal-k-conn').value;
+            const ip = document.getElementById('swal-k-ip').value;
+            let cats = {};
+            document.querySelectorAll('.k-cat-cb:checked').forEach(cb => cats[cb.value] = true);
+            if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อสถานี'); return false; }
+            if(Object.keys(cats).length === 0) cats = { 'ทั้งหมด': true };
+            return { name, mode, connection: conn, ipAddress: ip, categories: cats, status: 'closed' };
+         }
+      }).then(res => {
+         if(res.isConfirmed) {
+            window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/kitchens')), res.value).then(() => openAdminModal('kitchens'));
+         }
+      });
+    };
     
     let tempCompressedImage = "";
     function compressMenuImage(event) {
