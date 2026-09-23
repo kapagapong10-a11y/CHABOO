@@ -1775,7 +1775,16 @@
     }
     
     function printTableQR() {
-      const tId = document.getElementById('mt-table-id').value; const t = gTables[tId]; if(!t) return;
+      const tId = document.getElementById('mt-table-id').value; 
+      
+      // ถ้าเชื่อมต่อเครื่องพิมพ์ USB ไว้ ให้เลี้ยวไปใช้ระบบพิมพ์ตรง
+      if (posPrinterDevice) {
+         printTableQRViaWebUSB(tId);
+         return;
+      }
+      
+      // (ระบบเดิม) ถ้าไม่ได้เชื่อม USB จะเปิดหน้าต่างพรีวิวปกติ
+      const t = gTables[tId]; if(!t) return;
       let timeLimitStr = "ไม่จำกัดเวลา"; let rateData = null; Object.values(gRates).forEach(r => { if(r.name === t.rateName) rateData = r; });
       if(rateData && rateData.timeLimit > 0) { const outTime = new Date(t.checkInTime + (rateData.timeLimit * 60000)); timeLimitStr = outTime.toLocaleTimeString('th-TH'); }
       document.getElementById('print-table').innerText = 'โต๊ะ: ' + t.name; document.getElementById('print-in').innerText = new Date(t.checkInTime).toLocaleTimeString('th-TH') + ' น.'; document.getElementById('print-out').innerText = timeLimitStr + (timeLimitStr !== "ไม่จำกัดเวลา" ? ' น.' : ''); document.getElementById('print-rate').innerText = t.rateName || '-';
@@ -1787,6 +1796,96 @@
       
       document.body.classList.add('print-mode-table');
       modals.manage.hide(); setTimeout(() => { document.getElementById('print-section').classList.remove('d-none'); window.print(); document.getElementById('print-section').classList.add('d-none'); document.body.classList.remove('print-mode-table'); }, 500);
+    }
+
+    // ==========================================
+    // ระบบสั่งพิมพ์ QR Code โต๊ะ ผ่าน WebUSB
+    // ==========================================
+    async function printTableQRViaWebUSB(tId) {
+      const t = gTables[tId]; if(!t) return;
+      const pShop = gShop || {};
+      
+      let timeLimitStr = "ไม่จำกัดเวลา"; let rateData = null; 
+      Object.values(gRates).forEach(r => { if(r.name === t.rateName) rateData = r; });
+      if(rateData && rateData.timeLimit > 0) { 
+          const outTime = new Date(t.checkInTime + (rateData.timeLimit * 60000)); 
+          timeLimitStr = outTime.toLocaleTimeString('th-TH'); 
+      }
+      let custDetails = ''; if(t.customers) Object.entries(t.customers).forEach(([n, q]) => custDetails += `${n}:${q} `);
+
+      let buffer = [];
+      const addCmd = (cmd) => buffer = buffer.concat(cmd);
+      const addText = (text) => {
+        for(let i=0; i<text.length; i++) {
+           let code = text.charCodeAt(i);
+           if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
+        }
+        buffer.push(0x0A);
+      };
+
+      addCmd([0x1B, 0x40]); // Init Printer
+      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน
+      addCmd([0x1B, 0x74, 26]); // ภาษาไทย
+
+      // ส่วนหัว
+      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+      addCmd([0x1B, 0x45, 1]); // ตัวหนา
+      addText(pShop.shopName || 'Shabu POS');
+      addCmd([0x1B, 0x45, 0]); // เลิกตัวหนา
+      addText(`โต๊ะ: ${t.name}`);
+      addText('--------------------------------');
+
+      // สร้าง QR Code ลิงก์สั่งอาหาร
+      const currentUrl = window.location.href.split('?')[0]; 
+      const baseUrl = currentUrl.replace('index.html', ''); 
+      const orderLink = baseUrl + 'customer.html?table=' + tId;
+
+      let qrTempDiv = document.createElement('div');
+      new QRCode(qrTempDiv, { text: orderLink, width: 200, height: 200, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+      
+      let qrCanvas = qrTempDiv.querySelector('canvas');
+      if (qrCanvas) {
+          let ctx = qrCanvas.getContext('2d');
+          let width = qrCanvas.width;
+          let height = qrCanvas.height;
+          let imgData = ctx.getImageData(0, 0, width, height).data;
+          
+          let bytesWidth = Math.ceil(width / 8);
+          let qrBuffer = [0x1D, 0x76, 0x30, 0, bytesWidth & 0xFF, (bytesWidth >> 8) & 0xFF, height & 0xFF, (height >> 8) & 0xFF];
+          
+          for (let y = 0; y < height; y++) {
+              for (let x = 0; x < bytesWidth; x++) {
+                  let byte = 0;
+                  for (let bit = 0; bit < 8; bit++) {
+                      let px = x * 8 + bit;
+                      if (px < width) {
+                          let idx = (y * width + px) * 4;
+                          if (imgData[idx] < 128 && imgData[idx+3] > 128) byte |= (1 << (7 - bit));
+                      }
+                  }
+                  qrBuffer.push(byte);
+              }
+          }
+          addCmd(qrBuffer); // พิมพ์รูปภาพ QR Code
+          addCmd([0x0A]);
+      }
+
+      addText('สแกนเพื่อสั่งอาหาร');
+      addText('--------------------------------');
+      
+      // รายละเอียดด้านล่าง QR
+      addCmd([0x1B, 0x61, 0]); // ชิดซ้าย
+      addText(`ลูกค้า: ${custDetails}`);
+      addText(`เรทราคา: ${t.rateName || '-'}`);
+      addText(`เวลาเข้า: ${new Date(t.checkInTime).toLocaleTimeString('th-TH')} น.`);
+      addText(`หมดเวลา: ${timeLimitStr}${timeLimitStr !== "ไม่จำกัดเวลา" ? ' น.' : ''}`);
+      
+      addCmd([0x1B, 0x61, 1]); // กึ่งกลาง
+      addText(' '); addText(' ');
+      addCmd([0x1D, 0x56, 0x41, 0x10]); // ตัดกระดาษ
+
+      await sendToUSBPrinter(buffer);
+      if(modals.manage) modals.manage.hide(); // ปิดหน้าต่างจัดการโต๊ะ
     }
 
     // ==========================================
