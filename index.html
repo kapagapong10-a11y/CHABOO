@@ -2724,6 +2724,29 @@
     
     // บังคับผูกฟังก์ชันกับ Global Window
     window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer; window.openPrinterSettings=openPrinterSettings; window.connectUSBPrinter=connectUSBPrinter; window.testPrintUSB=testPrintUSB;
+
+    // ==========================================
+    // 🤖 ระบบผู้พิทักษ์: ตรวจสอบและปริ้นออเดอร์เข้าครัวอัตโนมัติ (Background Monitor)
+    // ==========================================
+    setInterval(() => {
+        if(typeof gOrders === 'undefined' || typeof gKitchens === 'undefined') return;
+        
+        // 1. ตรวจสอบเครื่องปริ้นสาย LAN (ยิงคำสั่งปริ้นอัตโนมัติจากเบื้องหลังทันที)
+        Object.entries(gKitchens).forEach(([kId, k]) => {
+            if(k.mode === 'printer' && k.connection === 'lan' && k.status === 'open') {
+                autoPrintPendingOrders(k, kId);
+            }
+        });
+        
+        // 2. ตรวจสอบเครื่องปริ้นสาย USB (พิมพ์ทันทีที่เชื่อมต่ออุปกรณ์สำเร็จ)
+        if(typeof kitchenPrinterDevice !== 'undefined' && kitchenPrinterDevice && currentKitchenId) {
+            const myK = gKitchens[currentKitchenId];
+            if(myK && myK.mode === 'printer' && myK.connection === 'usb' && myK.status === 'open') {
+                autoPrintPendingOrders(myK, currentKitchenId);
+            }
+        }
+    }, 4000); // ระบบจะแอบเช็คออเดอร์ใหม่ทุกๆ 4 วินาที
+    
   </script>
 </body>
 </html>
