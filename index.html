@@ -610,8 +610,15 @@
       window.dbOnValue(window.dbRef(window.db, 'settings/promotions'), s => { gPromotions = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/payment'), s => { gPayment = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/shop'), s => { gShop = s.val() || {}; });
-      window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { gInventory = s.val() || {}; renderInventoryFront(); });
-      window.dbOnValue(window.dbRef(window.db, 'settings/invCategories'), s => { gInvCategories = s.val() || {}; });
+      // ดึงหมวดหมู่สต๊อกก่อน แล้วเมื่อดึงเสร็จค่อยสั่งเรนเดอร์สต๊อก
+      window.dbOnValue(window.dbRef(window.db, 'settings/invCategories'), s => { 
+          gInvCategories = s.val() || {}; 
+          if(Object.keys(gInventory).length > 0) renderInventoryFront(); 
+      });
+      window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { 
+          gInventory = s.val() || {}; 
+          renderInventoryFront(); 
+      });
       window.dbOnValue(window.dbRef(window.db, 'settings/initialBalance'), s => { 
         gInitialBalance = s.val() || { cash: 0, transfer: 0, gov: 0, date: 0 }; 
         if(Object.keys(gAccounting).length > 0) renderAccountingFront(); 
@@ -1004,11 +1011,7 @@
     let currentInvCat = 'all';
 
     function filterInventory() { renderInventoryFront(); }
-    
-    function setInvCategory(catName) { 
-        currentInvCat = catName; 
-        renderInventoryFront(); 
-    }
+    function setInvCategory(catName) { currentInvCat = catName; renderInventoryFront(); }
 
     function renderInventoryFront() {
       const container = document.getElementById('inventory-container');
@@ -1017,10 +1020,10 @@
       
       let invArray = Object.entries(gInventory).map(([id, item]) => ({ id, ...item }));
       
-      // 1. สร้างปุ่มตัวกรองหมวดหมู่ด้านบน
+      // 1. สร้างปุ่มตัวกรองด้านบน
       if (filterContainer) {
           let cats = ['all'];
-          Object.values(window.gInvCategories || {}).forEach(c => { if(c.name) cats.push(c.name); });
+          Object.values(gInvCategories).forEach(c => { if(c.name) cats.push(c.name); });
           
           let hasUncategorized = invArray.some(item => !item.category || item.category.trim() === '');
           if (hasUncategorized && !cats.includes('ไม่กำหนด')) cats.push('ไม่กำหนด');
@@ -1035,55 +1038,68 @@
 
       container.innerHTML = '';
       
-      // 2. กรองข้อมูล (ตามช่องค้นหา และ ตามหมวดหมู่ที่คลิก)
       let searchInput = document.getElementById('inv-search-input');
       let searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-      invArray = invArray.filter(item => {
+      // 2. จัดกลุ่มวัตถุดิบ (Grouping)
+      let groupedInv = {};
+      invArray.forEach(item => {
           let catName = item.category || 'ไม่กำหนด';
-          let matchCat = (currentInvCat === 'all' || catName === currentInvCat);
-          let matchSearch = item.name.toLowerCase().includes(searchTerm);
-          return matchCat && matchSearch;
+          // กรองข้อมูลตามปุ่มหมวดหมู่ และ ช่องค้นหา
+          if (currentInvCat !== 'all' && catName !== currentInvCat) return;
+          if (searchTerm !== '' && !item.name.toLowerCase().includes(searchTerm)) return;
+
+          if (!groupedInv[catName]) groupedInv[catName] = [];
+          groupedInv[catName].push(item);
       });
 
-      if (invArray.length === 0) {
+      if (Object.keys(groupedInv).length === 0) {
         container.innerHTML = '<div class="col-12 text-center py-5"><div class="text-muted fs-5"><i class="fa-solid fa-box-open fs-1 mb-3 d-block text-secondary opacity-50"></i>ไม่พบรายการวัตถุดิบที่ค้นหา</div></div>';
         return;
       }
       
-      // 3. เรียงตามจำนวนเหลือน้อยขึ้นก่อน
-      invArray.sort((a, b) => (parseFloat(a.qty) || 0) - (parseFloat(b.qty) || 0));
-      
-      invArray.forEach(item => {
-        let isLow = item.qty <= 5; 
-        let qtyColor = isLow ? 'text-danger' : 'text-success';
-        let badge = isLow ? `<span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle" title="ของใกล้หมด!"><span class="visually-hidden">เตือน</span></span>` : '';
-        let imgHtml = item.image ? `<img src="${item.image}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;" class="shadow-sm">` : `<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 12px; display: flex; align-items: center; justify-content: center;" class="shadow-sm"><i class="fa-solid fa-box text-muted fs-3"></i></div>`;
-        
-        let catName = item.category || 'ไม่กำหนด';
+      // 3. แสดงผลแยกตามกลุ่มหมวดหมู่
+      for (const [catName, items] of Object.entries(groupedInv)) {
+          // เรียงตามจำนวนที่เหลือน้อยขึ้นก่อน ในแต่ละหมวดหมู่
+          items.sort((a, b) => (parseFloat(a.qty) || 0) - (parseFloat(b.qty) || 0));
 
-        let html = `
-          <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-            <div class="card border-0 shadow-sm h-100 rounded-4 position-relative">
-              ${badge}
-              <div class="card-body p-3 d-flex align-items-center gap-3">
-                ${imgHtml}
-                <div class="flex-grow-1" style="min-width: 0;">
-                  <h6 class="fw-bold text-dark text-truncate mb-1">${item.name}</h6>
-                  <div class="text-muted small mb-1"><span class="badge bg-secondary opacity-75">${catName}</span></div>
-                  <div class="text-muted small mb-1">ต้นทุน: ${item.cost} ฿/${item.unit}</div>
-                  <div class="fw-bold fs-5 ${qtyColor}">เหลือ: ${item.qty} <span class="fs-6 fw-normal text-muted">${item.unit}</span></div>
-                </div>
-              </div>
-              <div class="card-footer bg-white border-top-0 p-3 pt-0 d-flex gap-2 flex-wrap">
-                <button class="btn btn-warning fw-bold text-dark flex-grow-1 rounded-3 shadow-sm" onclick="adjustStock('${item.id}')"><i class="fa-solid fa-calculator"></i> ตัด/เพิ่ม</button>
-                <button class="btn btn-outline-primary border-0 rounded-3 px-3 shadow-sm" onclick="addEditInventoryItem('${item.id}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-danger border-0 rounded-3 px-3 shadow-sm" onclick="deleteData('settings/inventory', '${item.id}')" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
-              </div>
+          let groupHtml = `
+            <div class="col-12 mt-4 mb-2">
+                <h5 class="fw-bold text-danger border-bottom border-danger pb-2" style="border-width: 2px !important;">
+                   <i class="fa-solid fa-tags me-2"></i> หมวดหมู่: ${catName}
+                </h5>
             </div>
-          </div>`;
-        container.insertAdjacentHTML('beforeend', html);
-      });
+          `;
+          
+          items.forEach(item => {
+            let isLow = item.qty <= 5; 
+            let qtyColor = isLow ? 'text-danger' : 'text-success';
+            let badge = isLow ? `<span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle" title="ของใกล้หมด!"><span class="visually-hidden">เตือน</span></span>` : '';
+            let imgHtml = item.image ? `<img src="${item.image}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;" class="shadow-sm">` : `<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 12px; display: flex; align-items: center; justify-content: center;" class="shadow-sm"><i class="fa-solid fa-box text-muted fs-3"></i></div>`;
+            
+            groupHtml += `
+              <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 rounded-4 position-relative">
+                  ${badge}
+                  <div class="card-body p-3 d-flex align-items-center gap-3">
+                    ${imgHtml}
+                    <div class="flex-grow-1" style="min-width: 0;">
+                      <h6 class="fw-bold text-dark text-truncate mb-1">${item.name}</h6>
+                      <div class="text-muted small mb-1">ต้นทุน: ${item.cost} ฿/${item.unit}</div>
+                      <div class="fw-bold fs-5 ${qtyColor}">เหลือ: ${item.qty} <span class="fs-6 fw-normal text-muted">${item.unit}</span></div>
+                    </div>
+                  </div>
+                  <div class="card-footer bg-light border-top-0 p-3 pt-0 d-flex gap-2 flex-wrap">
+                    <button class="btn btn-warning fw-bold text-dark flex-grow-1 rounded-3 shadow-sm" onclick="adjustStock('${item.id}')"><i class="fa-solid fa-calculator"></i> ตัด/เพิ่ม</button>
+                    <button class="btn btn-outline-primary border-0 rounded-3 px-3 shadow-sm bg-white" onclick="addEditInventoryItem('${item.id}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-outline-danger border-0 rounded-3 px-3 shadow-sm bg-white" onclick="deleteData('settings/inventory', '${item.id}')" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </div>
+              </div>`;
+          });
+          
+          container.insertAdjacentHTML('beforeend', groupHtml);
+      }
     }
     
     window.addEditInventoryItem = (id = null) => {
