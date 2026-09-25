@@ -313,6 +313,7 @@
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('soups')"><i class="fa-solid fa-mug-hot admin-icon"></i><h5 class="fw-bold">ประเภทน้ำซุป</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('categories')"><i class="fa-solid fa-list admin-icon"></i><h5 class="fw-bold">หมวดหมู่อาหาร</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('menus')"><i class="fa-solid fa-burger admin-icon"></i><h5 class="fw-bold">จัดการเมนู</h5></div></div>
+          <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('invCategories')"><i class="fa-solid fa-tags admin-icon text-secondary"></i><h5 class="fw-bold text-secondary">หมวดหมู่สต๊อก</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('kitchens')"><i class="fa-solid fa-display admin-icon"></i><h5 class="fw-bold">จัดการจอครัว</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('extraMenus')"><i class="fa-solid fa-wine-glass admin-icon"></i><h5 class="fw-bold">รายการสั่งเพิ่ม</h5></div></div>
           <div class="col-6 col-md-3"><div class="card admin-menu-card border-0 shadow-sm" onclick="openAdminModal('rates')"><i class="fa-solid fa-tags admin-icon"></i><h5 class="fw-bold">เรทราคาบุฟเฟ่ต์</h5></div></div>
@@ -557,7 +558,7 @@
   
   <script>
     let gTables = {}, gRates = {}, gCustTypes = {}, gSoups = {}, gCategories = {}, gMenus = {}, gExtraMenus = {}, gKitchens = {}, gOrders = {}, gPings = {};
-    let gPromotions = {}, gPayment = {}, gShop = {}, gInventory = {}, gAccounting = {};
+    let gPromotions = {}, gPayment = {}, gShop = {}, gInventory = {}, gAccounting = {}, gInvCategories = {};
     let gInitialBalance = { cash: 0, transfer: 0, gov: 0, date: 0 };
     let posPrinterDevice = null; // เก็บสถานะเครื่องพิมพ์ USB
     let accountingChartInstance = null; // ตัวแปรเก็บกราฟ
@@ -596,6 +597,7 @@
       window.dbOnValue(window.dbRef(window.db, 'settings/payment'), s => { gPayment = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/shop'), s => { gShop = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/inventory'), s => { gInventory = s.val() || {}; renderInventoryFront(); });
+      window.dbOnValue(window.dbRef(window.db, 'settings/invCategories'), s => { gInvCategories = s.val() || {}; });
       window.dbOnValue(window.dbRef(window.db, 'settings/initialBalance'), s => { 
         gInitialBalance = s.val() || { cash: 0, transfer: 0, gov: 0, date: 0 }; 
         if(Object.keys(gAccounting).length > 0) renderAccountingFront(); 
@@ -1004,6 +1006,8 @@
         let badge = isLow ? `<span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle" title="ของใกล้หมด!"><span class="visually-hidden">เตือน</span></span>` : '';
         let imgHtml = item.image ? `<img src="${item.image}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;" class="shadow-sm">` : `<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 12px; display: flex; align-items: center; justify-content: center;" class="shadow-sm"><i class="fa-solid fa-box text-muted fs-3"></i></div>`;
         
+        let catName = item.category || 'ไม่กำหนด';
+
         let html = `
           <div class="col-12 col-md-6 col-lg-4 col-xl-3">
             <div class="card border-0 shadow-sm h-100 rounded-4 position-relative">
@@ -1012,44 +1016,90 @@
                 ${imgHtml}
                 <div class="flex-grow-1" style="min-width: 0;">
                   <h6 class="fw-bold text-dark text-truncate mb-1">${item.name}</h6>
+                  <div class="text-muted small mb-1"><span class="badge bg-secondary opacity-75">${catName}</span></div>
                   <div class="text-muted small mb-1">ต้นทุน: ${item.cost} ฿/${item.unit}</div>
                   <div class="fw-bold fs-5 ${qtyColor}">เหลือ: ${item.qty} <span class="fs-6 fw-normal text-muted">${item.unit}</span></div>
                 </div>
               </div>
-              <div class="card-footer bg-white border-top-0 p-3 pt-0 d-flex gap-2">
+              <div class="card-footer bg-white border-top-0 p-3 pt-0 d-flex gap-2 flex-wrap">
                 <button class="btn btn-warning fw-bold text-dark flex-grow-1 rounded-3 shadow-sm" onclick="adjustStock('${item.id}')"><i class="fa-solid fa-calculator"></i> ตัด/เพิ่ม</button>
-                <button class="btn btn-outline-danger border-0 rounded-3 px-3" onclick="deleteData('settings/inventory', '${item.id}')" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-outline-primary border-0 rounded-3 px-3 shadow-sm" onclick="addEditInventoryItem('${item.id}')" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-danger border-0 rounded-3 px-3 shadow-sm" onclick="deleteData('settings/inventory', '${item.id}')" title="ลบทิ้ง"><i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
           </div>`;
         container.insertAdjacentHTML('beforeend', html);
       });
     }
+    
+    window.addEditInventoryItem = (id = null) => {
+        let item = id ? gInventory[id] : { name: '', category: '', unit: '', cost: '', qty: '' };
+        tempCompressedImage = id ? (item.image || "") : "";
+        
+        let catOptions = '<option value="">-- ไม่กำหนด --</option>';
+        Object.values(gInvCategories).forEach(c => {
+            let selected = (item.category === c.name) ? 'selected' : '';
+            catOptions += `<option value="${c.name}" ${selected}>${c.name}</option>`;
+        });
 
-    function addInventoryItem() {
-      tempCompressedImage = ""; 
-      let html = `<input id="swal-inv-name" class="swal2-input mb-2" placeholder="ชื่อวัตถุดิบ (เช่น หมูสไลด์, ผักกาด)">
-                  <input id="swal-inv-unit" class="swal2-input mb-2" placeholder="หน่วยนับ (เช่น กิโลกรัม, แพ็ค, ถาด)">
-                  <input id="swal-inv-cost" type="number" class="swal2-input mb-2" placeholder="ต้นทุนเฉลี่ยต่อหน่วย (บาท)">
-                  <input id="swal-inv-qty" type="number" class="swal2-input mb-2" placeholder="จำนวนคงเหลือตั้งต้น">
-                  <div class="text-start small text-muted px-4 mt-2">รูปภาพวัตถุดิบ:</div>
-                  <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`;
-      Swal.fire({ title: 'เพิ่มรายการสต๊อค', html: html, showCancelButton: true, confirmButtonText: 'บันทึก', customClass: { popup: 'rounded-4' } }).then(res => { 
-        if(res.isConfirmed) { 
-          const name = document.getElementById('swal-inv-name').value;
-          const unit = document.getElementById('swal-inv-unit').value || 'หน่วย';
-          const cost = parseFloat(document.getElementById('swal-inv-cost').value) || 0;
-          const qty = parseFloat(document.getElementById('swal-inv-qty').value) || 0;
-          if(!name) return Swal.fire('ผิดพลาด', 'กรุณาใส่ชื่อวัตถุดิบ', 'error');
-          
-          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-          window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/inventory')), {
-             name: name, unit: unit, cost: cost, qty: qty, image: tempCompressedImage || "", lastUpdate: Date.now()
-          }).then(() => { Swal.close(); Swal.fire({icon:'success', title:'เพิ่มสำเร็จ', timer: 1500, showConfirmButton:false}); });
-        } 
-      });
-    }
-
+        Swal.fire({
+            title: id ? '📝 แก้ไขวัตถุดิบ' : '📦 เพิ่มวัตถุดิบใหม่',
+            html: `
+                <div class="text-start mb-1 fw-bold small text-muted">ชื่อวัตถุดิบ:</div>
+                <input id="swal-inv-name" class="swal2-input mt-0 mb-3" placeholder="เช่น หมูสามชั้น, ผักกาดขาว" value="${item.name}">
+                
+                <div class="text-start mb-1 fw-bold small text-muted">หมวดหมู่:</div>
+                <select id="swal-inv-cat" class="swal2-select mt-0 mb-3" style="display:flex; width: 100%; font-size: 1rem;">
+                    ${catOptions}
+                </select>
+                
+                <div class="row g-2 mb-3">
+                   <div class="col-6">
+                      <div class="text-start mb-1 fw-bold small text-muted">หน่วยนับ:</div>
+                      <input id="swal-inv-unit" class="swal2-input mt-0 w-100" placeholder="เช่น กก., ถาด" value="${item.unit || ''}">
+                   </div>
+                   <div class="col-6">
+                      <div class="text-start mb-1 fw-bold small text-muted">ต้นทุน/หน่วย (฿):</div>
+                      <input id="swal-inv-cost" type="number" class="swal2-input mt-0 w-100" placeholder="0" value="${item.cost || ''}">
+                   </div>
+                </div>
+                
+                ${!id ? `
+                <div class="text-start mb-1 fw-bold small text-muted">จำนวนคงเหลือตั้งต้น:</div>
+                <input id="swal-inv-qty" type="number" class="swal2-input mt-0 mb-3" placeholder="ระบุจำนวนตั้งต้น" value="${item.qty || ''}">
+                ` : ''}
+                
+                <div class="text-start small text-muted px-1 mt-2">รูปภาพวัตถุดิบ (เลือกใหม่เพื่อเปลี่ยน):</div>
+                <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-100" onchange="compressMenuImage(event)">
+            `,
+            showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', customClass: { popup: 'rounded-4' },
+            preConfirm: () => {
+                const name = document.getElementById('swal-inv-name').value.trim();
+                const category = document.getElementById('swal-inv-cat').value;
+                const unit = document.getElementById('swal-inv-unit').value.trim() || 'หน่วย';
+                const cost = parseFloat(document.getElementById('swal-inv-cost').value) || 0;
+                let qty = item.qty || 0;
+                if (!id) qty = parseFloat(document.getElementById('swal-inv-qty').value) || 0;
+                
+                if(!name) { Swal.showValidationMessage('กรุณากรอกชื่อวัตถุดิบ'); return false; }
+                return { name, category, unit, cost, qty, image: tempCompressedImage, lastUpdate: Date.now() };
+            }
+        }).then(res => {
+            if(res.isConfirmed) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                if(id) {
+                    window.dbUpdate(window.dbRef(window.db, `settings/inventory/${id}`), res.value).then(() => {
+                        Swal.close(); Swal.fire({icon:'success', title:'แก้ไขสำเร็จ', timer: 1500, showConfirmButton:false});
+                    });
+                } else {
+                    window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/inventory')), res.value).then(() => {
+                        Swal.close(); Swal.fire({icon:'success', title:'เพิ่มสำเร็จ', timer: 1500, showConfirmButton:false});
+                    });
+                }
+            }
+        });
+    };
+    
     function adjustStock(id) {
        const item = gInventory[id];
        if(!item) return;
@@ -1225,6 +1275,13 @@
       else if(mode === 'custTypes') { titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); }
       else if(mode === 'soups') { titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); }
       else if(mode === 'categories') { titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); }
+      else if(mode === 'invCategories') { 
+          titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> จัดการหมวดหมู่สต๊อก'; 
+          btnEl.onclick = () => addSimpleData('settings/invCategories', 'เพิ่มหมวดหมู่สต๊อก', 'ชื่อหมวดหมู่ (เช่น เนื้อสัตว์, ผักสด, เครื่องดื่ม)'); 
+          Object.entries(gInvCategories).forEach(([id, item]) => { 
+             listEl.innerHTML += renderListItem(id, item.name, 'settings/invCategories'); 
+          }); 
+      }
       else if(mode === 'menus') { titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; btnEl.onclick = () => addMenuAdmin(); Object.entries(gMenus).forEach(([id, item]) => { let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
       else if(mode === 'kitchens') { 
           titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีครัว / เครื่องปริ้น'; 
