@@ -180,10 +180,24 @@
       
       <!-- Inventory Tab -->
       <div class="tab-pane fade" id="tab-inventory">
-        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded-4 shadow-sm border">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border gap-3">
           <h4 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-boxes-stacked"></i> สต๊อควัตถุดิบ</h4>
-          <button class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm" onclick="addInventoryItem()"><i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบ</button>
+          <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1 justify-content-end">
+             <div class="input-group" style="max-width: 300px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-radius: 50px; overflow: hidden;">
+                <span class="input-group-text bg-light border-0"><i class="fa-solid fa-search text-muted"></i></span>
+                <input type="text" id="inv-search-input" class="form-control border-0 bg-light" placeholder="ค้นหาวัตถุดิบ..." onkeyup="filterInventory()">
+             </div>
+             <button class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm" onclick="addEditInventoryItem()"><i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบ</button>
+          </div>
         </div>
+        
+        <!-- แถบปุ่มหมวดหมู่ (คลิกเพื่อกรอง) -->
+        <div class="mb-4">
+           <div class="d-flex gap-2" id="inv-category-filters" style="overflow-x: auto; padding-bottom: 8px; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+              <!-- ปุ่มจะถูกสร้างอัตโนมัติด้วย JavaScript -->
+           </div>
+        </div>
+        
         <div class="row g-3" id="inventory-container">
           <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
         </div>
@@ -987,17 +1001,57 @@
     // ==========================================
     // ระบบจัดการสต๊อคสินค้า (Inventory)
     // ==========================================
+    let currentInvCat = 'all';
+
+    function filterInventory() { renderInventoryFront(); }
+    
+    function setInvCategory(catName) { 
+        currentInvCat = catName; 
+        renderInventoryFront(); 
+    }
+
     function renderInventoryFront() {
       const container = document.getElementById('inventory-container');
+      const filterContainer = document.getElementById('inv-category-filters');
       if (!container) return;
-      container.innerHTML = '';
       
       let invArray = Object.entries(gInventory).map(([id, item]) => ({ id, ...item }));
+      
+      // 1. สร้างปุ่มตัวกรองหมวดหมู่ด้านบน
+      if (filterContainer) {
+          let cats = ['all'];
+          Object.values(window.gInvCategories || {}).forEach(c => { if(c.name) cats.push(c.name); });
+          
+          let hasUncategorized = invArray.some(item => !item.category || item.category.trim() === '');
+          if (hasUncategorized && !cats.includes('ไม่กำหนด')) cats.push('ไม่กำหนด');
+
+          let filterHtml = `<button class="btn ${currentInvCat === 'all' ? 'btn-primary shadow-sm' : 'btn-outline-secondary bg-white text-dark border'} rounded-pill px-4 fw-bold" onclick="setInvCategory('all')">ทั้งหมด</button>`;
+          cats.forEach(c => {
+              if (c === 'all') return;
+              filterHtml += `<button class="btn ${currentInvCat === c ? 'btn-primary shadow-sm' : 'btn-outline-secondary bg-white text-dark border'} rounded-pill px-4 fw-bold" onclick="setInvCategory('${c}')">${c}</button>`;
+          });
+          filterContainer.innerHTML = filterHtml;
+      }
+
+      container.innerHTML = '';
+      
+      // 2. กรองข้อมูล (ตามช่องค้นหา และ ตามหมวดหมู่ที่คลิก)
+      let searchInput = document.getElementById('inv-search-input');
+      let searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+      invArray = invArray.filter(item => {
+          let catName = item.category || 'ไม่กำหนด';
+          let matchCat = (currentInvCat === 'all' || catName === currentInvCat);
+          let matchSearch = item.name.toLowerCase().includes(searchTerm);
+          return matchCat && matchSearch;
+      });
+
       if (invArray.length === 0) {
-        container.innerHTML = '<div class="col-12 text-center py-5"><div class="text-muted fs-5"><i class="fa-solid fa-box-open fs-1 mb-3 d-block"></i>ยังไม่มีรายการวัตถุดิบในสต๊อค</div></div>';
+        container.innerHTML = '<div class="col-12 text-center py-5"><div class="text-muted fs-5"><i class="fa-solid fa-box-open fs-1 mb-3 d-block text-secondary opacity-50"></i>ไม่พบรายการวัตถุดิบที่ค้นหา</div></div>';
         return;
       }
       
+      // 3. เรียงตามจำนวนเหลือน้อยขึ้นก่อน
       invArray.sort((a, b) => (parseFloat(a.qty) || 0) - (parseFloat(b.qty) || 0));
       
       invArray.forEach(item => {
@@ -2781,7 +2835,7 @@
     
     // บังคับผูกฟังก์ชันกับ Global Window
     window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer; window.openPrinterSettings=openPrinterSettings; window.connectUSBPrinter=connectUSBPrinter; window.testPrintUSB=testPrintUSB;
-
+    window.filterInventory=filterInventory; window.setInvCategory=setInvCategory;
     // ==========================================
     // 🤖 ระบบผู้พิทักษ์: ตรวจสอบและปริ้นออเดอร์เข้าครัวอัตโนมัติ (Background Monitor)
     // ==========================================
