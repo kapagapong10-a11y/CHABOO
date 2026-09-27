@@ -1130,7 +1130,7 @@
         tempCompressedImage = id ? (item.image || "") : "";
         
         let catOptions = '<option value="">-- ไม่กำหนด --</option>';
-        Object.values(gInvCategories).forEach(c => {
+        Object.values(window.gInvCategories || {}).forEach(c => {
             let selected = (item.category === c.name) ? 'selected' : '';
             catOptions += `<option value="${c.name}" ${selected}>${c.name}</option>`;
         });
@@ -1138,32 +1138,42 @@
         Swal.fire({
             title: id ? '📝 แก้ไขวัตถุดิบ' : '📦 เพิ่มวัตถุดิบใหม่',
             html: `
-                <div class="text-start mb-1 fw-bold small text-muted">ชื่อวัตถุดิบ:</div>
-                <input id="swal-inv-name" class="swal2-input mt-0 mb-3" placeholder="เช่น หมูสามชั้น, ผักกาดขาว" value="${item.name}">
-                
-                <div class="text-start mb-1 fw-bold small text-muted">หมวดหมู่:</div>
-                <select id="swal-inv-cat" class="swal2-select mt-0 mb-3" style="display:flex; width: 100%; font-size: 1rem;">
-                    ${catOptions}
-                </select>
-                
-                <div class="row g-2 mb-3">
-                   <div class="col-6">
-                      <div class="text-start mb-1 fw-bold small text-muted">หน่วยนับ:</div>
-                      <input id="swal-inv-unit" class="swal2-input mt-0 w-100" placeholder="เช่น กก., ถาด" value="${item.unit || ''}">
-                   </div>
-                   <div class="col-6">
-                      <div class="text-start mb-1 fw-bold small text-muted">ต้นทุน/หน่วย (฿):</div>
-                      <input id="swal-inv-cost" type="number" class="swal2-input mt-0 w-100" placeholder="0" value="${item.cost || ''}">
-                   </div>
+                <div class="px-1" style="overflow-x: hidden;">
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold small text-muted mb-1">ชื่อวัตถุดิบ:</label>
+                        <input id="swal-inv-name" class="form-control" placeholder="เช่น หมูสามชั้น, ผักกาดขาว" value="${item.name}">
+                    </div>
+                    
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold small text-muted mb-1">หมวดหมู่:</label>
+                        <select id="swal-inv-cat" class="form-select">
+                            ${catOptions}
+                        </select>
+                    </div>
+                    
+                    <div class="row g-3 mb-3 text-start">
+                       <div class="col-6">
+                          <label class="form-label fw-bold small text-muted mb-1">หน่วยนับ:</label>
+                          <input id="swal-inv-unit" class="form-control" placeholder="เช่น กก., ถาด" value="${item.unit || ''}">
+                       </div>
+                       <div class="col-6">
+                          <label class="form-label fw-bold small text-muted mb-1">ต้นทุน/หน่วย (฿):</label>
+                          <input id="swal-inv-cost" type="number" class="form-control" placeholder="0" value="${item.cost || ''}">
+                       </div>
+                    </div>
+                    
+                    ${!id ? `
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold small text-muted mb-1">จำนวนคงเหลือตั้งต้น:</label>
+                        <input id="swal-inv-qty" type="number" class="form-control text-primary fw-bold" placeholder="ระบุจำนวนตั้งต้น" value="${item.qty || ''}">
+                    </div>
+                    ` : ''}
+                    
+                    <div class="mb-2 text-start">
+                        <label class="form-label fw-bold small text-muted mb-1">รูปภาพวัตถุดิบ (เลือกใหม่เพื่อเปลี่ยน):</label>
+                        <input type="file" accept="image/*" class="form-control" onchange="compressMenuImage(event)">
+                    </div>
                 </div>
-                
-                ${!id ? `
-                <div class="text-start mb-1 fw-bold small text-muted">จำนวนคงเหลือตั้งต้น:</div>
-                <input id="swal-inv-qty" type="number" class="swal2-input mt-0 mb-3" placeholder="ระบุจำนวนตั้งต้น" value="${item.qty || ''}">
-                ` : ''}
-                
-                <div class="text-start small text-muted px-1 mt-2">รูปภาพวัตถุดิบ (เลือกใหม่เพื่อเปลี่ยน):</div>
-                <input type="file" accept="image/*" class="form-control mb-2 mx-auto w-100" onchange="compressMenuImage(event)">
             `,
             showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', customClass: { popup: 'rounded-4' },
             preConfirm: () => {
@@ -1196,50 +1206,40 @@
     function adjustStock(id) {
        const item = gInventory[id];
        if(!item) return;
+       
+       let currentQty = parseFloat(item.qty) || 0;
+       
        Swal.fire({
           title: `จัดการสต๊อค: ${item.name}`,
-          html: `<div class="mb-3 mt-2">ยอดคงเหลือ: <strong class="text-primary fs-3">${item.qty}</strong> ${item.unit}</div>
-                 <div class="d-flex justify-content-center gap-2 mb-3">
-                    <input type="radio" class="btn-check" name="adjType" id="adjAdd" value="add" checked onchange="document.getElementById('cost-input-area').classList.remove('d-none')">
-                    <label class="btn btn-outline-success fw-bold px-4 rounded-pill shadow-sm" for="adjAdd"><i class="fa-solid fa-plus"></i> รับเข้า</label>
-                    <input type="radio" class="btn-check" name="adjType" id="adjMinus" value="minus" onchange="document.getElementById('cost-input-area').classList.add('d-none')">
-                    <label class="btn btn-outline-danger fw-bold px-4 rounded-pill shadow-sm" for="adjMinus"><i class="fa-solid fa-minus"></i> ตัดยอด</label>
+          html: `<div class="mb-4 mt-2 fs-5">ยอดคงเหลือ: <strong class="text-primary fs-2">${currentQty.toLocaleString(undefined, {maximumFractionDigits: 2})}</strong> ${item.unit}</div>
+                 <div class="d-flex justify-content-center gap-2 mb-4">
+                    <input type="radio" class="btn-check" name="adjType" id="adjAdd" value="add" checked>
+                    <label class="btn btn-outline-success fw-bold px-4 py-2 rounded-pill shadow-sm" for="adjAdd"><i class="fa-solid fa-plus"></i> รับเข้า</label>
+                    <input type="radio" class="btn-check" name="adjType" id="adjMinus" value="minus">
+                    <label class="btn btn-outline-danger fw-bold px-4 py-2 rounded-pill shadow-sm" for="adjMinus"><i class="fa-solid fa-minus"></i> ตัดยอด</label>
                  </div>
-                 <input type="number" id="swal-adj-val" class="swal2-input mt-0 w-75" placeholder="ระบุจำนวน ${item.unit} ที่ต้องการ" step="0.01">
-                 <div id="cost-input-area" class="mt-2">
-                    <input type="number" id="swal-adj-cost" class="swal2-input w-75 border-danger" placeholder="ยอดเงินที่ซื้อ (บาท) เพื่อลงบัญชี" step="0.01">
-                 </div>`,
+                 <input type="number" id="swal-adj-val" class="form-control text-center fs-4 mx-auto fw-bold text-primary" style="max-width: 200px;" placeholder="ระบุจำนวน" step="0.01">
+                 <div class="text-muted small mt-2">ระบุจำนวน ${item.unit} ที่ต้องการปรับปรุง</div>`,
           showCancelButton: true, confirmButtonText: 'ยืนยันการปรับยอด', customClass: { popup: 'rounded-4' },
           preConfirm: () => {
              const val = parseFloat(document.getElementById('swal-adj-val').value);
              const type = document.querySelector('input[name="adjType"]:checked').value;
-             const cost = parseFloat(document.getElementById('swal-adj-cost').value) || 0;
              if(!val || val <= 0) { Swal.showValidationMessage('กรุณาใส่จำนวนที่มากกว่า 0'); return false; }
-             if(type === 'add' && cost <= 0) { Swal.showValidationMessage('กรุณาระบุยอดเงินที่ซื้อเพื่อลงบัญชี'); return false; }
-             return { val, type, cost };
+             return { val, type };
           }
        }).then(res => {
           if(res.isConfirmed) {
-             let newQty = item.qty;
-             const updates = {};
-             if(res.value.type === 'add') {
-                newQty += res.value.val;
-                // บันทึกรายจ่ายลงบัญชีอัตโนมัติ
-                const accId = Date.now().toString();
-                updates[`accounting/${accId}`] = {
-                   type: 'expense', source: 'inventory', date: Date.now(),
-                   description: `ซื้อวัตถุดิบเข้าสต๊อค: ${item.name} (${res.value.val} ${item.unit})`,
-                   amount: res.value.cost, slipImage: ""
-                };
-             } else {
-                newQty -= res.value.val;
-             }
+             let newQty = currentQty;
+             if(res.value.type === 'add') newQty += res.value.val;
+             else newQty -= res.value.val;
+             
              if(newQty < 0) newQty = 0; 
+             const updates = {};
              updates[`settings/inventory/${id}/qty`] = newQty;
              updates[`settings/inventory/${id}/lastUpdate`] = Date.now();
              
              window.dbUpdate(window.dbRef(window.db), updates)
-             .then(() => Swal.fire({icon:'success', title:'ปรับยอดและลงบัญชีสำเร็จ', timer: 1500, showConfirmButton:false}));
+             .then(() => Swal.fire({icon:'success', title:'ปรับยอดสำเร็จ', timer: 1500, showConfirmButton:false}));
           }
        });
     }
