@@ -3195,9 +3195,10 @@
         let incMap = window.currentCatIncomeMap || {};
         let expMap = window.currentCatExpenseMap || {};
 
-        let incLabels = Object.keys(incMap);
+        // นำยอดเงินมาต่อท้ายชื่อหมวดหมู่ เพื่อให้แสดงที่ป้ายกำกับ (Legend) ด้านล่างกราฟ
+        let incLabels = Object.keys(incMap).map(k => `${k} (${incMap[k].toLocaleString()} ฿)`);
         let incData = Object.values(incMap);
-        let expLabels = Object.keys(expMap);
+        let expLabels = Object.keys(expMap).map(k => `${k} (${expMap[k].toLocaleString()} ฿)`);
         let expData = Object.values(expMap);
 
         const createChart = (id, type, labels, data, labelName, bgColors) => {
@@ -3323,6 +3324,10 @@
        } else if (role === 'account') {
            ['nav-inventory', 'nav-inv-dashboard', 'nav-accounting'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
            defaultTab = 'tab-inventory';
+       } else if (role === 'manager') {
+           // ผู้จัดการ: เห็นทุกหน้า ยกเว้นหน้าบัญชี (nav-accounting)
+           ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-admin'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
+           defaultTab = 'tab-tables';
        }
 
        if(defaultTab) {
