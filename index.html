@@ -2689,13 +2689,44 @@
        tempCompressedImage = "";
        Swal.fire({
           title: 'เพิ่มรายจ่ายร้าน',
-          html: `<input type="date" id="man-exp-date" class="swal2-input w-75" value="${new Date().toISOString().split('T')[0]}">
-             <input type="text" id="man-exp-desc" class="swal2-input w-75" placeholder="รายการ (เช่น ค่าผัก, ค่าไฟ)">
-             <select id="man-exp-cat" class="swal2-select w-75 mt-2" style="display:flex;"><option value="วัตถุดิบ/สินค้า">ซืัอวัตถุดิบ/สินค้า</option><option value="เงินเดือน/ค่าจ้าง">เงินเดือน/ค่าจ้าง</option><option value="ค่าน้ำไฟ/สาธารณูปโภค">ค่าน้ำไฟ/สาธารณูปโภค</option><option value="จิปาถะ/อื่นๆ">จิปาถะ/อื่นๆ</option><option value="เงินสดสูญหาย/ส่วนต่าง">เงินสดสูญหาย/ปรับปรุงยอด</option></select>
-             <select id="man-exp-wallet" class="swal2-select w-75 mt-2 border-danger text-danger fw-bold" style="display:flex;"><option value="">-- จ่ายเงินออกจากกระเป๋าไหน? --</option><option value="cash">💵 จ่ายจากเงินสดในลิ้นชัก</option><option value="transfer">📱 โอนจ่ายจากบัญชีธนาคาร</option></select>
-             <input type="number" id="man-exp-amt" class="swal2-input w-75 border-danger" placeholder="ยอดเงินรายจ่าย (บาท)">
-             <div class="text-start small fw-bold px-4 mt-3 mb-1 text-muted">แนบสลิป/บิล (ถ้ามี):</div><input type="file" accept="image/*" class="form-control mb-2 mx-auto w-75" onchange="compressMenuImage(event)">`,
-          showCancelButton: true, confirmButtonText: 'บันทึกรายจ่าย',
+          html: `
+             <div class="px-2" style="overflow-x: hidden;">
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">วันที่ทำรายการ:</label>
+                   <input type="date" id="man-exp-date" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">ชื่อรายการ:</label>
+                   <input type="text" id="man-exp-desc" class="form-control" placeholder="เช่น ค่าผัก, ค่าไฟ">
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">หมวดหมู่รายจ่าย:</label>
+                   <select id="man-exp-cat" class="form-select">
+                      <option value="วัตถุดิบ/สินค้า">ซืัอวัตถุดิบ/สินค้า</option>
+                      <option value="เงินเดือน/ค่าจ้าง">เงินเดือน/ค่าจ้าง</option>
+                      <option value="ค่าน้ำไฟ/สาธารณูปโภค">ค่าน้ำไฟ/สาธารณูปโภค</option>
+                      <option value="จิปาถะ/อื่นๆ">จิปาถะ/อื่นๆ</option>
+                      <option value="เงินสดสูญหาย/ส่วนต่าง">เงินสดสูญหาย/ปรับปรุงยอด</option>
+                   </select>
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-danger mb-1">จ่ายเงินออกจากกระเป๋าไหน?</label>
+                   <select id="man-exp-wallet" class="form-select border-danger text-danger fw-bold">
+                      <option value="">-- เลือกกระเป๋าเงิน --</option>
+                      <option value="cash">💵 จ่ายจากเงินสดในลิ้นชัก</option>
+                      <option value="transfer">📱 โอนจ่ายจากบัญชีธนาคาร</option>
+                   </select>
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-danger mb-1">ยอดเงินรายจ่าย (บาท):</label>
+                   <input type="number" id="man-exp-amt" class="form-control border-danger text-danger fw-bold" placeholder="0">
+                </div>
+                <div class="mb-2 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">แนบสลิป/บิล (ถ้ามี):</label>
+                   <input type="file" accept="image/*" class="form-control" onchange="compressMenuImage(event)">
+                </div>
+             </div>`,
+          showCancelButton: true, confirmButtonText: 'บันทึกรายจ่าย', customClass: { popup: 'rounded-4' },
           preConfirm: () => {
              const date = document.getElementById('man-exp-date').value; const desc = document.getElementById('man-exp-desc').value; const cat = document.getElementById('man-exp-cat').value; const wallet = document.getElementById('man-exp-wallet').value; const amt = parseFloat(document.getElementById('man-exp-amt').value) || 0;
              if(!desc) { Swal.showValidationMessage('กรุณาระบุชื่อรายการ'); return false; } if(!wallet) { Swal.showValidationMessage('กรุณาเลือกว่าจ่ายเงินจากไหน'); return false; } if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุยอดเงิน'); return false; }
