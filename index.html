@@ -3045,7 +3045,7 @@
     // ผูกฟังก์ชันเข้ากับ Global Window เพื่อให้คลิกจากเมนูแล้วทำงาน
     window.renderInvCharts = renderInvCharts;
 
-    // ==========================================
+   // ==========================================
     // 🔐 ระบบเข้าสู่ระบบ (Login) & สิทธิ์ใช้งาน (Roles)
     // ==========================================
     window.processLogin = async () => {
@@ -3063,10 +3063,9 @@
               btn.disabled = true;
           }
 
-          // ยิงข้อมูลไปหา Google Sheets (ใส่ Header ให้ปลอดภัยจากการบล็อก CORS)
+          // ยิงข้อมูลไปหา Google Sheets
           const response = await fetch(GAS_URL, {
              method: 'POST',
-             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
              body: JSON.stringify({ action: 'login', username: u, password: p })
           });
           
@@ -3075,7 +3074,7 @@
           try {
               data = JSON.parse(textData);
           } catch (e) {
-              throw new Error("ยังไม่ได้กดอนุญาตสิทธิ์ (Review Permissions) หรือ ยังไม่ได้ Deploy โค้ดเป็น 'เวอร์ชันใหม่' ใน Google Sheets ครับ");
+              throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง (คุณอาจจะยังไม่ได้ปลดล็อกสิทธิ์ หรือยังไม่ได้ Deploy เป็นเวอร์ชัน 'ใหม่')");
           }
 
           if(btn) {
@@ -3099,46 +3098,40 @@
 
     window.applyUserRole = (role, name) => {
        const navs = ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-accounting', 'nav-admin'];
-       // ซ่อนทุกเมนูก่อน
        navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'none'; });
        
        let defaultTab = '';
-
-       // กำหนดสิทธิ์ให้แต่ละประเภท
        if(role === 'admin') {
-           navs.forEach(id => document.getElementById(id).style.display = 'block');
+           navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
            defaultTab = 'tab-tables';
        } else if (role === 'counter') {
-           document.getElementById('nav-tables').style.display = 'block';
+           let el = document.getElementById('nav-tables'); if(el) el.style.display = 'block';
            defaultTab = 'tab-tables';
        } else if (role === 'kitchen') {
-           document.getElementById('nav-kitchen').style.display = 'block';
+           let el = document.getElementById('nav-kitchen'); if(el) el.style.display = 'block';
            defaultTab = 'tab-kitchen';
        } else if (role === 'account') {
-           document.getElementById('nav-inventory').style.display = 'block';
-           document.getElementById('nav-inv-dashboard').style.display = 'block';
-           document.getElementById('nav-accounting').style.display = 'block';
-           defaultTab = 'tab-accounting';
+           ['nav-inventory', 'nav-inv-dashboard', 'nav-accounting'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
+           defaultTab = 'tab-inventory';
        }
 
-       // เด้งไปหน้าแรกของสิทธิ์นั้นๆ อัตโนมัติ
        if(defaultTab) {
            let targetBtn = document.querySelector(`button[data-bs-target="#${defaultTab}"]`);
            if(targetBtn) targetBtn.click();
        }
        
-       // เพิ่มปุ่ม "ออกจากระบบ" ที่แถบด้านบน (Navbar)
        let navContainer = document.querySelector('.navbar .container-fluid');
        let logoutBtn = document.getElementById('btn-logout-nav');
-       if(!logoutBtn) {
+       if(!logoutBtn && navContainer) {
            navContainer.insertAdjacentHTML('beforeend', `<button id="btn-logout-nav" class="btn btn-sm btn-outline-light rounded-pill fw-bold shadow-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกระบบ</button>`);
        }
     };
 
     window.logout = () => {
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('login-user').value = '';
-        document.getElementById('login-pass').value = '';
+        let sc = document.getElementById('login-screen');
+        if(sc) sc.style.display = 'flex';
+        let u = document.getElementById('login-user'); if(u) u.value = '';
+        let p = document.getElementById('login-pass'); if(p) p.value = '';
         let logoutBtn = document.getElementById('btn-logout-nav');
         if(logoutBtn) logoutBtn.remove();
     };
