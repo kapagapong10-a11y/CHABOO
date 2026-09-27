@@ -69,6 +69,28 @@
 </head>
 <body>
 
+  <!-- หน้าต่างเข้าสู่ระบบ (จะบังหน้าจอไว้จนกว่าจะล็อกอินผ่าน) -->
+  <div id="login-screen" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 9999; background: linear-gradient(135deg, #f4f7f6 0%, #e0e0e0 100%);">
+    <div class="card border-0 shadow-lg" style="width: 100%; max-width: 400px; border-radius: 24px; overflow: hidden;">
+      <div class="bg-danger text-center p-4">
+        <i class="fa-solid fa-fire-burner fa-4x text-white mb-2"></i>
+        <h3 class="fw-bold text-white mb-0">Shabu POS</h3>
+      </div>
+      <div class="card-body p-4 p-md-5 text-center bg-white">
+        <p class="text-muted mb-4 fw-bold">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+        <div class="input-group mb-3 shadow-sm rounded-pill overflow-hidden">
+          <span class="input-group-text bg-light border-0 px-4"><i class="fa-solid fa-user text-muted"></i></span>
+          <input type="text" id="login-user" class="form-control form-control-lg border-0 bg-light fw-bold text-primary" placeholder="Username">
+        </div>
+        <div class="input-group mb-4 shadow-sm rounded-pill overflow-hidden">
+          <span class="input-group-text bg-light border-0 px-4"><i class="fa-solid fa-lock text-muted"></i></span>
+          <input type="password" id="login-pass" class="form-control form-control-lg border-0 bg-light text-danger fw-bold" placeholder="Password" onkeypress="if(event.key === 'Enter') processLogin()">
+        </div>
+        <button class="btn btn-danger btn-lg w-100 rounded-pill fw-bold shadow" onclick="processLogin()" id="btn-login"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Navbar -->
   <nav class="navbar sticky-top mb-4 shadow-sm">
     <div class="container-fluid px-3 px-md-4">
@@ -88,38 +110,36 @@
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-3">
-      <ul class="nav nav-pills flex-column" role="tablist">
-        <li class="nav-item mb-2">
+      <li class="nav-item mb-2" id="nav-tables">
           <button class="nav-link active w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-tables" data-bs-dismiss="offcanvas">
             <i class="fa-solid fa-border-all me-3"></i> จัดการโต๊ะ
           </button>
         </li>
-        <li class="nav-item mb-2">
+        <li class="nav-item mb-2" id="nav-kitchen">
           <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-kitchen" data-bs-dismiss="offcanvas">
             <i class="fa-solid fa-display me-3"></i> จอห้องครัว (KDS)
           </button>
         </li>
-        <li class="nav-item mb-2">
+        <li class="nav-item mb-2" id="nav-inventory">
           <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-inventory" data-bs-dismiss="offcanvas">
             <i class="fa-solid fa-boxes-stacked me-3"></i> สต๊อควัตถุดิบ
           </button>
         </li>
-        <li class="nav-item mb-2">
+        <li class="nav-item mb-2" id="nav-inv-dashboard">
           <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-inv-dashboard" data-bs-dismiss="offcanvas" onclick="renderInvCharts()">
             <i class="fa-solid fa-chart-pie me-3"></i> วิเคราะห์สต๊อคสินค้า
           </button>
         </li>
-        <li class="nav-item mb-2">
+        <li class="nav-item mb-2" id="nav-accounting">
           <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-accounting" data-bs-dismiss="offcanvas">
             <i class="fa-solid fa-chart-line me-3"></i> ระบบบัญชี & แดชบอร์ด
           </button>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" id="nav-admin">
           <button class="nav-link w-100 text-start" data-bs-toggle="pill" data-bs-target="#tab-admin" data-bs-dismiss="offcanvas">
             <i class="fa-solid fa-gear me-3"></i> ตั้งค่าแอดมิน
           </button>
         </li>
-      </ul>
     </div>
   </div>
 
@@ -3021,9 +3041,89 @@
         }
     });
 
-    window.renderInvCharts = renderInvCharts;
+    
     // ผูกฟังก์ชันเข้ากับ Global Window เพื่อให้คลิกจากเมนูแล้วทำงาน
     window.renderInvCharts = renderInvCharts;
+
+    // ==========================================
+    // 🔐 ระบบเข้าสู่ระบบ (Login) & สิทธิ์ใช้งาน (Roles)
+    // ==========================================
+    window.processLogin = () => {
+      const u = document.getElementById('login-user').value.trim();
+      const p = document.getElementById('login-pass').value.trim();
+      if(!u || !p) return Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'warning');
+
+      const btn = document.getElementById('btn-login');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
+      btn.disabled = true;
+
+      // ยิงข้อมูลไปให้ Google Sheets ตรวจสอบ
+      fetch(GAS_URL, {
+         method: 'POST',
+         body: JSON.stringify({ action: 'login', username: u, password: p })
+      })
+      .then(res => res.json())
+      .then(data => {
+         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false;
+         if(data.success) {
+            applyUserRole(data.role, data.name);
+            document.getElementById('login-screen').style.display = 'none';
+            Swal.fire({icon:'success', title:`เข้าสู่ระบบสำเร็จ!`, text: `ยินดีต้อนรับ ${data.name}`, timer:1500, showConfirmButton:false});
+         } else {
+            Swal.fire('ข้อผิดพลาด', data.message, 'error');
+         }
+      })
+      .catch(err => {
+         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false;
+         Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อระบบล็อกอินล้มเหลว กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
+      });
+    };
+
+    window.applyUserRole = (role, name) => {
+       const navs = ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-accounting', 'nav-admin'];
+       // ซ่อนทุกเมนูก่อน
+       navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'none'; });
+       
+       let defaultTab = '';
+
+       // กำหนดสิทธิ์ให้แต่ละประเภท
+       if(role === 'admin') {
+           navs.forEach(id => document.getElementById(id).style.display = 'block');
+           defaultTab = 'tab-tables';
+       } else if (role === 'counter') {
+           document.getElementById('nav-tables').style.display = 'block';
+           defaultTab = 'tab-tables';
+       } else if (role === 'kitchen') {
+           document.getElementById('nav-kitchen').style.display = 'block';
+           defaultTab = 'tab-kitchen';
+       } else if (role === 'account') {
+           document.getElementById('nav-inventory').style.display = 'block';
+           document.getElementById('nav-inv-dashboard').style.display = 'block';
+           document.getElementById('nav-accounting').style.display = 'block';
+           defaultTab = 'tab-accounting';
+       }
+
+       // เด้งไปหน้าแรกของสิทธิ์นั้นๆ อัตโนมัติ
+       if(defaultTab) {
+           let targetBtn = document.querySelector(`button[data-bs-target="#${defaultTab}"]`);
+           if(targetBtn) targetBtn.click();
+       }
+       
+       // เพิ่มปุ่ม "ออกจากระบบ" ที่แถบด้านบน (Navbar)
+       let navContainer = document.querySelector('.navbar .container-fluid');
+       let logoutBtn = document.getElementById('btn-logout-nav');
+       if(!logoutBtn) {
+           navContainer.insertAdjacentHTML('beforeend', `<button id="btn-logout-nav" class="btn btn-sm btn-outline-light rounded-pill fw-bold shadow-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกระบบ</button>`);
+       }
+    };
+
+    window.logout = () => {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('login-user').value = '';
+        document.getElementById('login-pass').value = '';
+        let logoutBtn = document.getElementById('btn-logout-nav');
+        if(logoutBtn) logoutBtn.remove();
+    };
     
     // ==========================================
     // 🤖 ระบบผู้พิทักษ์: ตรวจสอบและปริ้นออเดอร์เข้าครัวอัตโนมัติ (Background Monitor)
