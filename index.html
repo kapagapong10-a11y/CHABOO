@@ -70,7 +70,7 @@
 <body>
 
   <!-- หน้าต่างเข้าสู่ระบบ (จะบังหน้าจอไว้จนกว่าจะล็อกอินผ่าน) -->
-  <div id="login-screen" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 1050; background: linear-gradient(135deg, #f4f7f6 0%, #e0e0e0 100%);">
+  <div id="login-screen" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 1000; background: linear-gradient(135deg, #f4f7f6 0%, #e0e0e0 100%);">
     <div class="card border-0 shadow-lg" style="width: 100%; max-width: 400px; border-radius: 24px; overflow: hidden;">
       <div class="bg-danger text-center p-4">
         <i class="fa-solid fa-fire-burner fa-4x text-white mb-2"></i>
@@ -3058,16 +3058,17 @@
               Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'warning');
               return;
           }
-
+          
           const btn = document.getElementById('btn-login');
           if(btn) {
               btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
               btn.disabled = true;
           }
-
-          // ยิงข้อมูลไปหา Google Sheets
+          
+          // ยิงข้อมูลไปหา Google Sheets (เพิ่ม headers ป้องกันเบราว์เซอร์บล็อก)
           const response = await fetch(GAS_URL, {
              method: 'POST',
+             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
              body: JSON.stringify({ action: 'login', username: u, password: p })
           });
           
@@ -3076,14 +3077,14 @@
           try {
               data = JSON.parse(textData);
           } catch (e) {
-              throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง (คุณอาจจะยังไม่ได้ปลดล็อกสิทธิ์ หรือยังไม่ได้ Deploy เป็นเวอร์ชัน 'ใหม่')");
+              throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง (คุณยังไม่ได้ปลดล็อกสิทธิ์ หรือ ยังไม่ได้ Deploy เป็นเวอร์ชัน 'ใหม่' ครับ)");
           }
-
+          
           if(btn) {
               btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; 
               btn.disabled = false;
           }
-
+          
           if(data.success) {
              if(window.applyUserRole) window.applyUserRole(data.role, data.name);
              document.getElementById('login-screen').style.display = 'none';
