@@ -2922,84 +2922,81 @@
     window.filterInventory=filterInventory; window.setInvCategory=setInvCategory;
 
    function renderInvCharts() {
-        // ใช้ setInterval เช็คทุกๆ 0.1 วินาที ว่าหน้าต่างเปิดเสร็จหรือยัง
-        let checkExist = setInterval(() => {
-            let dashboardTab = document.getElementById('tab-inv-dashboard');
+        let tabEl = document.getElementById('tab-inv-dashboard');
+        
+        // ถ้าระบบแท็บยังไม่ได้ติดสถานะ 'active' (หน้าจอยังไม่โชว์) ให้รอ 0.2 วิแล้วกลับมาเช็คใหม่
+        if (!tabEl || !tabEl.classList.contains('active')) {
+            setTimeout(renderInvCharts, 200);
+            return; 
+        }
+
+        // ดึงข้อมูลสต๊อกทั้งหมด
+        let items = Object.values(gInventory || {});
+        if(items.length === 0) return;
+
+        // เรียงข้อมูลตามยอดใช้งานสะสม (จากมากไปน้อย)
+        items.sort((a, b) => (parseFloat(b.totalUsed) || 0) - (parseFloat(a.totalUsed) || 0));
+
+        let labels = [];
+        let currentQtyData = [];
+        let totalUsedData = [];
+        let totalCostData = [];
+        let catCostMap = {};
+
+        // ลูปเก็บข้อมูลเพื่อวาดกราฟ
+        items.forEach(item => {
+            labels.push(item.name);
+            currentQtyData.push(parseFloat(item.qty) || 0);
             
-            // เช็คว่าแท็บถูกกางออกบนหน้าจอแล้วจริงๆ (ความกว้างต้องมากกว่า 0)
-            if (dashboardTab && dashboardTab.offsetWidth > 0) {
-                clearInterval(checkExist); // หยุดเรดาร์ตรวจจับ
-                
-                // ตรวจสอบว่ามีข้อมูลสต๊อกหรือไม่
-                let items = Object.values(gInventory || {});
-                if(items.length === 0) return;
+            let used = parseFloat(item.totalUsed) || 0;
+            totalUsedData.push(used);
+            
+            let costPerUnit = parseFloat(item.cost) || 0;
+            let totalSpent = used * costPerUnit;
+            totalCostData.push(totalSpent);
 
-                // เรียงข้อมูลตามยอดที่ใช้ไป
-                items.sort((a, b) => (parseFloat(b.totalUsed) || 0) - (parseFloat(a.totalUsed) || 0));
+            let cat = item.category || 'ไม่กำหนด';
+            catCostMap[cat] = (catCostMap[cat] || 0) + totalSpent;
+        });
 
-                let labels = [];
-                let currentQtyData = [];
-                let totalUsedData = [];
-                let totalCostData = [];
-                let catCostMap = {};
+        let catLabels = Object.keys(catCostMap);
+        let catCosts = Object.values(catCostMap);
 
-                items.forEach(item => {
-                    labels.push(item.name);
-                    currentQtyData.push(parseFloat(item.qty) || 0);
-                    
-                    let used = parseFloat(item.totalUsed) || 0;
-                    totalUsedData.push(used);
-                    
-                    let costPerUnit = parseFloat(item.cost) || 0;
-                    let totalSpent = used * costPerUnit;
-                    totalCostData.push(totalSpent);
+        // ฟังก์ชันวาดกราฟ
+        const createChart = (id, type, labels, data, labelName, bgColors) => {
+            let canvas = document.getElementById(id);
+            if(!canvas) return; 
 
-                    let cat = item.category || 'ไม่กำหนด';
-                    catCostMap[cat] = (catCostMap[cat] || 0) + totalSpent;
-                });
+            if(invCharts[id]) invCharts[id].destroy();
+            const ctx = canvas.getContext('2d');
+            invCharts[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: labelName,
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderWidth: 1,
+                        borderRadius: type === 'bar' ? 4 : 0
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: (type === 'pie' || type === 'doughnut') } },
+                    scales: (type === 'bar') ? { y: { beginAtZero: true } } : {}
+                }
+            });
+        };
 
-                let catLabels = Object.keys(catCostMap);
-                let catCosts = Object.values(catCostMap);
-
-                const createChart = (id, type, labels, data, labelName, bgColors) => {
-                    let canvas = document.getElementById(id);
-                    if(!canvas) return; 
-
-                    if(invCharts[id]) invCharts[id].destroy();
-                    const ctx = canvas.getContext('2d');
-                    invCharts[id] = new Chart(ctx, {
-                        type: type,
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: labelName,
-                                data: data,
-                                backgroundColor: bgColors,
-                                borderWidth: 1,
-                                borderRadius: type === 'bar' ? 4 : 0
-                            }]
-                        },
-                        options: { 
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: (type === 'pie' || type === 'doughnut') } },
-                            scales: (type === 'bar') ? { y: { beginAtZero: true } } : {}
-                        }
-                    });
-                };
-
-                createChart('chartInvCurrent', 'bar', labels, currentQtyData, 'จำนวนคงเหลือ', 'rgba(13, 110, 253, 0.6)');
-                createChart('chartInvUsed', 'bar', labels, totalUsedData, 'ปริมาณสะสม', 'rgba(220, 53, 69, 0.6)');
-                createChart('chartInvCost', 'bar', labels, totalCostData, 'มูลค่า (บาท)', 'rgba(253, 126, 20, 0.6)');
-                let themeColors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#0dcaf0', '#d63384', '#20c997', '#dc3545', '#6c757d'];
-                createChart('chartInvCatCost', 'doughnut', catLabels, catCosts, 'มูลค่า (บาท)', themeColors);
-            }
-        }, 100); 
-
-        // ระบบป้องกัน: ถ้าโหลดนานเกิน 3 วินาที ให้หยุดรอ
-        setTimeout(() => clearInterval(checkExist), 3000);
+        // สั่งวาดกราฟทั้ง 4 ตัว
+        createChart('chartInvCurrent', 'bar', labels, currentQtyData, 'จำนวนคงเหลือ', 'rgba(13, 110, 253, 0.6)');
+        createChart('chartInvUsed', 'bar', labels, totalUsedData, 'ปริมาณสะสม', 'rgba(220, 53, 69, 0.6)');
+        createChart('chartInvCost', 'bar', labels, totalCostData, 'มูลค่า (บาท)', 'rgba(253, 126, 20, 0.6)');
+        let themeColors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#0dcaf0', '#d63384', '#20c997', '#dc3545', '#6c757d'];
+        createChart('chartInvCatCost', 'doughnut', catLabels, catCosts, 'มูลค่า (บาท)', themeColors);
     }
-
     // ผูกฟังก์ชันเข้ากับ Global Window เพื่อให้คลิกจากเมนูแล้วทำงาน
     window.renderInvCharts = renderInvCharts;
     
