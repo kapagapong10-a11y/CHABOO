@@ -2634,14 +2634,38 @@
     function addManualIncome() {
        Swal.fire({
           title: 'เพิ่มรายรับด้วยตนเอง',
-          html: `<input type="date" id="man-inc-date" class="swal2-input w-75" value="${new Date().toISOString().split('T')[0]}">
-             <input type="text" id="man-inc-desc" class="swal2-input w-75" placeholder="รายการ (เช่น ลูกค้าเหมาจัดเลี้ยง)">
-             <select id="man-inc-cat" class="swal2-select w-75 mt-2" style="display:flex;"><option value="ขายทั่วไป">ขายทั่วไป</option><option value="รายรับอื่นๆ">รายรับอื่นๆ</option></select>
-             <hr class="w-75 mx-auto">
-             <div class="text-start small fw-bold px-5 mb-1 text-primary">ยอดเงินโอน (ถ้ามี):</div><input type="number" id="man-inc-trans" class="swal2-input mt-0 w-75" placeholder="0">
-             <div class="text-start small fw-bold px-5 mb-1 text-success">ยอดเงินสด (ถ้ามี):</div><input type="number" id="man-inc-cash" class="swal2-input mt-0 w-75" placeholder="0">
-             <div class="text-start small fw-bold px-5 mb-1 text-warning">ยอดโครงการรัฐ (ถ้ามี):</div><input type="number" id="man-inc-gov" class="swal2-input mt-0 w-75" placeholder="0">`,
-          showCancelButton: true, confirmButtonText: 'บันทึกรายรับ',
+          html: `
+             <div class="px-2" style="overflow-x: hidden;">
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">วันที่ทำรายการ:</label>
+                   <input type="date" id="man-inc-date" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">ชื่อรายการ:</label>
+                   <input type="text" id="man-inc-desc" class="form-control" placeholder="เช่น ลูกค้าเหมาจัดเลี้ยง">
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-muted mb-1">หมวดหมู่รายรับ:</label>
+                   <select id="man-inc-cat" class="form-select">
+                      <option value="ขายทั่วไป">ขายทั่วไป</option>
+                      <option value="รายรับอื่นๆ">รายรับอื่นๆ</option>
+                   </select>
+                </div>
+                <hr class="my-3 opacity-25">
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-primary mb-1">ยอดเงินโอน (ถ้ามี):</label>
+                   <input type="number" id="man-inc-trans" class="form-control text-primary fw-bold" placeholder="0">
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-success mb-1">ยอดเงินสด (ถ้ามี):</label>
+                   <input type="number" id="man-inc-cash" class="form-control text-success fw-bold" placeholder="0">
+                </div>
+                <div class="mb-3 text-start">
+                   <label class="form-label fw-bold small text-warning mb-1">ยอดโครงการรัฐ (ถ้ามี):</label>
+                   <input type="number" id="man-inc-gov" class="form-control text-warning fw-bold" placeholder="0">
+                </div>
+             </div>`,
+          showCancelButton: true, confirmButtonText: 'บันทึกรายรับ', customClass: { popup: 'rounded-4' },
           preConfirm: () => {
              const date = document.getElementById('man-inc-date').value; const desc = document.getElementById('man-inc-desc').value; const cat = document.getElementById('man-inc-cat').value;
              const trans = parseFloat(document.getElementById('man-inc-trans').value) || 0; const cash = parseFloat(document.getElementById('man-inc-cash').value) || 0; const gov = parseFloat(document.getElementById('man-inc-gov').value) || 0; const total = trans + cash + gov;
