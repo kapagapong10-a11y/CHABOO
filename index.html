@@ -3186,16 +3186,24 @@
     }
 
     let accCharts = {};
-    window.renderAccCategoryCharts = () => {
+
+    function renderAccCategoryCharts() {
         let tabEl = document.getElementById('pills-category');
-        if (!tabEl || tabEl.offsetWidth === 0) return;
+        // เช็คชัวร์ๆ ว่าหน้าต่างมีคลาส active (โชว์บนจอแล้วจริงๆ)
+        if (!tabEl || !tabEl.classList.contains('active')) return;
 
         let incMap = window.currentCatIncomeMap || {};
         let expMap = window.currentCatExpenseMap || {};
 
+        let incLabels = Object.keys(incMap);
+        let incData = Object.values(incMap);
+        let expLabels = Object.keys(expMap);
+        let expData = Object.values(expMap);
+
         const createChart = (id, type, labels, data, labelName, bgColors) => {
             let canvas = document.getElementById(id);
             if(!canvas) return; 
+            
             if(accCharts[id]) accCharts[id].destroy();
             const ctx = canvas.getContext('2d');
             accCharts[id] = new Chart(ctx, {
@@ -3213,35 +3221,31 @@
                 options: { 
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: (type === 'pie' || type === 'doughnut'), position: 'bottom' } },
-                    scales: (type === 'bar') ? { y: { beginAtZero: true } } : {}
+                    plugins: { legend: { display: true, position: 'bottom' } }
                 }
             });
         };
 
-        let incLabels = Object.keys(incMap);
-        let incData = Object.values(incMap);
-        let expLabels = Object.keys(expMap);
-        let expData = Object.values(expMap);
-
-        // สีของกราฟรายรับ (โทนเย็น/สว่าง) และ รายจ่าย (โทนร้อน/เข้ม)
         let themeColorsInc = ['#198754', '#20c997', '#0dcaf0', '#0d6efd', '#6f42c1'];
         let themeColorsExp = ['#dc3545', '#fd7e14', '#ffc107', '#d63384', '#6c757d'];
 
         createChart('chartAccIncome', 'doughnut', incLabels, incData, 'มูลค่า (บาท)', themeColorsInc);
         createChart('chartAccExpense', 'doughnut', expLabels, expData, 'มูลค่า (บาท)', themeColorsExp);
-    };
+    }
+
+    // ผูกฟังก์ชันเข้ากับ window อย่างชัดเจน
+    window.renderAccCategoryCharts = renderAccCategoryCharts;
 
     // 🌟 ดักจับตอนที่ Bootstrap เปิดหน้าต่างเสร็จสมบูรณ์ 100%
     document.addEventListener('shown.bs.tab', function (event) {
-        if (event.target.getAttribute('data-bs-target') === '#tab-inv-dashboard') {
-            setTimeout(renderInvCharts, 100); 
+        let target = event.target.getAttribute('data-bs-target') || event.target.hash;
+        if (target === '#tab-inv-dashboard' && typeof window.renderInvCharts === 'function') {
+            setTimeout(window.renderInvCharts, 150); 
         }
-        if (event.target.getAttribute('data-bs-target') === '#pills-category') {
-            setTimeout(window.renderAccCategoryCharts, 100);
+        if (target === '#pills-category' && typeof window.renderAccCategoryCharts === 'function') {
+            setTimeout(window.renderAccCategoryCharts, 150);
         }
     });
-
 
    // ==========================================
     // 🔐 ระบบเข้าสู่ระบบ (Login) & สิทธิ์ใช้งาน (Roles)
