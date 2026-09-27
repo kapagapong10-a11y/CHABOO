@@ -2883,12 +2883,12 @@
     window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.addInventoryItem=addInventoryItem; window.adjustStock=adjustStock;window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer; window.openPrinterSettings=openPrinterSettings; window.connectUSBPrinter=connectUSBPrinter; window.testPrintUSB=testPrintUSB;
     window.filterInventory=filterInventory; window.setInvCategory=setInvCategory;
 
-    // ==========================================
+   // ==========================================
     // 📊 ระบบ Dashboard วิเคราะห์สต๊อกวัตถุดิบ
     // ==========================================
-    let invCharts = {}; // เก็บออบเจ็กต์กราฟเพื่อลบและวาดใหม่
+    let invCharts = {};
 
-    window.openInventoryDashboard = () => {
+    function openInventoryDashboard() {
         let modalEl = document.getElementById('invDashboardModal');
         if (!modalEl) {
             const html = `
@@ -2901,28 +2901,24 @@
                   </div>
                   <div class="modal-body p-4">
                     <div class="row g-4">
-                      <!-- กราฟที่ 1: ยอดคงเหลือปัจจุบัน -->
                       <div class="col-12 col-lg-6">
                          <div class="bg-white p-3 rounded-4 shadow-sm border h-100">
                             <h6 class="fw-bold text-primary mb-3 text-center">1. ปริมาณสต๊อกคงเหลือปัจจุบัน</h6>
                             <canvas id="chartInvCurrent"></canvas>
                          </div>
                       </div>
-                      <!-- กราฟที่ 2: ยอดใช้งานสะสม -->
                       <div class="col-12 col-lg-6">
                          <div class="bg-white p-3 rounded-4 shadow-sm border h-100">
                             <h6 class="fw-bold text-danger mb-3 text-center">2. สถิติการใช้งานสะสม (ปริมาณที่ใช้ไป)</h6>
                             <canvas id="chartInvUsed"></canvas>
                          </div>
                       </div>
-                      <!-- กราฟที่ 3: มูลค่าเงินที่ใช้ไป (รายตัว) -->
                       <div class="col-12 col-lg-6">
                          <div class="bg-white p-3 rounded-4 shadow-sm border h-100">
                             <h6 class="fw-bold text-warning text-dark mb-3 text-center">3. มูลค่าเงินทุนที่จมไปกับวัตถุดิบ (บาท)</h6>
                             <canvas id="chartInvCost"></canvas>
                          </div>
                       </div>
-                      <!-- กราฟที่ 4: สรุปมูลค่าตามหมวดหมู่ -->
                       <div class="col-12 col-lg-6">
                          <div class="bg-white p-3 rounded-4 shadow-sm border h-100">
                             <h6 class="fw-bold text-success mb-3 text-center">4. สรุปมูลค่าที่ใช้ไป แยกตามหมวดหมู่ (บาท)</h6>
@@ -2938,18 +2934,18 @@
             modalEl = document.getElementById('invDashboardModal');
         }
         
-        let modal = new bootstrap.Modal(modalEl);
+        // ใช้ getOrCreateInstance เพื่อให้ชัวร์ว่า Bootstrap เปิดหน้าต่างได้แน่นอน
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
 
-        // หน่วงเวลาให้ Modal เปิดเสร็จก่อนค่อยวาดกราฟ (ป้องกันกราฟเบี้ยว)
+        // หน่วงเวลาให้หน้าต่างกางออกเสร็จก่อน แล้วค่อยวาดกราฟ
         setTimeout(() => { renderInvCharts(); }, 400);
-    };
+    }
 
-    window.renderInvCharts = () => {
+    function renderInvCharts() {
         let items = Object.values(gInventory || {});
         if(items.length === 0) return;
 
-        // จัดเรียงตามยอดที่ใช้ไปสะสม (เยอะสุดขึ้นก่อน)
         items.sort((a, b) => (parseFloat(b.totalUsed) || 0) - (parseFloat(a.totalUsed) || 0));
 
         let labels = [];
@@ -2966,7 +2962,7 @@
             totalUsedData.push(used);
             
             let costPerUnit = parseFloat(item.cost) || 0;
-            let totalSpent = used * costPerUnit; // มูลค่า = จำนวนที่เคยใช้ไป * ราคาต่อหน่วย
+            let totalSpent = used * costPerUnit;
             totalCostData.push(totalSpent);
 
             let cat = item.category || 'ไม่กำหนด';
@@ -2976,7 +2972,6 @@
         let catLabels = Object.keys(catCostMap);
         let catCosts = Object.values(catCostMap);
 
-        // ฟังก์ชันช่วยสร้างและทำลายกราฟเก่าทิ้ง
         const createChart = (id, type, labels, data, labelName, bgColors) => {
             if(invCharts[id]) invCharts[id].destroy();
             const ctx = document.getElementById(id).getContext('2d');
@@ -3000,19 +2995,16 @@
             });
         };
 
-        // 1. กราฟแท่ง สีฟ้า (คงเหลือ)
         createChart('chartInvCurrent', 'bar', labels, currentQtyData, 'จำนวนคงเหลือ', 'rgba(13, 110, 253, 0.6)');
-        
-        // 2. กราฟแท่ง สีแดง (ปริมาณที่ใช้ไป)
         createChart('chartInvUsed', 'bar', labels, totalUsedData, 'ปริมาณสะสม', 'rgba(220, 53, 69, 0.6)');
-        
-        // 3. กราฟแท่ง สีเหลือง (มูลค่าเงินที่ใช้ไปรายตัว)
         createChart('chartInvCost', 'bar', labels, totalCostData, 'มูลค่า (บาท)', 'rgba(253, 126, 20, 0.6)');
-        
-        // 4. กราฟโดนัท สีสันสดใส (มูลค่ารวมรายหมวดหมู่)
         let themeColors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#0dcaf0', '#d63384', '#20c997', '#dc3545', '#6c757d'];
         createChart('chartInvCatCost', 'doughnut', catLabels, catCosts, 'มูลค่า (บาท)', themeColors);
-    };
+    }
+
+    // ผูกฟังก์ชันเข้ากับ Global Window เพื่อให้ HTML ปุ่มมองเห็นแน่นอน 100%
+    window.openInventoryDashboard = openInventoryDashboard;
+    window.renderInvCharts = renderInvCharts;
     
     // ==========================================
     // 🤖 ระบบผู้พิทักษ์: ตรวจสอบและปริ้นออเดอร์เข้าครัวอัตโนมัติ (Background Monitor)
