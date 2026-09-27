@@ -3116,14 +3116,14 @@
               Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'warning');
               return;
           }
-          
+
           const btn = document.getElementById('btn-login');
           if(btn) {
               btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
               btn.disabled = true;
           }
-          
-          // ยิงข้อมูลไปหา Google Sheets (เพิ่ม headers ป้องกันเบราว์เซอร์บล็อก)
+
+          // ยิงข้อมูลไปหา Google Sheets
           const response = await fetch(GAS_URL, {
              method: 'POST',
              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -3137,15 +3137,22 @@
           } catch (e) {
               throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง (คุณยังไม่ได้ปลดล็อกสิทธิ์ หรือ ยังไม่ได้ Deploy เป็นเวอร์ชัน 'ใหม่' ครับ)");
           }
-          
+
           if(btn) {
               btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; 
               btn.disabled = false;
           }
-          
+
           if(data.success) {
              if(window.applyUserRole) window.applyUserRole(data.role, data.name);
-             document.getElementById('login-screen').style.display = 'none';
+             
+             // 🌟 สั่งซ่อนหน้าล็อกอิน (แก้ปัญหา Bootstrap ดื้อ)
+             let loginScreen = document.getElementById('login-screen');
+             if (loginScreen) {
+                 loginScreen.classList.remove('d-flex');
+                 loginScreen.classList.add('d-none');
+             }
+             
              Swal.fire({icon:'success', title:'เข้าสู่ระบบสำเร็จ!', text: `ยินดีต้อนรับ ${data.name}`, timer:1500, showConfirmButton:false});
           } else {
              Swal.fire('ข้อผิดพลาด', data.message, 'error');
@@ -3190,7 +3197,11 @@
 
     window.logout = () => {
         let sc = document.getElementById('login-screen');
-        if(sc) sc.style.display = 'flex';
+        if(sc) {
+            // 🌟 สั่งโชว์หน้าล็อกอินตอนกดออกระบบ
+            sc.classList.remove('d-none');
+            sc.classList.add('d-flex');
+        }
         let u = document.getElementById('login-user'); if(u) u.value = '';
         let p = document.getElementById('login-pass'); if(p) p.value = '';
         let logoutBtn = document.getElementById('btn-logout-nav');
