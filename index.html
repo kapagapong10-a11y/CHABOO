@@ -267,13 +267,13 @@
 
       <!-- Accounting Tab -->
       <div class="tab-pane fade" id="tab-accounting">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border gap-2">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 bg-white p-3 rounded-4 shadow-sm border gap-3">
           <h4 class="fw-bold mb-0 text-success"><i class="fa-solid fa-chart-line"></i> ระบบบัญชีร้าน</h4>
-          <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-outline-secondary fw-bold" onclick="setInitialBalance()"><i class="fa-solid fa-coins"></i> ตั้งค่ายอดเริ่มต้น</button>
-            <button class="btn btn-outline-info fw-bold" onclick="addCashFlowTransfer()"><i class="fa-solid fa-money-bill-transfer"></i> โยกย้ายเงิน</button>
-            <button class="btn btn-success fw-bold text-white shadow-sm" onclick="addManualIncome()"><i class="fa-solid fa-plus"></i> เพิ่มรายรับ</button>
-            <button class="btn btn-danger fw-bold text-white shadow-sm" onclick="addManualExpense()"><i class="fa-solid fa-minus"></i> เพิ่มรายจ่าย</button>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <button class="btn btn-outline-secondary fw-bold px-3 py-2 d-flex align-items-center" onclick="setInitialBalance()"><i class="fa-solid fa-coins me-2"></i> ตั้งค่ายอดเริ่มต้น</button>
+            <button class="btn btn-outline-info fw-bold px-3 py-2 d-flex align-items-center" onclick="addCashFlowTransfer()"><i class="fa-solid fa-money-bill-transfer me-2"></i> โยกย้ายเงิน</button>
+            <button class="btn btn-success fw-bold text-white shadow-sm px-3 py-2 d-flex align-items-center" onclick="addManualIncome()"><i class="fa-solid fa-plus me-2"></i> เพิ่มรายรับ</button>
+            <button class="btn btn-danger fw-bold text-white shadow-sm px-3 py-2 d-flex align-items-center" onclick="addManualExpense()"><i class="fa-solid fa-minus me-2"></i> เพิ่มรายจ่าย</button>
           </div>
         </div>
 
@@ -293,6 +293,9 @@
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#pills-overview" type="button" role="tab"><i class="fa-solid fa-calendar-days"></i> สรุปภาพรวม</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#pills-category" type="button" role="tab"><i class="fa-solid fa-chart-pie"></i> สรุปแยกหมวดหมู่</button>
           </li>
         </ul>
 
@@ -377,6 +380,25 @@
                  </div>
              </div>
           </div>
+          
+          <!-- Tab 4: สรุปแยกหมวดหมู่ (กราฟ) -->
+          <div class="tab-pane fade" id="pills-category" role="tabpanel">
+             <div class="row g-4">
+                <div class="col-12 col-md-6">
+                   <div class="bg-white p-3 rounded-4 shadow-sm border h-100">
+                      <h5 class="fw-bold text-success mb-3 text-center"><i class="fa-solid fa-arrow-trend-up"></i> กราฟรายรับแยกตามหมวดหมู่</h5>
+                      <div style="position: relative; height:45vh; width:100%;"><canvas id="chartAccIncome"></canvas></div>
+                   </div>
+                </div>
+                <div class="col-12 col-md-6">
+                   <div class="bg-white p-3 rounded-4 shadow-sm border h-100">
+                      <h5 class="fw-bold text-danger mb-3 text-center"><i class="fa-solid fa-arrow-trend-down"></i> กราฟรายจ่ายแยกตามหมวดหมู่</h5>
+                      <div style="position: relative; height:45vh; width:100%;"><canvas id="chartAccExpense"></canvas></div>
+                   </div>
+                </div>
+             </div>
+          </div>
+          
         </div>
       </div>
       
@@ -2402,6 +2424,9 @@
        let cur = { inCash: 0, inTransfer: 0, inGov: 0, outCash: 0, outTransfer: 0, outGov: 0, tfCash: 0, tfTransfer: 0, tfGov: 0 };
        let bf = { cash: initCash, transfer: initTransfer, gov: initGov };
        let tbodyStatement = ''; let statementRecords = [];
+       // เพิ่มตัวแปรเก็บข้อมูลกราฟ
+       let catIncomeMap = {};
+       let catExpenseMap = {};
        
        let dailyData = {}; 
        let allTx = Object.entries(gAccounting).map(([id, data]) => ({id, ...data})).sort((a, b) => a.date - b.date);
@@ -2450,6 +2475,15 @@
              cur.inCash += iCash; cur.inTransfer += iTransfer; cur.inGov += iGov;
              cur.outCash += oCash; cur.outTransfer += oTransfer; cur.outGov += oGov;
              cur.tfCash += tfCash; cur.tfTransfer += tfTransfer; cur.tfGov += tfGov;
+             
+             // แอบเก็บยอดรวมแยกตามหมวดหมู่
+             if (item.type === 'income') {
+                 let cat = item.category || 'รายได้อื่นๆ';
+                 catIncomeMap[cat] = (catIncomeMap[cat] || 0) + inTotal;
+             } else if (item.type === 'expense') {
+                 let cat = item.category || 'รายจ่ายอื่นๆ';
+                 catExpenseMap[cat] = (catExpenseMap[cat] || 0) + outTotal;
+             }
              
              let catBadge = item.category ? `<span class="badge bg-secondary opacity-75">${item.category}</span>` : '-';
              let descText = item.description;
@@ -2557,6 +2591,11 @@
        
        if(filteredDays.length === 0) overviewHtml = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลสรุปในช่วงเวลานี้</td></tr>`;
        document.getElementById('overview-body').innerHTML = overviewHtml;
+       
+       // โยนข้อมูลหมวดหมู่ไปวาดกราฟ
+       window.currentCatIncomeMap = catIncomeMap;
+       window.currentCatExpenseMap = catExpenseMap;
+       if(window.renderAccCategoryCharts) window.renderAccCategoryCharts();
     }
 
     function setInitialBalance() {
@@ -3146,10 +3185,60 @@
         createChart('chartInvCatCost', 'doughnut', catLabels, catCosts, 'มูลค่า (บาท)', themeColors);
     }
 
-    // 🌟 พระเอกอยู่ตรงนี้: ดักจับตอนที่ Bootstrap เปิดหน้าต่างเสร็จสมบูรณ์ 100%
+    let accCharts = {};
+    window.renderAccCategoryCharts = () => {
+        let tabEl = document.getElementById('pills-category');
+        if (!tabEl || tabEl.offsetWidth === 0) return;
+
+        let incMap = window.currentCatIncomeMap || {};
+        let expMap = window.currentCatExpenseMap || {};
+
+        const createChart = (id, type, labels, data, labelName, bgColors) => {
+            let canvas = document.getElementById(id);
+            if(!canvas) return; 
+            if(accCharts[id]) accCharts[id].destroy();
+            const ctx = canvas.getContext('2d');
+            accCharts[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: labelName,
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderWidth: 1,
+                        borderRadius: type === 'bar' ? 4 : 0
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: (type === 'pie' || type === 'doughnut'), position: 'bottom' } },
+                    scales: (type === 'bar') ? { y: { beginAtZero: true } } : {}
+                }
+            });
+        };
+
+        let incLabels = Object.keys(incMap);
+        let incData = Object.values(incMap);
+        let expLabels = Object.keys(expMap);
+        let expData = Object.values(expMap);
+
+        // สีของกราฟรายรับ (โทนเย็น/สว่าง) และ รายจ่าย (โทนร้อน/เข้ม)
+        let themeColorsInc = ['#198754', '#20c997', '#0dcaf0', '#0d6efd', '#6f42c1'];
+        let themeColorsExp = ['#dc3545', '#fd7e14', '#ffc107', '#d63384', '#6c757d'];
+
+        createChart('chartAccIncome', 'doughnut', incLabels, incData, 'มูลค่า (บาท)', themeColorsInc);
+        createChart('chartAccExpense', 'doughnut', expLabels, expData, 'มูลค่า (บาท)', themeColorsExp);
+    };
+
+    // 🌟 ดักจับตอนที่ Bootstrap เปิดหน้าต่างเสร็จสมบูรณ์ 100%
     document.addEventListener('shown.bs.tab', function (event) {
         if (event.target.getAttribute('data-bs-target') === '#tab-inv-dashboard') {
-            setTimeout(renderInvCharts, 100); // สั่งวาดกราฟทันที
+            setTimeout(renderInvCharts, 100); 
+        }
+        if (event.target.getAttribute('data-bs-target') === '#pills-category') {
+            setTimeout(window.renderAccCategoryCharts, 100);
         }
     });
 
