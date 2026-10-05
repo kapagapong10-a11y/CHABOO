@@ -1058,7 +1058,7 @@
        }
     }
 
-    // สร้างตั๋วปริ้นเข้าครัว
+    // สร้างตั๋วปริ้นเข้าครัว (ฉบับแยกบิลตามหมวดหมู่)
     async function printKitchenTicket(tableName, items, kitchenConfig) {
       let buffer = [];
       const addCmd = (cmd) => buffer = buffer.concat(cmd);
@@ -1070,31 +1070,51 @@
         buffer.push(0x0A);
       };
 
-      addCmd([0x1B, 0x40]); // Init Printer
-      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน
-      addCmd([0x1B, 0x74, 26]); // ภาษาไทย CP874
-
-      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
-      addCmd([0x1D, 0x21, 0x11]); // ขยายตัวอักษร 2 เท่า
-      addText(`** โต๊ะ: ${tableName} **`);
-      addCmd([0x1D, 0x21, 0x00]); // ขนาดอักษรปกติ
-      addText(`เวลา: ${new Date().toLocaleTimeString('th-TH')}`);
-      addText(`สถานี: ${kitchenConfig.name}`);
-      addText('--------------------------------');
-
-      addCmd([0x1B, 0x61, 0]); // ชิดซ้าย
-      addCmd([0x1B, 0x45, 1]); // ตัวหนา
+      // 🌟 นำรายการอาหารทั้งหมดมาจัดกลุ่มตามหมวดหมู่ก่อน
+      let groupedItems = {};
       items.forEach(item => {
-         addCmd([0x1D, 0x21, 0x01]); // ความสูง 2 เท่า
-         addText(`${item.name} x${item.qty}`);
+          let cat = item.category || 'ทั่วไป'; // ถ้าไม่มีหมวดหมู่ให้ใส่เป็น 'ทั่วไป'
+          if (!groupedItems[cat]) groupedItems[cat] = [];
+          groupedItems[cat].push(item);
       });
-      addCmd([0x1B, 0x45, 0]); // ยกเลิกตัวหนา
-      addCmd([0x1D, 0x21, 0x00]); 
-      addText('--------------------------------');
-      addText(' '); addText(' '); addText(' ');
-      addCmd([0x1D, 0x56, 0x41, 0x10]); // ตัดกระดาษ
 
-      // ส่งพิมพ์
+      // 🌟 วนลูปสร้างบิลสั่งพิมพ์ และตัดกระดาษ "แยกทีละหมวดหมู่"
+      for (const [catName, catItems] of Object.entries(groupedItems)) {
+          addCmd([0x1B, 0x40]); // Init Printer (รีเซ็ตค่าเครื่องพิมพ์สำหรับบิลใหม่)
+          addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน
+          addCmd([0x1B, 0x74, 26]); // ภาษาไทย CP874
+          
+          // --- ส่วนหัวบิล ---
+          addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+          addCmd([0x1D, 0x21, 0x11]); // ขยายตัวอักษร 2 เท่า (กว้าง+สูง)
+          addText(`** โต๊ะ: ${tableName} **`);
+          
+          addCmd([0x1D, 0x21, 0x01]); // ขยายเฉพาะความสูงตัวอักษร
+          addText(`หมวด: ${catName}`); // แสดงชื่อหมวดหมู่
+          
+          addCmd([0x1D, 0x21, 0x00]); // ขนาดอักษรปกติ
+          addText(`เวลา: ${new Date().toLocaleTimeString('th-TH')}`);
+          addText(`สถานี: ${kitchenConfig.name}`);
+          addText('--------------------------------');
+          
+          // --- ส่วนรายการอาหาร ---
+          addCmd([0x1B, 0x61, 0]); // ชิดซ้าย
+          addCmd([0x1B, 0x45, 1]); // ตัวหนา
+          catItems.forEach(item => {
+             addCmd([0x1D, 0x21, 0x01]); // ความสูง 2 เท่า
+             addText(`${item.name} x${item.qty}`);
+          });
+          
+          // --- ส่วนท้ายบิลและคำสั่งตัดกระดาษ ---
+          addCmd([0x1B, 0x45, 0]); // ยกเลิกตัวหนา
+          addCmd([0x1D, 0x21, 0x00]); // ขนาดปกติ
+          addText('--------------------------------');
+          addText(' '); addText(' '); addText(' '); // ดันกระดาษขึ้นก่อนตัด
+          
+          addCmd([0x1D, 0x56, 0x41, 0x10]); // ✂️ สั่งตัดกระดาษ (ทำทุกครั้งที่จบ 1 หมวดหมู่)
+      }
+
+      // ส่งข้อมูลคำสั่งทั้งหมดเข้าเครื่องพิมพ์ทีเดียว
       if (kitchenConfig.connection === 'usb' && kitchenPrinterDevice) {
          try {
            let endpointOut = null;
@@ -1105,7 +1125,6 @@
          } catch (err) { console.error("USB Print Error:", err); }
       } 
       else if (kitchenConfig.connection === 'lan' && kitchenConfig.ipAddress) {
-         // ยิงผ่าน HTTP POST (สำหรับเครื่องปริ้น LAN ที่รองรับ Web Server)
          fetch(`http://${kitchenConfig.ipAddress}/print`, {
             method: 'POST', mode: 'no-cors',
             body: new Uint8Array(buffer)
