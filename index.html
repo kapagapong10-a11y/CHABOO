@@ -2868,13 +2868,12 @@
         if(qty > 0) { customers[inp.dataset.name] = qty; totalPeople += qty; } 
       });
       if(totalPeople === 0) return Swal.fire('ผิดพลาด', 'กรุณาระบุจำนวนลูกค้าอย่างน้อย 1 คน', 'warning');
-      let soups = []; 
-      document.querySelectorAll('.ci-soup-cb:checked').forEach(cb => soups.push(cb.value)); 
-      if(soups.length === 0) return Swal.fire('ผิดพลาด', 'กรุณาเลือกน้ำซุปอย่างน้อย 1 อย่าง', 'warning');
+      
+      // 🌟 ให้ข้ามการบังคับเลือกน้ำซุปไปเลย เพื่อให้ลูกค้าไปเลือกเองที่โต๊ะ
       let currentTotal = parseFloat(document.getElementById('ci-total').innerText.replace(/[^0-9.-]+/g,""));
       Swal.fire({ title: 'กำลังเปิดโต๊ะ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       window.dbUpdate(window.dbRef(window.db, 'tables/' + id), { 
-        status: 'eating', checkInTime: Date.now(), rateName: gRates[rateId].name, customers: customers, soups: soups.join(', '), currentTotal: currentTotal 
+        status: 'eating', checkInTime: Date.now(), rateName: gRates[rateId].name, customers: customers, soups: '', currentTotal: currentTotal 
       }).then(() => { Swal.close(); modals.checkIn.hide(); });
     }
 
