@@ -97,7 +97,7 @@
     
     let tableData = null;
     let allowedMenus = {};
-    let cart = {}; // รูปแบบ: { mId: { name, price, qty, checked } }
+    let cart = {}; // รูปแบบ: { cartKey: { mId, name, price, option, qty, checked } }
     
     async function initClient() {
       if(!TABLE_ID) {
@@ -142,7 +142,7 @@
           }
         });
 
-        // สร้าง HTML แถบปุ่มหมวดหมู่ (เลื่อนซ้ายขวาได้)
+        // สร้าง HTML แถบปุ่มหมวดหมู่
         let html = '<style>#category-filters::-webkit-scrollbar { display: none; }</style>';
         html += '<div class="d-flex gap-2 overflow-auto pb-1 mb-2" style="white-space: nowrap; scrollbar-width: none; -ms-overflow-style: none;" id="category-filters">';
         html += `<button class="btn btn-danger rounded-pill px-4 py-1 btn-filter shadow-sm" onclick="filterByCategory('ทั้งหมด', this)">ทั้งหมด</button>`;
@@ -159,21 +159,29 @@
               
           groupedMenus[cat].forEach(m => {
             const priceTag = m.price > 0 ? `<span class="text-danger fw-bold small">+${m.price}฿</span>` : `<span class="badge bg-success" style="font-size:0.6rem;">ฟรี</span>`;
-            const imgHtml = (m.image && m.image.trim() !== '') ? `<img src="${m.image}" class="menu-img">` : `<div class="menu-img d-flex justify-content-center align-items-center"><i class="fa-solid fa-utensils text-muted"></i></div>`;
+            const imgHtml = (m.image && m.image.trim() !== '') ? `<img src="${m.image}" class="menu-img shadow-sm">` : `<div class="menu-img border d-flex justify-content-center align-items-center bg-light shadow-sm"><i class="fa-solid fa-utensils text-muted"></i></div>`;
             
-            // เพิ่ม data-cat สำหรับการกรอง
+            // 🌟 เช็คว่ามีตัวเลือกหรือไม่ ถ้ามีโชว์ปุ่ม "เลือก" ถ้าไม่มีโชว์ "+/-"
+            let controlHtml = '';
+            if (m.options && m.options.trim() !== '') {
+                controlHtml = `<button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3 py-1 shadow-sm" onclick="promptOptions('${m.id}')">เลือก</button>`;
+            } else {
+                controlHtml = `
+                <div class="d-flex align-items-center">
+                  <button class="qty-btn shadow-sm" onclick="updateCart('${m.id}', '', -1)">-</button>
+                  <span class="mx-2 fw-bold fs-5" id="qty_${m.id}">0</span>
+                  <button class="qty-btn plus shadow-sm" onclick="updateCart('${m.id}', '', 1)">+</button>
+                </div>`;
+            }
+
             html += `
-              <div class="menu-card menu-item-card" data-name="${m.name.toLowerCase()}" data-cat="${cat}">
+              <div class="menu-card menu-item-card border-0" data-name="${m.name.toLowerCase()}" data-cat="${cat}">
                 ${imgHtml}
                 <div class="flex-grow-1">
-                  <div class="fw-bold text-dark lh-sm mb-1">${m.name}</div>
+                  <div class="fw-bold text-dark lh-sm mb-1 fs-6">${m.name}</div>
                   <div>${priceTag}</div>
                 </div>
-                <div class="d-flex align-items-center">
-                  <button class="qty-btn" onclick="updateCart('${m.id}', -1)">-</button>
-                  <span class="mx-2 fw-bold fs-5" id="qty_${m.id}">0</span>
-                  <button class="qty-btn plus" onclick="updateCart('${m.id}', 1)">+</button>
-                </div>
+                ${controlHtml}
               </div>`;
           });
           html += `</div>`;
@@ -182,96 +190,109 @@
         document.getElementById('menu-container').innerHTML = html || '<div class="text-center mt-5 text-muted">ไม่มีรายการอาหาร</div>';
       } catch (err) { alert("การเชื่อมต่อล้มเหลว: " + err.message); }
     }
+
+    // 🌟 หน้าต่างเด้งให้เลือกตัวเลือกเพิ่มเติม
+    window.promptOptions = (mId) => {
+      const m = allowedMenus[mId];
+      const opts = m.options.split(',').map(o => o.trim()).filter(o => o !== '');
+      let radioHtml = '<div class="text-start mt-3 px-2">';
+      opts.forEach((o, idx) => {
+          radioHtml += `
+          <div class="form-check mb-2 p-3 border rounded shadow-sm bg-light" onclick="document.getElementById('opt_${idx}').checked = true" style="cursor: pointer;">
+            <input class="form-check-input mt-1" type="radio" name="menuOption" id="opt_${idx}" value="${o}" style="transform: scale(1.3);" ${idx===0?'checked':''}>
+            <label class="form-check-label w-100 ms-2 fw-bold" for="opt_${idx}">${o}</label>
+          </div>`;
+      });
+      radioHtml += '</div>';
+
+      Swal.fire({
+          title: `<span class="text-danger fw-bold fs-4">${m.name}</span><br><span class="fs-6 text-muted fw-normal">เลือกรายละเอียดเพิ่มเติม</span>`,
+          html: radioHtml,
+          showCancelButton: true,
+          confirmButtonText: 'หยิบใส่ตะกร้า',
+          cancelButtonText: 'ยกเลิก',
+          customClass: { popup: 'rounded-4' },
+          preConfirm: () => {
+              const selected = document.querySelector('input[name="menuOption"]:checked');
+              if(!selected) { Swal.showValidationMessage('กรุณาเลือก 1 รายการ'); return false; }
+              return selected.value;
+          }
+      }).then(res => {
+          if(res.isConfirmed) {
+              updateCart(mId, res.value, 1);
+              Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'เพิ่มลงตะกร้าแล้ว', showConfirmButton: false, timer: 1000 });
+          }
+      });
+    };
     
     // ----------------------------------------------------
     // ฟังก์ชันค้นหาและกรองหมวดหมู่เมนู
     // ----------------------------------------------------
     let currentCategory = 'ทั้งหมด';
-
     window.filterByCategory = (catName, btnEl) => {
       currentCategory = catName;
-      
-      // อัปเดตสีปุ่มหมวดหมู่
       document.querySelectorAll('.btn-filter').forEach(btn => {
-        btn.classList.remove('btn-danger');
-        btn.classList.add('btn-outline-danger', 'bg-white');
+        btn.classList.remove('btn-danger'); btn.classList.add('btn-outline-danger', 'bg-white');
       });
-      btnEl.classList.remove('btn-outline-danger', 'bg-white');
-      btnEl.classList.add('btn-danger');
-
+      btnEl.classList.remove('btn-outline-danger', 'bg-white'); btnEl.classList.add('btn-danger');
       applyFilters();
     };
-
-    window.filterMenus = () => {
-      applyFilters();
-    };
-
+    window.filterMenus = () => { applyFilters(); };
     function applyFilters() {
       let input = document.getElementById('search-input').value.toLowerCase();
       let sections = document.querySelectorAll('.category-section');
-      
       sections.forEach(sec => {
         let secCat = sec.dataset.category;
-        // ตรวจสอบว่าหมวดหมู่นี้ตรงกับที่กดเลือกหรือไม่
         let isCatMatch = (currentCategory === 'ทั้งหมด' || currentCategory === secCat);
-        
         let visibleCount = 0;
         let cards = sec.querySelectorAll('.menu-item-card');
         
         cards.forEach(card => {
           let isNameMatch = card.dataset.name.includes(input);
-          
-          if (isCatMatch && isNameMatch) {
-            card.style.display = 'flex';
-            visibleCount++;
-          } else {
-            card.style.display = 'none';
-          }
+          if (isCatMatch && isNameMatch) { card.style.display = 'flex'; visibleCount++; } 
+          else { card.style.display = 'none'; }
         });
         
-        // จัดการซ่อน/แสดง โซนหมวดหมู่
         let header = sec.querySelector('.category-header');
-        if (visibleCount === 0 || !isCatMatch) {
-          sec.style.display = 'none';
-        } else {
-          sec.style.display = 'block';
-          // ถ้ากำลังพิมพ์ค้นหา ให้ซ่อนชื่อหมวดหมู่ไปเลยเพื่อความสะอาดตา
-          header.style.display = (input !== '') ? 'none' : 'block'; 
-        }
+        if (visibleCount === 0 || !isCatMatch) { sec.style.display = 'none'; } 
+        else { sec.style.display = 'block'; header.style.display = (input !== '') ? 'none' : 'block'; }
       });
     }
     
     // ----------------------------------------------------
-    // ฟังก์ชันจัดการตะกร้าสินค้า (แยกส่วนเลือกและส่วนส่ง)
+    // ฟังก์ชันจัดการตะกร้าสินค้า
     // ----------------------------------------------------
-    window.updateCart = (mId, change) => {
-      // ถ้าหยิบใส่ตะกร้าครั้งแรก ค่า checked จะเป็น true ทันที
-      if(!cart[mId]) cart[mId] = { name: allowedMenus[mId].name, price: allowedMenus[mId].price || 0, qty: 0, checked: true };
+    const getCartKey = (mId, opt) => {
+        if (!opt) return mId;
+        return mId + "_" + opt.replace(/[.#$\[\]]/g, ""); // ป้องกันอักขระแปลกๆ เข้า Firebase
+    };
+
+    window.updateCart = (mId, opt, change) => {
+      const cartKey = getCartKey(mId, opt);
       
-      cart[mId].qty += change;
-      if(cart[mId].qty <= 0) {
-        delete cart[mId];
-        if(document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = '0';
+      if(!cart[cartKey]) {
+        if (change < 0) return; 
+        cart[cartKey] = { mId: mId, name: allowedMenus[mId].name, price: allowedMenus[mId].price || 0, option: opt || '', qty: 0, checked: true };
+      }
+      
+      cart[cartKey].qty += change;
+      if(cart[cartKey].qty <= 0) {
+        delete cart[cartKey];
+        if(!opt && document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = '0';
       } else {
-        if(document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = cart[mId].qty;
+        if(!opt && document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = cart[cartKey].qty;
       }
       
       updateCartUI();
-      // อัปเดตหน้าต่างตะกร้าทันทีถ้าเปิดค้างไว้
-      if(document.getElementById('cartModal').classList.contains('show')) viewCart();
+      if(document.getElementById('cartModal') && document.getElementById('cartModal').classList.contains('show')) viewCart();
     };
     
     function updateCartUI() {
       let totalQty = 0; 
       Object.values(cart).forEach(item => { totalQty += item.qty; });
-      
       const bar = document.getElementById('cart-bar');
-      if(totalQty > 0) { 
-        bar.classList.remove('d-none'); 
-        document.getElementById('cart-qty').innerText = totalQty; 
-      } else { 
-        bar.classList.add('d-none'); 
-      }
+      if(totalQty > 0) { bar.classList.remove('d-none'); document.getElementById('cart-qty').innerText = totalQty; } 
+      else { bar.classList.add('d-none'); }
     }
     
     let cartModalInstance = null;
@@ -282,27 +303,29 @@
       let html = '';
       let totalCheckedPrice = 0;
       
-      Object.entries(cart).forEach(([mId, item]) => { 
+      Object.entries(cart).forEach(([cartKey, item]) => { 
         let checkedStr = item.checked ? 'checked' : '';
         if(item.checked) { totalCheckedPrice += (item.qty * item.price); }
+        let optHtml = item.option ? `<div class="text-primary small fw-bold mt-1"><i class="fa-solid fa-hand-point-right"></i> ${item.option}</div>` : '';
         
         html += `
           <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
             <div class="d-flex align-items-start gap-2" style="width: 60%;">
-              <input class="form-check-input mt-1" type="checkbox" style="transform: scale(1.4);" onchange="toggleCartItem('${mId}', this.checked)" ${checkedStr}>
+              <input class="form-check-input mt-1 shadow-sm border-secondary" type="checkbox" style="transform: scale(1.4);" onchange="toggleCartItem('${cartKey}', this.checked)" ${checkedStr}>
               <div class="ms-2">
                 <strong class="d-block lh-sm mb-1">${item.name}</strong>
                 <small class="text-muted">${item.price > 0 ? '+'+item.price+'฿' : 'ฟรี'}</small>
+                ${optHtml}
               </div>
             </div>
             
             <div class="d-flex align-items-center gap-2">
-              <div class="d-flex align-items-center bg-light rounded-pill px-1">
-                <button class="btn btn-sm text-danger fw-bold fs-5 px-2 py-0" onclick="updateCart('${mId}', -1)">-</button>
+              <div class="d-flex align-items-center bg-light rounded-pill px-1 border shadow-sm">
+                <button class="btn btn-sm text-danger fw-bold fs-5 px-2 py-0 border-0" onclick="updateCart('${item.mId}', '${item.option}', -1)">-</button>
                 <span class="mx-1 fw-bold">${item.qty}</span>
-                <button class="btn btn-sm text-success fw-bold fs-5 px-2 py-0" onclick="updateCart('${mId}', 1)">+</button>
+                <button class="btn btn-sm text-success fw-bold fs-5 px-2 py-0 border-0" onclick="updateCart('${item.mId}', '${item.option}', 1)">+</button>
               </div>
-              <button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="removeFromCart('${mId}')"><i class="fa-solid fa-trash fs-5"></i></button>
+              <button class="btn btn-sm btn-outline-danger border-0 p-1 shadow-sm bg-light" onclick="removeFromCart('${cartKey}')"><i class="fa-solid fa-trash fs-5"></i></button>
             </div>
           </div>`; 
       });
@@ -316,22 +339,22 @@
       cartModalInstance.show();
     };
     
-    // ติ๊กเลือกหรือไม่เลือกเมนู
-    window.toggleCartItem = (mId, isChecked) => {
-      if(cart[mId]) cart[mId].checked = isChecked;
-      viewCart(); // รีเฟรชยอดรวม
+    window.toggleCartItem = (cartKey, isChecked) => {
+      if(cart[cartKey]) cart[cartKey].checked = isChecked;
+      viewCart(); 
     };
     
-    // ลบออกจากตะกร้า
-    window.removeFromCart = (mId) => {
-      delete cart[mId];
-      if(document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = '0';
+    window.removeFromCart = (cartKey) => {
+      const mId = cart[cartKey].mId;
+      const opt = cart[cartKey].option;
+      delete cart[cartKey];
+      if(!opt && document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = '0';
       updateCartUI();
       viewCart();
     }
     
     // ----------------------------------------------------
-    // ส่งออเดอร์ (ส่งเฉพาะที่ติ๊กถูก)
+    // ส่งออเดอร์
     // ----------------------------------------------------
     window.submitOrder = async () => {
       let itemsToSend = {};
@@ -339,20 +362,26 @@
       let hasCheckedItems = false;
       
       // กรองเฉพาะรายการที่ติ๊กถูก
-      Object.entries(cart).forEach(([mId, item]) => {
+      Object.entries(cart).forEach(([cartKey, item]) => {
         if(item.checked) {
-          itemsToSend[mId] = { ...item, image: allowedMenus[mId].image || "", served: false }; 
+          itemsToSend[cartKey] = { 
+              name: item.name, 
+              price: item.price, 
+              qty: item.qty, 
+              option: item.option || "", 
+              image: allowedMenus[item.mId].image || "", 
+              category: allowedMenus[item.mId].category || "ทั่วไป",
+              served: false 
+          }; 
           totalExtra += (item.qty * item.price); 
           hasCheckedItems = true;
         }
       });
       
       if(!hasCheckedItems) return Swal.fire('แจ้งเตือน', 'กรุณาติ๊กเลือกรายการอาหารอย่างน้อย 1 อย่าง', 'warning');
-
       Swal.fire({ title: 'ส่งออเดอร์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       
       try {
-        // ค้นหาครัว
         const kSnap = await get(ref(db, 'settings/kitchens')); const kitchens = kSnap.val() || {};
         const pSnap = await get(ref(db, 'kitchenPings')); const pings = pSnap.val() || {};
         const now = Date.now();
@@ -372,9 +401,11 @@
         if(totalExtra > 0) { await update(ref(db, 'tables/' + TABLE_ID), { currentTotal: (tableData.currentTotal || 0) + totalExtra }); }
         
         // ล้างเฉพาะรายการที่ส่งแล้วออกจากตะกร้า
-        Object.keys(itemsToSend).forEach(mId => {
-          delete cart[mId];
-          if(document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = '0';
+        Object.keys(itemsToSend).forEach(cartKey => {
+          const mId = cart[cartKey].mId;
+          const opt = cart[cartKey].option;
+          delete cart[cartKey];
+          if(!opt && document.getElementById(`qty_${mId}`)) document.getElementById(`qty_${mId}`).innerText = '0';
         });
         
         updateCartUI();
