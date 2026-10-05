@@ -3162,7 +3162,122 @@
             if(myK && myK.mode === 'printer' && myK.connection === 'usb' && myK.status === 'open') { autoPrintPendingOrders(myK, currentKitchenId); }
         }
     }, 4000);
+
+    // บังคับผูกฟังก์ชันกับ Global Window
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.addEditMenuAdmin=window.addEditMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.adjustStock=adjustStock; window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer; window.openPrinterSettings=openPrinterSettings; window.connectUSBPrinter=connectUSBPrinter; window.testPrintUSB=testPrintUSB; window.filterInventory=filterInventory; window.setInvCategory=setInvCategory; window.renderInvCharts=renderInvCharts;
+
+    let invCharts = {};
+    function renderInvCharts() {
+        let tabEl = document.getElementById('tab-inv-dashboard');
+        if (!tabEl || tabEl.offsetWidth === 0) return;
+        let items = Object.values(gInventory || {});
+        if(items.length === 0) return;
+        items.sort((a, b) => (parseFloat(b.totalUsed) || 0) - (parseFloat(a.totalUsed) || 0));
+        let labels = []; let currentQtyData = []; let totalUsedData = []; let totalCostData = []; let catCostMap = {};
+        items.forEach(item => {
+            labels.push(item.name); currentQtyData.push(parseFloat(item.qty) || 0);
+            let used = parseFloat(item.totalUsed) || 0; totalUsedData.push(used);
+            let costPerUnit = parseFloat(item.cost) || 0; let totalSpent = used * costPerUnit; totalCostData.push(totalSpent);
+            let cat = item.category || 'ไม่กำหนด'; catCostMap[cat] = (catCostMap[cat] || 0) + totalSpent;
+        });
+        let catLabels = Object.keys(catCostMap); let catCosts = Object.values(catCostMap);
+        const createChart = (id, type, labels, data, labelName, bgColors) => {
+            let canvas = document.getElementById(id); if(!canvas) return; 
+            if(invCharts[id]) invCharts[id].destroy();
+            const ctx = canvas.getContext('2d');
+            invCharts[id] = new Chart(ctx, {
+                type: type,
+                data: { labels: labels, datasets: [{ label: labelName, data: data, backgroundColor: bgColors, borderWidth: 1, borderRadius: type === 'bar' ? 4 : 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: (type === 'pie' || type === 'doughnut') } }, scales: (type === 'bar') ? { y: { beginAtZero: true } } : {} }
+            });
+        };
+        createChart('chartInvCurrent', 'bar', labels, currentQtyData, 'จำนวนคงเหลือ', 'rgba(13, 110, 253, 0.6)');
+        createChart('chartInvUsed', 'bar', labels, totalUsedData, 'ปริมาณสะสม', 'rgba(220, 53, 69, 0.6)');
+        createChart('chartInvCost', 'bar', labels, totalCostData, 'มูลค่า (บาท)', 'rgba(253, 126, 20, 0.6)');
+        let themeColors = ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#0dcaf0', '#d63384', '#20c997', '#dc3545', '#6c757d'];
+        createChart('chartInvCatCost', 'doughnut', catLabels, catCosts, 'มูลค่า (บาท)', themeColors);
+    }
+
+    let accCharts = {};
+    function renderAccCategoryCharts() {
+        let tabEl = document.getElementById('pills-category');
+        if (!tabEl || !tabEl.classList.contains('active')) return;
+        let incMap = window.currentCatIncomeMap || {}; let expMap = window.currentCatExpenseMap || {};
+        let incLabels = Object.keys(incMap).map(k => `${k} (${incMap[k].toLocaleString()} ฿)`); let incData = Object.values(incMap);
+        let expLabels = Object.keys(expMap).map(k => `${k} (${expMap[k].toLocaleString()} ฿)`); let expData = Object.values(expMap);
+        const createChart = (id, type, labels, data, labelName, bgColors) => {
+            let canvas = document.getElementById(id); if(!canvas) return; 
+            if(accCharts[id]) accCharts[id].destroy();
+            const ctx = canvas.getContext('2d');
+            accCharts[id] = new Chart(ctx, {
+                type: type,
+                data: { labels: labels, datasets: [{ label: labelName, data: data, backgroundColor: bgColors, borderWidth: 1, borderRadius: type === 'bar' ? 4 : 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } } }
+            });
+        };
+        let themeColorsInc = ['#198754', '#20c997', '#0dcaf0', '#0d6efd', '#6f42c1'];
+        let themeColorsExp = ['#dc3545', '#fd7e14', '#ffc107', '#d63384', '#6c757d'];
+        createChart('chartAccIncome', 'doughnut', incLabels, incData, 'มูลค่า (บาท)', themeColorsInc);
+        createChart('chartAccExpense', 'doughnut', expLabels, expData, 'มูลค่า (บาท)', themeColorsExp);
+    }
+    window.renderAccCategoryCharts = renderAccCategoryCharts;
+
+    document.addEventListener('shown.bs.tab', function (event) {
+        let target = event.target.getAttribute('data-bs-target') || event.target.hash;
+        if (target === '#tab-inv-dashboard' && typeof window.renderInvCharts === 'function') setTimeout(window.renderInvCharts, 150); 
+        if (target === '#pills-category' && typeof window.renderAccCategoryCharts === 'function') setTimeout(window.renderAccCategoryCharts, 150);
+    });
+
+    window.processLogin = async () => {
+      try {
+          const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim();
+          if(!u || !p) { Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'warning'); return; }
+          const btn = document.getElementById('btn-login');
+          if(btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...'; btn.disabled = true; }
+          const response = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'login', username: u, password: p }) });
+          const textData = await response.text();
+          let data; try { data = JSON.parse(textData); } catch (e) { throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง (คุณยังไม่ได้ปลดล็อกสิทธิ์ หรือ ยังไม่ได้ Deploy เป็นเวอร์ชัน 'ใหม่' ครับ)"); }
+          if(btn) { btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false; }
+          if(data.success) {
+             if(window.applyUserRole) window.applyUserRole(data.role, data.name);
+             let loginScreen = document.getElementById('login-screen'); if (loginScreen) { loginScreen.classList.remove('d-flex'); loginScreen.classList.add('d-none'); }
+             Swal.fire({icon:'success', title:'เข้าสู่ระบบสำเร็จ!', text: `ยินดีต้อนรับ ${data.name}`, timer:1500, showConfirmButton:false});
+          } else { Swal.fire('ข้อผิดพลาด', data.message, 'error'); }
+      } catch (err) {
+          const btn = document.getElementById('btn-login'); if(btn) { btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false; }
+          Swal.fire('การเชื่อมต่อล้มเหลว', err.message, 'error');
+      }
+    };
+
+    window.applyUserRole = (role, name) => {
+       const navs = ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-accounting', 'nav-admin'];
+       navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'none'; });
+       let defaultTab = '';
+       if(role === 'admin') { navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; }); defaultTab = 'tab-tables'; } 
+       else if (role === 'counter') { let el = document.getElementById('nav-tables'); if(el) el.style.display = 'block'; defaultTab = 'tab-tables'; } 
+       else if (role === 'kitchen') { let el = document.getElementById('nav-kitchen'); if(el) el.style.display = 'block'; defaultTab = 'tab-kitchen'; } 
+       else if (role === 'account') { ['nav-inventory', 'nav-inv-dashboard', 'nav-accounting'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; }); defaultTab = 'tab-inventory'; } 
+       else if (role === 'manager') { ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-admin'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; }); defaultTab = 'tab-tables'; }
+       if(defaultTab) { let targetBtn = document.querySelector(`button[data-bs-target="#${defaultTab}"]`); if(targetBtn) targetBtn.click(); }
+       let navContainer = document.querySelector('.navbar .container-fluid'); let logoutBtn = document.getElementById('btn-logout-nav');
+       if(!logoutBtn && navContainer) { navContainer.insertAdjacentHTML('beforeend', `<button id="btn-logout-nav" class="btn btn-sm btn-outline-light rounded-pill fw-bold shadow-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกระบบ</button>`); }
+    };
+
+    window.logout = () => {
+        let sc = document.getElementById('login-screen'); if(sc) { sc.classList.remove('d-none'); sc.classList.add('d-flex'); }
+        let u = document.getElementById('login-user'); if(u) u.value = '';
+        let p = document.getElementById('login-pass'); if(p) p.value = '';
+        let logoutBtn = document.getElementById('btn-logout-nav'); if(logoutBtn) logoutBtn.remove();
+    };
     
+    setInterval(() => {
+        if(typeof gOrders === 'undefined' || typeof gKitchens === 'undefined') return;
+        Object.entries(gKitchens).forEach(([kId, k]) => { if(k.mode === 'printer' && k.connection === 'lan' && k.status === 'open') { autoPrintPendingOrders(k, kId); } });
+        if(typeof kitchenPrinterDevice !== 'undefined' && kitchenPrinterDevice && currentKitchenId) {
+            const myK = gKitchens[currentKitchenId];
+            if(myK && myK.mode === 'printer' && myK.connection === 'usb' && myK.status === 'open') { autoPrintPendingOrders(myK, currentKitchenId); }
+        }
+    }, 4000);
   </script>
 </body>
 </html>
