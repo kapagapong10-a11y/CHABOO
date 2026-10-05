@@ -1518,7 +1518,25 @@
              listEl.innerHTML += renderListItem(id, item.name, 'settings/invCategories'); 
           }); 
       }
-      else if(mode === 'menus') { titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; btnEl.onclick = () => addMenuAdmin(); Object.entries(gMenus).forEach(([id, item]) => { let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; listEl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div class="d-flex align-items-center">${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:40px; height:40px; object-fit:cover; border-radius:8px; margin-right:10px;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image text-muted"></i></div>`}<div><strong>${item.name}</strong><br>${priceText}</div></div><button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button></li>`; }); }
+      else if(mode === 'menus') { 
+          titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; 
+          btnEl.onclick = () => addEditMenuAdmin(); 
+          Object.entries(gMenus).forEach(([id, item]) => { 
+             let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; 
+             let optText = item.options ? `<br><small class="text-primary fw-bold">ตัวเลือก: ${item.options}</small>` : '';
+             listEl.innerHTML += `
+             <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                   ${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:45px; height:45px; object-fit:cover; border-radius:8px; margin-right:10px;" class="shadow-sm">` : `<div style="width:45px; height:45px; background:#f8f9fa; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;" class="border shadow-sm"><i class="fa-solid fa-image text-muted"></i></div>`}
+                   <div><strong>${item.name}</strong><br>${priceText}${optText}</div>
+                </div>
+                <div>
+                   <button class="btn btn-sm btn-outline-primary me-1" onclick="addEditMenuAdmin('${id}')"><i class="fa-solid fa-pen"></i></button>
+                   <button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+             </li>`; 
+          }); 
+      }
       else if(mode === 'kitchens') { 
           titleEl.innerHTML = '<i class="fa-solid fa-display"></i> จัดการสถานีครัว / เครื่องปริ้น'; 
           btnEl.onclick = () => addKitchenAdmin(); 
@@ -1618,41 +1636,66 @@
       reader.readAsDataURL(file);
     }
     
-    function addMenuAdmin() {
-      tempCompressedImage = ""; 
-      let catOptions = ''; 
-      if (Object.keys(gCategories).length === 0) { 
-        catOptions = '<option value="ทั่วไป">ทั่วไป (กรุณาไปเพิ่มหมวดหมู่ก่อน)</option>'; 
-      } else { 
-        Object.entries(gCategories).forEach(([id, c]) => { catOptions += `<option value="${c.name}">${c.name}</option>`; }); 
+    window.addEditMenuAdmin = (id = null) => {
+      let item = id ? gMenus[id] : { name: '', category: 'ทั่วไป', price: 0, options: '', image: '' };
+      tempCompressedImage = id ? (item.image || "") : "";
+
+      let catOptions = '';
+      if (Object.keys(gCategories).length === 0) {
+        catOptions = '<option value="ทั่วไป">ทั่วไป (กรุณาไปเพิ่มหมวดหมู่ก่อน)</option>';
+      } else {
+        Object.entries(gCategories).forEach(([cid, c]) => {
+            let selected = (item.category === c.name) ? 'selected' : '';
+            catOptions += `<option value="${c.name}" ${selected}>${c.name}</option>`;
+        });
       }
-      
+
       let html = `
-        <input id="swal-menu-name" class="swal2-input mb-2" placeholder="ชื่อเมนู (เช่น หมูสไลด์)">
-        <select id="swal-menu-category" class="swal2-select mb-2" style="display: flex; width: 75%; font-size: 1.125em;">${catOptions}</select>
-        <input id="swal-menu-price" type="number" class="swal2-input mb-2" placeholder="ราคาจ่ายเพิ่ม (ถ้าฟรีใส่ 0)">
-        <input id="swal-menu-img" type="file" accept="image/*" class="form-control mt-3 mx-auto" style="width: 80%;" onchange="compressMenuImage(event)">
-        <small class="text-muted d-block mt-1">ระบบจะย่อรูปอัตโนมัติเพื่อให้ลูกค้าโหลดเร็วที่สุด</small>`;
-        
-      Swal.fire({ 
-        title: 'เพิ่มรายการอาหารใหม่', html: html, showCancelButton: true, confirmButtonText: 'บันทึกและอัปโหลด', 
-        preConfirm: () => { 
-          const name = document.getElementById('swal-menu-name').value; 
-          const category = document.getElementById('swal-menu-category').value || 'ทั่วไป'; 
-          const price = parseFloat(document.getElementById('swal-menu-price').value) || 0; 
-          if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเมนู'); return false; } 
-          return { name: name, category: category, price: price }; 
-        } 
-      }).then(res => { 
-        if(res.isConfirmed) { 
-          const data = res.value; 
-          Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } }); 
-          saveMenuToFirebase(data.name, data.category, data.price, tempCompressedImage || ""); 
-        } 
+        <div class="px-2" style="overflow-x: hidden;">
+            <div class="mb-3 text-start">
+               <label class="form-label fw-bold small text-muted mb-1">ชื่อเมนู:</label>
+               <input type="text" id="swal-menu-name" class="form-control" placeholder="เช่น ส้มตำไทย" value="${item.name}">
+            </div>
+            <div class="mb-3 text-start">
+               <label class="form-label fw-bold small text-muted mb-1">หมวดหมู่:</label>
+               <select id="swal-menu-category" class="form-select">${catOptions}</select>
+            </div>
+            <div class="mb-3 text-start">
+               <label class="form-label fw-bold small text-muted mb-1">ราคาจ่ายเพิ่ม (ถ้าฟรีใส่ 0):</label>
+               <input type="number" id="swal-menu-price" class="form-control" value="${item.price || 0}">
+            </div>
+            <div class="mb-3 text-start bg-light p-2 rounded border border-primary border-opacity-25">
+               <label class="form-label fw-bold small text-primary mb-1"><i class="fa-solid fa-list-check"></i> ตัวเลือกเพิ่มเติม (ถ้ามี):</label>
+               <input type="text" id="swal-menu-options" class="form-control border-primary text-primary fw-bold" placeholder="เช่น เผ็ดน้อย, เผ็ดกลาง, เผ็ดมาก" value="${item.options || ''}">
+               <small class="text-danger mt-1 d-block">* พิมพ์คั่นด้วยลูกน้ำ ( , ) หากไม่มีให้เว้นว่างไว้ ลูกค้าจะเลือกได้เพียง 1 อย่าง</small>
+            </div>
+            <div class="mb-2 text-start">
+               <label class="form-label fw-bold small text-muted mb-1">รูปภาพเมนู:</label>
+               <input type="file" accept="image/*" class="form-control" onchange="compressMenuImage(event)">
+            </div>
+        </div>`;
+
+      Swal.fire({
+        title: id ? '📝 แก้ไขรายการอาหาร' : '🍔 เพิ่มรายการอาหาร', html: html, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', customClass: { popup: 'rounded-4' },
+        preConfirm: () => {
+          const name = document.getElementById('swal-menu-name').value.trim();
+          const category = document.getElementById('swal-menu-category').value || 'ทั่วไป';
+          const price = parseFloat(document.getElementById('swal-menu-price').value) || 0;
+          const options = document.getElementById('swal-menu-options').value.trim();
+          if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเมนู'); return false; }
+          return { name, category, price, options, image: tempCompressedImage, status: 'active' };
+        }
+      }).then(res => {
+        if(res.isConfirmed) {
+          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          if(id) {
+             window.dbUpdate(window.dbRef(window.db, `settings/menus/${id}`), res.value).then(() => { Swal.fire({icon:'success', title:'แก้ไขสำเร็จ', timer: 1500, showConfirmButton:false}); openAdminModal('menus'); });
+          } else {
+             window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/menus')), res.value).then(() => { Swal.fire({icon:'success', title:'เพิ่มสำเร็จ', timer: 1500, showConfirmButton:false}); openAdminModal('menus'); });
+          }
+        }
       });
-    }
-    
-    function saveMenuToFirebase(name, category, price, imageUrl) { window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/menus')), { name: name, category: category, price: price, image: imageUrl, status: 'active' }).then(() => { Swal.fire('สำเร็จ', 'เพิ่มรายการอาหารเรียบร้อย', 'success'); openAdminModal('menus'); }); }
+    };
     
     function addRateAdmin() {
       if(Object.keys(gCustTypes).length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาไปเพิ่ม "ประเภทลูกค้า" ก่อนสร้างเรทราคา', 'warning');
