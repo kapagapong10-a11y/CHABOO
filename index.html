@@ -2654,7 +2654,7 @@
        Swal.fire({
           title: 'เพิ่มรายรับด้วยตนเอง',
           html: `
-             <div class="px-2" style="overflow-x: hidden;">
+             <div class="px-3 py-2" style="overflow-x: hidden;">
                 <div class="mb-3 text-start">
                    <label class="form-label fw-bold small text-muted mb-1">วันที่ทำรายการ:</label>
                    <input type="date" id="man-inc-date" class="form-control" value="${new Date().toISOString().split('T')[0]}">
@@ -2680,7 +2680,7 @@
                    <input type="number" id="man-inc-cash" class="form-control text-success fw-bold" placeholder="0">
                 </div>
                 <div class="mb-3 text-start">
-                   <label class="form-label fw-bold small text-warning mb-1">ยอดโครงการรัฐ (ถ้ามี):</label>
+                   <label class="form-label fw-bold small text-warning text-dark mb-1">ยอดโครงการรัฐ (ถ้ามี):</label>
                    <input type="number" id="man-inc-gov" class="form-control text-warning fw-bold" placeholder="0">
                 </div>
              </div>`,
@@ -2709,7 +2709,7 @@
        Swal.fire({
           title: 'เพิ่มรายจ่ายร้าน',
           html: `
-             <div class="px-2" style="overflow-x: hidden;">
+             <div class="px-3 py-2" style="overflow-x: hidden;">
                 <div class="mb-3 text-start">
                    <label class="form-label fw-bold small text-muted mb-1">วันที่ทำรายการ:</label>
                    <input type="date" id="man-exp-date" class="form-control" value="${new Date().toISOString().split('T')[0]}">
@@ -2784,28 +2784,24 @@
                     <option value="gov">🏛️ รัฐ</option>
                  </select>
              </div>
-             <input type="number" id="man-tf-amt" class="swal2-input w-75 mt-0" placeholder="จำนวนเงินที่โยกย้าย (บาท)">
-             <input type="date" id="man-tf-date" class="swal2-input w-75 mt-3" value="${new Date().toISOString().split('T')[0]}">`,
+             <input type="number" id="man-tf-amt" class="form-control w-75 mx-auto mt-0" placeholder="จำนวนเงินที่โยกย้าย (บาท)">
+             <input type="date" id="man-tf-date" class="form-control w-75 mx-auto mt-3" value="${new Date().toISOString().split('T')[0]}">`,
           showCancelButton: true, confirmButtonText: 'ยืนยันการทำรายการ',
           preConfirm: () => {
              const fromWallet = document.getElementById('man-tf-from').value;
              const toWallet = document.getElementById('man-tf-to').value;
              const amt = parseFloat(document.getElementById('man-tf-amt').value) || 0;
              const date = document.getElementById('man-tf-date').value;
-             
              if(!fromWallet || !toWallet) { Swal.showValidationMessage('กรุณาเลือกกระเป๋าต้นทางและปลายทาง'); return false; }
              if(fromWallet === toWallet) { Swal.showValidationMessage('ต้นทางและปลายทางต้องไม่ซ้ำกัน'); return false; }
              if(amt <= 0) { Swal.showValidationMessage('กรุณาระบุจำนวนเงินให้ถูกต้อง'); return false; }
-             
              return { fromWallet, toWallet, amt, date };
           }
        }).then(res => {
           if(res.isConfirmed) {
              const d = new Date(res.value.date); d.setHours(new Date().getHours()); const accId = Date.now().toString();
-             
              const walletNames = { 'cash': 'เงินสด', 'transfer': 'โอน', 'gov': 'รัฐ' };
              let desc = `โยกเงินจาก [${walletNames[res.value.fromWallet]}] ไป [${walletNames[res.value.toWallet]}]`;
-             
              window.dbSet(window.dbRef(window.db, `accounting/${accId}`), { 
                 type: 'transfer', date: d.getTime(), description: desc, category: 'โยกย้ายเงินภายใน', 
                 from: res.value.fromWallet, to: res.value.toWallet, amount: res.value.amt 
@@ -2823,48 +2819,25 @@
       const id = document.getElementById('ci-table-id').value; 
       const rateId = document.getElementById('ci-rate').value; 
       if(!rateId) return Swal.fire('ผิดพลาด', 'กรุณาเลือกเรทราคา', 'warning');
-      
-      let customers = {}; 
-      let totalPeople = 0; 
+      let customers = {}; let totalPeople = 0; 
       document.querySelectorAll('.ci-cust-input').forEach(inp => { 
         const qty = parseInt(inp.value) || 0; 
-        if(qty > 0) { 
-          customers[inp.dataset.name] = qty; 
-          totalPeople += qty; 
-        } 
+        if(qty > 0) { customers[inp.dataset.name] = qty; totalPeople += qty; } 
       });
-      
       if(totalPeople === 0) return Swal.fire('ผิดพลาด', 'กรุณาระบุจำนวนลูกค้าอย่างน้อย 1 คน', 'warning');
-      
       let soups = []; 
       document.querySelectorAll('.ci-soup-cb:checked').forEach(cb => soups.push(cb.value)); 
       if(soups.length === 0) return Swal.fire('ผิดพลาด', 'กรุณาเลือกน้ำซุปอย่างน้อย 1 อย่าง', 'warning');
-      
       let currentTotal = parseFloat(document.getElementById('ci-total').innerText.replace(/[^0-9.-]+/g,""));
-      
       Swal.fire({ title: 'กำลังเปิดโต๊ะ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       window.dbUpdate(window.dbRef(window.db, 'tables/' + id), { 
-        status: 'eating', 
-        checkInTime: Date.now(), 
-        rateName: gRates[rateId].name, 
-        customers: customers, 
-        soups: soups.join(', '), 
-        currentTotal: currentTotal 
-      }).then(() => { 
-        Swal.close();
-        modals.checkIn.hide(); 
-      });
+        status: 'eating', checkInTime: Date.now(), rateName: gRates[rateId].name, customers: customers, soups: soups.join(', '), currentTotal: currentTotal 
+      }).then(() => { Swal.close(); modals.checkIn.hide(); });
     }
 
     function deleteData(path, id) {
       Swal.fire({
-        title: 'ยืนยันการลบ?',
-        text: "หากลบทิ้งแล้วจะไม่สามารถกู้คืนได้!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'ใช่, ลบเลย',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#d33'
+        title: 'ยืนยันการลบ?', text: "หากลบทิ้งแล้วจะไม่สามารถกู้คืนได้!", icon: 'warning', showCancelButton: true, confirmButtonText: 'ใช่, ลบเลย', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#d33'
       }).then((result) => {
         if (result.isConfirmed) {
           window.dbRemove(window.dbRef(window.db, path + '/' + id)).then(() => {
@@ -2875,96 +2848,74 @@
       });
     }
 
-    // ==========================================
-    // 🖨️ ระบบพิมพ์ใบเสร็จผ่าน WebUSB (Direct Print)
-    // ==========================================
     function openPrinterSettings() {
       let statusHtml = posPrinterDevice 
           ? `<div class="alert alert-success fw-bold"><i class="fa-solid fa-check-circle"></i> เชื่อมต่อแล้ว:<br>${posPrinterDevice.productName}</div>`
           : `<div class="alert alert-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> ยังไม่ได้เชื่อมต่อเครื่องพิมพ์ USB</div>`;
-          
       Swal.fire({
         title: 'ตั้งค่าเครื่องพิมพ์ (WebUSB)',
-        html: `
-          ${statusHtml}
+        html: `${statusHtml}
           <div class="text-start small text-muted mb-3 p-2 bg-light border rounded">
-             <strong>ข้อควรรู้:</strong><br>
-             1. ใช้ได้เฉพาะ Google Chrome หรือ Edge<br>
-             2. ไดรเวอร์เครื่องพิมพ์ต้องถูกแปลงเป็น <b>WinUSB</b> (ผ่านโปรแกรม Zadig) เพื่อให้เบราว์เซอร์มองเห็น
+             <strong>ข้อควรรู้:</strong><br>1. ใช้ได้เฉพาะ Chrome/Edge<br>2. ไดรเวอร์เครื่องพิมพ์ต้องถูกแปลงเป็น <b>WinUSB</b> (ผ่าน Zadig)
           </div>
           <div class="d-grid gap-2">
             <button class="btn btn-primary fw-bold py-2" onclick="connectUSBPrinter()"><i class="fa-brands fa-usb"></i> ค้นหาเครื่องพิมพ์</button>
             <button class="btn btn-outline-success fw-bold py-2" onclick="testPrintUSB()"><i class="fa-solid fa-print"></i> ทดสอบพิมพ์ 1 แผ่น</button>
-          </div>
-        `,
+          </div>`,
         showConfirmButton: false, showCancelButton: true, cancelButtonText: 'ปิดหน้าต่าง'
       });
     }
 
     async function connectUSBPrinter() {
       try {
-        // ขอสิทธิ์เข้าถึงอุปกรณ์ USB ทั้งหมด
         let device = await navigator.usb.requestDevice({ filters: [] });
         await device.open();
         if (device.configuration === null) await device.selectConfiguration(1);
         await device.claimInterface(0);
-        
         posPrinterDevice = device;
         Swal.fire('สำเร็จ', `เชื่อมต่อเครื่องพิมพ์: <b>${device.productName}</b> แล้ว`, 'success');
-      } catch (err) {
-        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อได้: ' + err.message, 'error');
-      }
+      } catch (err) { Swal.fire('ข้อผิดพลาด', err.message, 'error'); }
     }
 
     async function sendToUSBPrinter(bufferArray) {
       if (!posPrinterDevice) return Swal.fire('แจ้งเตือน', 'กรุณาเชื่อมต่อเครื่องพิมพ์ก่อน', 'warning');
       try {
         let endpointOut = null;
-        // ค้นหาช่องทางส่งข้อมูล (OUT Endpoint) ของเครื่องพิมพ์
         for (let endpoint of posPrinterDevice.configuration.interfaces[0].alternate.endpoints) {
           if (endpoint.direction === 'out') { endpointOut = endpoint.endpointNumber; break; }
         }
         if(!endpointOut) throw new Error("ไม่พบช่องทางส่งข้อมูล (Endpoint OUT)");
-        
-        const data = new Uint8Array(bufferArray);
-        await posPrinterDevice.transferOut(endpointOut, data);
-      } catch (err) {
-        Swal.fire('พิมพ์ไม่สำเร็จ', err.message, 'error');
-      }
+        await posPrinterDevice.transferOut(endpointOut, new Uint8Array(bufferArray));
+      } catch (err) { Swal.fire('พิมพ์ไม่สำเร็จ', err.message, 'error'); }
     }
 
     async function testPrintUSB() {
       if(!posPrinterDevice) return Swal.fire('แจ้งเตือน', 'กรุณาเชื่อมต่อเครื่องพิมพ์ก่อน', 'warning');
       let buffer = [];
       const addCmd = (cmd) => buffer = buffer.concat(cmd);
-      // แปลงภาษาไทยเป็นรหัสเครื่องพิมพ์ (CP874)
       const addText = (text) => {
         for(let i=0; i<text.length; i++) {
            let code = text.charCodeAt(i);
            if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
         }
-        buffer.push(0x0A); // ขึ้นบรรทัดใหม่
+        buffer.push(0x0A);
       };
-      
-      addCmd([0x1B, 0x40]); // Reset Printer
-      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน (Disable Chinese mode)
-      addCmd([0x1B, 0x74, 26]); // 🌟 เปลี่ยนเป็น 26 (รหัสภาษาไทยของ Xprinter)
-      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
+      addCmd([0x1B, 0x40]); 
+      addCmd([0x1C, 0x2E]); 
+      addCmd([0x1B, 0x74, 26]); 
+      addCmd([0x1B, 0x61, 1]); 
       addText('ทดสอบเครื่องพิมพ์ Shabu POS');
       addText('เชื่อมต่อ WebUSB สำเร็จ!');
       addText('-------------------------');
-      addCmd([0x1B, 0x61, 0]); // จัดชิดซ้าย
-      addCmd([0x1D, 0x56, 0x41, 0x10]); // ตัดกระดาษ
-      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); // เปิดลิ้นชักเก็บเงิน
-      
+      addCmd([0x1B, 0x61, 0]); 
+      addCmd([0x1D, 0x56, 0x41, 0x10]); 
+      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); 
       await sendToUSBPrinter(buffer);
     }
 
     async function printViaWebUSB() {
       const tId = checkoutState.tableId; const t = gTables[tId]; if (!t) return;
-      const pShop = gShop || {};
-      const pPay = gPayment || {};
-      
+      const pShop = gShop || {}; const pPay = gPayment || {};
       let buffer = [];
       const addCmd = (cmd) => buffer = buffer.concat(cmd);
       const addText = (text) => {
@@ -2972,28 +2923,18 @@
            let code = text.charCodeAt(i);
            if (code >= 0x0E01 && code <= 0x0E5B) buffer.push(code - 0x0E00 + 0xA0); else buffer.push(code);
         }
-        buffer.push(0x0A); // ขึ้นบรรทัดใหม่
+        buffer.push(0x0A);
       };
-
-      addCmd([0x1B, 0x40]); // Init printer
-
-      // ==========================================
-      // 1. ระบบแปลงรูปโลโก้ร้าน (Monochrome Bitmap)
-      // ==========================================
+      addCmd([0x1B, 0x40]);
       if (pShop.shopLogo) {
           let imgBuffer = await new Promise((resolve) => {
               let img = new Image();
               img.onload = () => {
-                  let canvas = document.createElement('canvas');
-                  let ctx = canvas.getContext('2d');
-                  let width = 200; // ความกว้างโลโก้
-                  let scale = width / img.width;
-                  let height = Math.floor(img.height * scale);
+                  let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
+                  let width = 200; let scale = width / img.width; let height = Math.floor(img.height * scale);
                   canvas.width = width; canvas.height = height;
-                  ctx.fillStyle = 'white'; ctx.fillRect(0, 0, width, height);
-                  ctx.drawImage(img, 0, 0, width, height);
+                  ctx.fillStyle = 'white'; ctx.fillRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
                   let imgData = ctx.getImageData(0, 0, width, height).data;
-                  
                   let bytesWidth = Math.ceil(width / 8);
                   let b = [0x1D, 0x76, 0x30, 0, bytesWidth & 0xFF, (bytesWidth >> 8) & 0xFF, height & 0xFF, (height >> 8) & 0xFF];
                   for (let y = 0; y < height; y++) {
@@ -3002,9 +2943,8 @@
                           for (let bit = 0; bit < 8; bit++) {
                               let px = x * 8 + bit;
                               if (px < width) {
-                                  let idx = (y * width + px) * 4;
+                                  let idx = (y * w + px) * 4;
                                   let luminance = (imgData[idx]*0.3 + imgData[idx+1]*0.59 + imgData[idx+2]*0.11);
-                                  // แปลงเป็นพิกเซลขาว-ดำ
                                   if (luminance < 128 && imgData[idx+3] > 128) byte |= (1 << (7 - bit));
                               }
                           }
@@ -3016,42 +2956,17 @@
               img.onerror = () => resolve([]);
               img.src = pShop.shopLogo;
           });
-          
-          if (imgBuffer.length > 0) {
-              addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
-              addCmd(imgBuffer);       // พิมพ์รูปภาพโลโก้
-              addCmd([0x0A]);
-          }
+          if (imgBuffer.length > 0) { addCmd([0x1B, 0x61, 1]); addCmd(imgBuffer); addCmd([0x0A]); }
       }
-
-      // ==========================================
-      // 2. ตั้งค่าภาษาไทย และ สั่งลิ้นชัก
-      // ==========================================
-      addCmd([0x1B, 0x40]); // Init อีกรอบป้องกันฟอร์แมตโลโก้ค้าง
-      addCmd([0x1C, 0x2E]); // ปิดโหมดภาษาจีน
-      addCmd([0x1B, 0x74, 26]); // Code Page ภาษาไทย
-      addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]); // สั่งลิ้นชักเด้งทันที
-
-      // หัวใบเสร็จ
-      addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
-      addCmd([0x1B, 0x45, 1]); // ตัวหนา
-      addText(pShop.shopName || 'Shabu POS');
-      addCmd([0x1B, 0x45, 0]); // เลิกตัวหนา
+      addCmd([0x1B, 0x40]); addCmd([0x1C, 0x2E]); addCmd([0x1B, 0x74, 26]); addCmd([0x1B, 0x70, 0x00, 0x19, 0xFA]);
+      addCmd([0x1B, 0x61, 1]); addCmd([0x1B, 0x45, 1]); addText(pShop.shopName || 'Shabu POS'); addCmd([0x1B, 0x45, 0]);
       if(pShop.shopAddress) addText(pShop.shopAddress);
       addText('--------------------------------');
-      
-      // ข้อมูลบิล
-      addCmd([0x1B, 0x61, 0]); // ชิดซ้าย
-      addText(`โต๊ะ: ${t.name}`);
-      addText(`วันที่: ${new Date().toLocaleString('th-TH')}`);
-      addText('--------------------------------');
-
-      // ค่าอาหาร
+      addCmd([0x1B, 0x61, 0]); addText(`โต๊ะ: ${t.name}`); addText(`วันที่: ${new Date().toLocaleString('th-TH')}`); addText('--------------------------------');
       if(t.customers) {
         const rate = Object.values(gRates).find(r => r.name === t.rateName);
         Object.entries(t.customers).forEach(([name, qty]) => {
-          let price = 0;
-          if(rate && rate.prices) { let cId = Object.keys(gCustTypes).find(k => gCustTypes[k].name === name); if(cId) price = rate.prices[cId] || 0; }
+          let price = 0; if(rate && rate.prices) { let cId = Object.keys(gCustTypes).find(k => gCustTypes[k].name === name); if(cId) price = rate.prices[cId] || 0; }
           addText(`บุฟเฟ่ต์ ${name} x${qty}   ${price * qty}บ.`);
         });
       }
@@ -3063,195 +2978,61 @@
       });
       if (t.extraOrders) Object.entries(t.extraOrders).forEach(([extId, ext]) => { if (ext.status !== 'canceled') addText(`${ext.name} x${ext.qty}   ${ext.total}บ.`); });
       if (t.fines) Object.entries(t.fines).forEach(([fId, f]) => { addText(`ปรับ: ${f.reason}   ${f.amount}บ.`); });
-      
-      // สรุปยอด
-      addText('--------------------------------');
-      addCmd([0x1B, 0x61, 2]); // ชิดขวา
-      addText(`ยอดรวม: ${checkoutState.subtotal.toLocaleString()} บาท`);
+      addText('--------------------------------'); addCmd([0x1B, 0x61, 2]); addText(`ยอดรวม: ${checkoutState.subtotal.toLocaleString()} บาท`);
       if (checkoutState.discount > 0) addText(`ส่วนลด: -${checkoutState.discount.toLocaleString()} บาท`);
-      addCmd([0x1B, 0x45, 1]); // ตัวหนา
-      addText(`ยอดสุทธิ: ${checkoutState.netTotal.toLocaleString()} บาท`);
-      addCmd([0x1B, 0x45, 0]); 
-
-      // ==========================================
-      // 3. ระบบวาด QR Code สแกนจ่าย (แปลงเป็นรูปภาพ)
-      // ==========================================
+      addCmd([0x1B, 0x45, 1]); addText(`ยอดสุทธิ: ${checkoutState.netTotal.toLocaleString()} บาท`); addCmd([0x1B, 0x45, 0]); 
       if (pPay.promptpay && checkoutState.netTotal > 0) {
           let payload = generatePromptPayPayload(pPay.promptpay, checkoutState.netTotal);
-          addText('--------------------------------');
-          addCmd([0x1B, 0x61, 1]); // จัดกึ่งกลาง
-          addText('สแกนเพื่อชำระเงิน');
-
-          // ใช้ QRCode.js วาดรูป QR ลงบน Canvas ที่ซ่อนอยู่
-          let qrDiv = document.createElement('div');
-          new QRCode(qrDiv, { text: payload, width: 160, height: 160, correctLevel : QRCode.CorrectLevel.M });
-          
-          // ดึง Canvas ออกมาแปลงเป็นภาษาเครื่องพิมพ์ (ESC/POS Raster Bitmap)
+          addText('--------------------------------'); addCmd([0x1B, 0x61, 1]); addText('สแกนเพื่อชำระเงิน');
+          let qrDiv = document.createElement('div'); new QRCode(qrDiv, { text: payload, width: 160, height: 160, correctLevel : QRCode.CorrectLevel.M });
           let qrCanvas = qrDiv.querySelector('canvas');
           if(qrCanvas) {
-              let ctx = qrCanvas.getContext('2d');
-              let w = qrCanvas.width;
-              let h = qrCanvas.height;
-              let imgData = ctx.getImageData(0, 0, w, h).data;
-              let bytesWidth = Math.ceil(w / 8);
-              
-              let b = [0x1D, 0x76, 0x30, 0, bytesWidth & 0xFF, (bytesWidth >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF];
+              let ctx = qrCanvas.getContext('2d'); let w = qrCanvas.width; let h = qrCanvas.height; let imgData = ctx.getImageData(0, 0, w, h).data;
+              let bytesWidth = Math.ceil(w / 8); let b = [0x1D, 0x76, 0x30, 0, bytesWidth & 0xFF, (bytesWidth >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF];
               for (let y = 0; y < h; y++) {
                   for (let x = 0; x < bytesWidth; x++) {
                       let byte = 0;
                       for (let bit = 0; bit < 8; bit++) {
                           let px = x * 8 + bit;
-                          if (px < w) {
-                              let idx = (y * w + px) * 4;
-                              // ถ้าพิกเซลเป็นสีดำ ให้แต้มจุดหมึกลงกระดาษ
-                              if (imgData[idx] < 128) byte |= (1 << (7 - bit));
-                          }
+                          if (px < w) { let idx = (y * w + px) * 4; if (imgData[idx] < 128) byte |= (1 << (7 - bit)); }
                       }
                       b.push(byte);
                   }
               }
-              addCmd(b); // สั่งพิมพ์รูป QR Code
-              addCmd([0x0A]);
+              addCmd(b); addCmd([0x0A]);
           }
       }
-
-      addCmd([0x1B, 0x61, 1]); // กึ่งกลาง
-      addText(' '); addText('ขอบคุณที่ใช้บริการ'); addText(' '); addText(' '); addText(' ');
-      
-      // สั่งตัดกระดาษ
-      addCmd([0x1D, 0x56, 0x41, 0x10]);
-      
-      // ส่งข้อมูลเข้าเครื่องพิมพ์ผ่าน USB
-      await sendToUSBPrinter(buffer);
+      addCmd([0x1B, 0x61, 1]); addText(' '); addText('ขอบคุณที่ใช้บริการ'); addText(' '); addText(' '); addText(' ');
+      addCmd([0x1D, 0x56, 0x41, 0x10]); await sendToUSBPrinter(buffer);
     }
-    
-  
-    // บังคับผูกฟังก์ชันกับ Global Window (เอาตัวที่มีปัญหาออกแล้ว)
-    window.initData=initData; 
-    window.renderTablesFront=renderTablesFront; 
-    window.handleTableClick=handleTableClick; 
-    window.openCheckIn=openCheckIn; 
-    window.renderCheckInCustomers=renderCheckInCustomers; 
-    window.calcCheckIn=calcCheckIn; 
-    window.checkSoupLimit=checkSoupLimit; 
-    window.selectKitchenStation=selectKitchenStation; 
-    window.toggleKitchenStatus=toggleKitchenStatus; 
-    window.renderKDS=renderKDS; 
-    window.serveItem=serveItem; 
-    window.serveAll=serveAll; 
-    window.confirmCheckIn=confirmCheckIn; 
-    window.openManageTable=openManageTable; 
-    window.openEditTable=openEditTable; 
-    window.openMoveTable=openMoveTable; 
-    window.clearTable=clearTable; 
-    window.openAdminModal=openAdminModal; 
-    window.renderListItem=renderListItem; 
-    window.addSimpleData=addSimpleData; 
-    window.compressMenuImage=compressMenuImage; 
-    window.addMenuAdmin=addMenuAdmin; 
-    window.saveMenuToFirebase=saveMenuToFirebase; 
-    window.addRateAdmin=addRateAdmin; 
-    window.manageRateMenus=manageRateMenus; 
-    window.addExtraMenuAdmin=addExtraMenuAdmin; 
-    window.addPromotionAdmin=addPromotionAdmin; 
-    window.editShopSettings=editShopSettings; 
-    window.editPaymentSettings=editPaymentSettings; 
-    window.openCheckoutModal=openCheckoutModal; 
-    window.togglePromoManual=togglePromoManual; 
-    window.renderCheckoutItems=renderCheckoutItems; 
-    window.updateCheckoutItemQty=updateCheckoutItemQty; 
-    window.addFineToBill=addFineToBill; 
-    window.removeFine=removeFine; 
-    window.calculateCheckout=calculateCheckout; 
-    window.togglePaymentMethods=togglePaymentMethods; 
-    window.calcSplitPayment=calcSplitPayment; 
-    window.showPaymentQR=showPaymentQR;
-    window.finalizeCheckout=finalizeCheckout; 
-    window.printReceipt=printReceipt; 
-    window.viewOrderHistory=viewOrderHistory; 
-    window.cancelOrderItem=cancelOrderItem; 
-    window.cancelExtraItem=cancelExtraItem; 
-    window.openExtraOrderModal=openExtraOrderModal; 
-    window.deleteData=deleteData; 
-    window.printTableQR=printTableQR; 
-    window.renderInventoryFront=renderInventoryFront; 
-    window.adjustStock=adjustStock; 
-    window.renderAccountingFront=renderAccountingFront; 
-    window.addManualIncome=addManualIncome; 
-    window.addManualExpense=addManualExpense; 
-    window.setInitialBalance=setInitialBalance; 
-    window.addCashFlowTransfer=addCashFlowTransfer; 
-    window.openPrinterSettings=openPrinterSettings; 
-    window.connectUSBPrinter=connectUSBPrinter; 
-    window.testPrintUSB=testPrintUSB;
-    window.filterInventory=filterInventory; 
-    window.setInvCategory=setInvCategory;
-    // ผูกฟังก์ชันเข้ากับ Global Window เพื่อให้คลิกจากเมนูแล้วทำงาน
-    window.renderInvCharts = renderInvCharts;
-    
-    let invCharts = {};
-   function renderInvCharts() {
-        let tabEl = document.getElementById('tab-inv-dashboard');
-        // ตรวจสอบว่าหน้าแท็บถูกเปิดและมีความกว้างแล้วใช่หรือไม่ (ป้องกันกราฟพัง)
-        if (!tabEl || tabEl.offsetWidth === 0) return;
 
+    window.initData=initData; window.renderTablesFront=renderTablesFront; window.handleTableClick=handleTableClick; window.openCheckIn=openCheckIn; window.renderCheckInCustomers=renderCheckInCustomers; window.calcCheckIn=calcCheckIn; window.checkSoupLimit=checkSoupLimit; window.selectKitchenStation=selectKitchenStation; window.toggleKitchenStatus=toggleKitchenStatus; window.renderKDS=renderKDS; window.serveItem=serveItem; window.serveAll=serveAll; window.confirmCheckIn=confirmCheckIn; window.openManageTable=openManageTable; window.openEditTable=openEditTable; window.openMoveTable=openMoveTable; window.clearTable=clearTable; window.openAdminModal=openAdminModal; window.renderListItem=renderListItem; window.addSimpleData=addSimpleData; window.compressMenuImage=compressMenuImage; window.addMenuAdmin=addMenuAdmin; window.saveMenuToFirebase=saveMenuToFirebase; window.addRateAdmin=addRateAdmin; window.manageRateMenus=manageRateMenus; window.addExtraMenuAdmin=addExtraMenuAdmin; window.addPromotionAdmin=addPromotionAdmin; window.editShopSettings=editShopSettings; window.editPaymentSettings=editPaymentSettings; window.openCheckoutModal=openCheckoutModal; window.togglePromoManual=togglePromoManual; window.renderCheckoutItems=renderCheckoutItems; window.updateCheckoutItemQty=updateCheckoutItemQty; window.addFineToBill=addFineToBill; window.removeFine=removeFine; window.calculateCheckout=calculateCheckout; window.togglePaymentMethods=togglePaymentMethods; window.calcSplitPayment=calcSplitPayment; window.showPaymentQR=showPaymentQR; window.finalizeCheckout=finalizeCheckout; window.printReceipt=printReceipt; window.viewOrderHistory=viewOrderHistory; window.cancelOrderItem=cancelOrderItem; window.cancelExtraItem=cancelExtraItem; window.openExtraOrderModal=openExtraOrderModal; window.deleteData=deleteData; window.printTableQR=printTableQR; window.renderInventoryFront=renderInventoryFront; window.adjustStock=adjustStock; window.renderAccountingFront=renderAccountingFront; window.addManualIncome=addManualIncome; window.addManualExpense=addManualExpense; window.setInitialBalance=setInitialBalance; window.addCashFlowTransfer=addCashFlowTransfer; window.openPrinterSettings=openPrinterSettings; window.connectUSBPrinter=connectUSBPrinter; window.testPrintUSB=testPrintUSB; window.filterInventory=filterInventory; window.setInvCategory=setInvCategory; window.renderInvCharts=renderInvCharts;
+
+    let invCharts = {};
+    function renderInvCharts() {
+        let tabEl = document.getElementById('tab-inv-dashboard');
+        if (!tabEl || tabEl.offsetWidth === 0) return;
         let items = Object.values(gInventory || {});
         if(items.length === 0) return;
-
-        // เรียงข้อมูลตามยอดใช้งานสะสม (จากมากไปน้อย)
         items.sort((a, b) => (parseFloat(b.totalUsed) || 0) - (parseFloat(a.totalUsed) || 0));
-
-        let labels = [];
-        let currentQtyData = [];
-        let totalUsedData = [];
-        let totalCostData = [];
-        let catCostMap = {};
-
+        let labels = []; let currentQtyData = []; let totalUsedData = []; let totalCostData = []; let catCostMap = {};
         items.forEach(item => {
-            labels.push(item.name);
-            currentQtyData.push(parseFloat(item.qty) || 0);
-            
-            let used = parseFloat(item.totalUsed) || 0;
-            totalUsedData.push(used);
-            
-            let costPerUnit = parseFloat(item.cost) || 0;
-            let totalSpent = used * costPerUnit;
-            totalCostData.push(totalSpent);
-
-            let cat = item.category || 'ไม่กำหนด';
-            catCostMap[cat] = (catCostMap[cat] || 0) + totalSpent;
+            labels.push(item.name); currentQtyData.push(parseFloat(item.qty) || 0);
+            let used = parseFloat(item.totalUsed) || 0; totalUsedData.push(used);
+            let costPerUnit = parseFloat(item.cost) || 0; let totalSpent = used * costPerUnit; totalCostData.push(totalSpent);
+            let cat = item.category || 'ไม่กำหนด'; catCostMap[cat] = (catCostMap[cat] || 0) + totalSpent;
         });
-
-        let catLabels = Object.keys(catCostMap);
-        let catCosts = Object.values(catCostMap);
-
+        let catLabels = Object.keys(catCostMap); let catCosts = Object.values(catCostMap);
         const createChart = (id, type, labels, data, labelName, bgColors) => {
-            let canvas = document.getElementById(id);
-            if(!canvas) return; 
-
+            let canvas = document.getElementById(id); if(!canvas) return; 
             if(invCharts[id]) invCharts[id].destroy();
             const ctx = canvas.getContext('2d');
             invCharts[id] = new Chart(ctx, {
                 type: type,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: labelName,
-                        data: data,
-                        backgroundColor: bgColors,
-                        borderWidth: 1,
-                        borderRadius: type === 'bar' ? 4 : 0
-                    }]
-                },
-                options: { 
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: (type === 'pie' || type === 'doughnut') } },
-                    scales: (type === 'bar') ? { y: { beginAtZero: true } } : {}
-                }
+                data: { labels: labels, datasets: [{ label: labelName, data: data, backgroundColor: bgColors, borderWidth: 1, borderRadius: type === 'bar' ? 4 : 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: (type === 'pie' || type === 'doughnut') } }, scales: (type === 'bar') ? { y: { beginAtZero: true } } : {} }
             });
         };
-
         createChart('chartInvCurrent', 'bar', labels, currentQtyData, 'จำนวนคงเหลือ', 'rgba(13, 110, 253, 0.6)');
         createChart('chartInvUsed', 'bar', labels, totalUsedData, 'ปริมาณสะสม', 'rgba(220, 53, 69, 0.6)');
         createChart('chartInvCost', 'bar', labels, totalCostData, 'มูลค่า (บาท)', 'rgba(253, 126, 20, 0.6)');
@@ -3260,123 +3041,52 @@
     }
 
     let accCharts = {};
-
     function renderAccCategoryCharts() {
         let tabEl = document.getElementById('pills-category');
-        // เช็คชัวร์ๆ ว่าหน้าต่างมีคลาส active (โชว์บนจอแล้วจริงๆ)
         if (!tabEl || !tabEl.classList.contains('active')) return;
-
-        let incMap = window.currentCatIncomeMap || {};
-        let expMap = window.currentCatExpenseMap || {};
-
-        // นำยอดเงินมาต่อท้ายชื่อหมวดหมู่ เพื่อให้แสดงที่ป้ายกำกับ (Legend) ด้านล่างกราฟ
-        let incLabels = Object.keys(incMap).map(k => `${k} (${incMap[k].toLocaleString()} ฿)`);
-        let incData = Object.values(incMap);
-        let expLabels = Object.keys(expMap).map(k => `${k} (${expMap[k].toLocaleString()} ฿)`);
-        let expData = Object.values(expMap);
-
+        let incMap = window.currentCatIncomeMap || {}; let expMap = window.currentCatExpenseMap || {};
+        let incLabels = Object.keys(incMap).map(k => `${k} (${incMap[k].toLocaleString()} ฿)`); let incData = Object.values(incMap);
+        let expLabels = Object.keys(expMap).map(k => `${k} (${expMap[k].toLocaleString()} ฿)`); let expData = Object.values(expMap);
         const createChart = (id, type, labels, data, labelName, bgColors) => {
-            let canvas = document.getElementById(id);
-            if(!canvas) return; 
-            
+            let canvas = document.getElementById(id); if(!canvas) return; 
             if(accCharts[id]) accCharts[id].destroy();
             const ctx = canvas.getContext('2d');
             accCharts[id] = new Chart(ctx, {
                 type: type,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: labelName,
-                        data: data,
-                        backgroundColor: bgColors,
-                        borderWidth: 1,
-                        borderRadius: type === 'bar' ? 4 : 0
-                    }]
-                },
-                options: { 
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: true, position: 'bottom' } }
-                }
+                data: { labels: labels, datasets: [{ label: labelName, data: data, backgroundColor: bgColors, borderWidth: 1, borderRadius: type === 'bar' ? 4 : 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } } }
             });
         };
-
         let themeColorsInc = ['#198754', '#20c997', '#0dcaf0', '#0d6efd', '#6f42c1'];
         let themeColorsExp = ['#dc3545', '#fd7e14', '#ffc107', '#d63384', '#6c757d'];
-
         createChart('chartAccIncome', 'doughnut', incLabels, incData, 'มูลค่า (บาท)', themeColorsInc);
         createChart('chartAccExpense', 'doughnut', expLabels, expData, 'มูลค่า (บาท)', themeColorsExp);
     }
-
-    // ผูกฟังก์ชันเข้ากับ window อย่างชัดเจน
     window.renderAccCategoryCharts = renderAccCategoryCharts;
 
-    // 🌟 ดักจับตอนที่ Bootstrap เปิดหน้าต่างเสร็จสมบูรณ์ 100%
     document.addEventListener('shown.bs.tab', function (event) {
         let target = event.target.getAttribute('data-bs-target') || event.target.hash;
-        if (target === '#tab-inv-dashboard' && typeof window.renderInvCharts === 'function') {
-            setTimeout(window.renderInvCharts, 150); 
-        }
-        if (target === '#pills-category' && typeof window.renderAccCategoryCharts === 'function') {
-            setTimeout(window.renderAccCategoryCharts, 150);
-        }
+        if (target === '#tab-inv-dashboard' && typeof window.renderInvCharts === 'function') setTimeout(window.renderInvCharts, 150); 
+        if (target === '#pills-category' && typeof window.renderAccCategoryCharts === 'function') setTimeout(window.renderAccCategoryCharts, 150);
     });
 
-   // ==========================================
-    // 🔐 ระบบเข้าสู่ระบบ (Login) & สิทธิ์ใช้งาน (Roles)
-    // ==========================================
     window.processLogin = async () => {
       try {
-          const u = document.getElementById('login-user').value.trim();
-          const p = document.getElementById('login-pass').value.trim();
-          if(!u || !p) {
-              Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'warning');
-              return;
-          }
-
+          const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim();
+          if(!u || !p) { Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'warning'); return; }
           const btn = document.getElementById('btn-login');
-          if(btn) {
-              btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
-              btn.disabled = true;
-          }
-
-          // ยิงข้อมูลไปหา Google Sheets
-          const response = await fetch(GAS_URL, {
-             method: 'POST',
-             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-             body: JSON.stringify({ action: 'login', username: u, password: p })
-          });
-          
+          if(btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...'; btn.disabled = true; }
+          const response = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'login', username: u, password: p }) });
           const textData = await response.text();
-          let data;
-          try {
-              data = JSON.parse(textData);
-          } catch (e) {
-              throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง (คุณยังไม่ได้ปลดล็อกสิทธิ์ หรือ ยังไม่ได้ Deploy เป็นเวอร์ชัน 'ใหม่' ครับ)");
-          }
-
-          if(btn) {
-              btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; 
-              btn.disabled = false;
-          }
-
+          let data; try { data = JSON.parse(textData); } catch (e) { throw new Error("ระบบ Google Sheets ปฏิเสธการเข้าถึง"); }
+          if(btn) { btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false; }
           if(data.success) {
              if(window.applyUserRole) window.applyUserRole(data.role, data.name);
-             
-             // 🌟 สั่งซ่อนหน้าล็อกอิน (แก้ปัญหา Bootstrap ดื้อ)
-             let loginScreen = document.getElementById('login-screen');
-             if (loginScreen) {
-                 loginScreen.classList.remove('d-flex');
-                 loginScreen.classList.add('d-none');
-             }
-             
+             let loginScreen = document.getElementById('login-screen'); if (loginScreen) { loginScreen.classList.remove('d-flex'); loginScreen.classList.add('d-none'); }
              Swal.fire({icon:'success', title:'เข้าสู่ระบบสำเร็จ!', text: `ยินดีต้อนรับ ${data.name}`, timer:1500, showConfirmButton:false});
-          } else {
-             Swal.fire('ข้อผิดพลาด', data.message, 'error');
-          }
+          } else { Swal.fire('ข้อผิดพลาด', data.message, 'error'); }
       } catch (err) {
-          const btn = document.getElementById('btn-login');
-          if(btn) { btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false; }
+          const btn = document.getElementById('btn-login'); if(btn) { btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ'; btn.disabled = false; }
           Swal.fire('การเชื่อมต่อล้มเหลว', err.message, 'error');
       }
     };
@@ -3384,72 +3094,32 @@
     window.applyUserRole = (role, name) => {
        const navs = ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-accounting', 'nav-admin'];
        navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'none'; });
-       
        let defaultTab = '';
-       if(role === 'admin') {
-           navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
-           defaultTab = 'tab-tables';
-       } else if (role === 'counter') {
-           let el = document.getElementById('nav-tables'); if(el) el.style.display = 'block';
-           defaultTab = 'tab-tables';
-       } else if (role === 'kitchen') {
-           let el = document.getElementById('nav-kitchen'); if(el) el.style.display = 'block';
-           defaultTab = 'tab-kitchen';
-       } else if (role === 'account') {
-           ['nav-inventory', 'nav-inv-dashboard', 'nav-accounting'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
-           defaultTab = 'tab-inventory';
-       } else if (role === 'manager') {
-           // ผู้จัดการ: เห็นทุกหน้า ยกเว้นหน้าบัญชี (nav-accounting)
-           ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-admin'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; });
-           defaultTab = 'tab-tables';
-       }
-
-       if(defaultTab) {
-           let targetBtn = document.querySelector(`button[data-bs-target="#${defaultTab}"]`);
-           if(targetBtn) targetBtn.click();
-       }
-       
-       let navContainer = document.querySelector('.navbar .container-fluid');
-       let logoutBtn = document.getElementById('btn-logout-nav');
-       if(!logoutBtn && navContainer) {
-           navContainer.insertAdjacentHTML('beforeend', `<button id="btn-logout-nav" class="btn btn-sm btn-outline-light rounded-pill fw-bold shadow-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกระบบ</button>`);
-       }
+       if(role === 'admin') { navs.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; }); defaultTab = 'tab-tables'; } 
+       else if (role === 'counter') { let el = document.getElementById('nav-tables'); if(el) el.style.display = 'block'; defaultTab = 'tab-tables'; } 
+       else if (role === 'kitchen') { let el = document.getElementById('nav-kitchen'); if(el) el.style.display = 'block'; defaultTab = 'tab-kitchen'; } 
+       else if (role === 'account') { ['nav-inventory', 'nav-inv-dashboard', 'nav-accounting'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; }); defaultTab = 'tab-inventory'; } 
+       else if (role === 'manager') { ['nav-tables', 'nav-kitchen', 'nav-inventory', 'nav-inv-dashboard', 'nav-admin'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'block'; }); defaultTab = 'tab-tables'; }
+       if(defaultTab) { let targetBtn = document.querySelector(`button[data-bs-target="#${defaultTab}"]`); if(targetBtn) targetBtn.click(); }
+       let navContainer = document.querySelector('.navbar .container-fluid'); let logoutBtn = document.getElementById('btn-logout-nav');
+       if(!logoutBtn && navContainer) { navContainer.insertAdjacentHTML('beforeend', `<button id="btn-logout-nav" class="btn btn-sm btn-outline-light rounded-pill fw-bold shadow-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกระบบ</button>`); }
     };
 
     window.logout = () => {
-        let sc = document.getElementById('login-screen');
-        if(sc) {
-            // 🌟 สั่งโชว์หน้าล็อกอินตอนกดออกระบบ
-            sc.classList.remove('d-none');
-            sc.classList.add('d-flex');
-        }
+        let sc = document.getElementById('login-screen'); if(sc) { sc.classList.remove('d-none'); sc.classList.add('d-flex'); }
         let u = document.getElementById('login-user'); if(u) u.value = '';
         let p = document.getElementById('login-pass'); if(p) p.value = '';
-        let logoutBtn = document.getElementById('btn-logout-nav');
-        if(logoutBtn) logoutBtn.remove();
+        let logoutBtn = document.getElementById('btn-logout-nav'); if(logoutBtn) logoutBtn.remove();
     };
     
-    // ==========================================
-    // 🤖 ระบบผู้พิทักษ์: ตรวจสอบและปริ้นออเดอร์เข้าครัวอัตโนมัติ (Background Monitor)
-    // ==========================================
     setInterval(() => {
         if(typeof gOrders === 'undefined' || typeof gKitchens === 'undefined') return;
-        
-        // 1. ตรวจสอบเครื่องปริ้นสาย LAN (ยิงคำสั่งปริ้นอัตโนมัติจากเบื้องหลังทันที)
-        Object.entries(gKitchens).forEach(([kId, k]) => {
-            if(k.mode === 'printer' && k.connection === 'lan' && k.status === 'open') {
-                autoPrintPendingOrders(k, kId);
-            }
-        });
-        
-        // 2. ตรวจสอบเครื่องปริ้นสาย USB (พิมพ์ทันทีที่เชื่อมต่ออุปกรณ์สำเร็จ)
+        Object.entries(gKitchens).forEach(([kId, k]) => { if(k.mode === 'printer' && k.connection === 'lan' && k.status === 'open') { autoPrintPendingOrders(k, kId); } });
         if(typeof kitchenPrinterDevice !== 'undefined' && kitchenPrinterDevice && currentKitchenId) {
             const myK = gKitchens[currentKitchenId];
-            if(myK && myK.mode === 'printer' && myK.connection === 'usb' && myK.status === 'open') {
-                autoPrintPendingOrders(myK, currentKitchenId);
-            }
+            if(myK && myK.mode === 'printer' && myK.connection === 'usb' && myK.status === 'open') { autoPrintPendingOrders(myK, currentKitchenId); }
         }
-    }, 4000); // ระบบจะแอบเช็คออเดอร์ใหม่ทุกๆ 4 วินาที
+    }, 4000);
     
   </script>
 </body>
