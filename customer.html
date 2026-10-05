@@ -221,14 +221,17 @@
     // ====================================================
     // 🍲 ระบบบังคับเลือกน้ำซุป 2 ช่อง
     // ====================================================
+    // ====================================================
+    // 🍲 ระบบบังคับเลือกน้ำซุป 2 ช่อง
+    // ====================================================
     window.showSoupModal = () => {
       let html = '<div class="text-center text-muted mb-3 small fw-bold">กรุณาเลือกน้ำซุปสำหรับหม้อชาบูของคุณ (บังคับ 2 อย่าง)</div><div class="row g-3 px-2">';
       Object.entries(window.globalSoupsData).forEach(([id, s]) => {
         html += `
           <div class="col-6">
-            <label class="d-flex flex-column align-items-center justify-content-center p-3 border rounded-4 shadow-sm bg-white text-center" style="cursor: pointer; transition: 0.2s;" for="soup_${id}" onclick="this.classList.toggle('border-danger'); this.classList.toggle('bg-danger'); this.classList.toggle('bg-opacity-10');">
+            <label class="d-flex flex-column align-items-center justify-content-center p-3 border rounded-4 shadow-sm bg-white text-center" style="cursor: pointer; transition: 0.2s;" for="soup_${id}">
               <input class="form-check-input soup-cb mb-2 d-none" type="checkbox" value="${s.name}" id="soup_${id}" onchange="checkSoupSelection(this)">
-              <span class="fw-bold text-dark">${s.name}</span>
+              <span class="fw-bold text-dark soup-text">${s.name}</span>
             </label>
           </div>`;
       });
@@ -238,13 +241,27 @@
     };
 
     window.checkSoupSelection = (cb) => {
-      const checked = document.querySelectorAll('.soup-cb:checked');
-      if (checked.length > 2) {
-        cb.checked = false;
-        let lbl = cb.closest('label');
-        lbl.classList.remove('border-danger', 'bg-danger', 'bg-opacity-10');
+      const checkedBoxes = document.querySelectorAll('.soup-cb:checked');
+      if (checkedBoxes.length > 2) {
+        cb.checked = false; // ถ้าเลือกเกิน 2 ให้ยกเลิกการติ๊กล่าสุด
         Swal.fire({ toast: true, position: 'top', icon: 'warning', title: 'เลือกได้สูงสุด 2 ชนิดเท่านั้น', showConfirmButton: false, timer: 1500 });
       }
+
+      // วนลูปอัปเดตสีปุ่มทั้งหมดให้ตรงกับสถานะการติ๊ก
+      document.querySelectorAll('.soup-cb').forEach(checkbox => {
+         let lbl = checkbox.closest('label');
+         let txt = lbl.querySelector('.soup-text');
+         if(checkbox.checked) {
+             lbl.classList.add('border-danger', 'bg-danger', 'bg-opacity-10');
+             txt.classList.remove('text-dark');
+             txt.classList.add('text-danger');
+         } else {
+             lbl.classList.remove('border-danger', 'bg-danger', 'bg-opacity-10');
+             txt.classList.remove('text-danger');
+             txt.classList.add('text-dark');
+         }
+      });
+
       const currentChecked = document.querySelectorAll('.soup-cb:checked').length;
       const btn = document.getElementById('btn-confirm-soup');
       btn.disabled = currentChecked !== 2;
@@ -269,7 +286,7 @@
          const soupStr = selectedSoups.join(' และ ');
          await update(ref(db, 'tables/' + TABLE_ID), { soups: soupStr });
 
-         // ส่งออเดอร์เข้าครัวเพื่อให้ครัวเตรียมหม้อ
+         // ค้นหาจอครัวที่ออนไลน์อยู่
          const kSnap = await get(ref(db, 'settings/kitchens')); const kitchens = kSnap.val() || {};
          const pSnap = await get(ref(db, 'kitchenPings')); const pings = pSnap.val() || {};
          const now = Date.now();
@@ -278,12 +295,22 @@
          let assignedKitchenId = "unassigned";
          if (openKIds.length > 0) { assignedKitchenId = openKIds[0]; } // ส่งไปครัวแรกที่เปิดอยู่
 
+         // 🌟 แยกน้ำซุป 2 ช่อง เป็น 2 รายการเพื่อให้ครัวเห็นชัดเจน และระบุหมวดหมู่ "น้ำซุป"
          let itemsToSend = {};
-         itemsToSend['soup_first_order'] = {
-            name: '🍲 น้ำซุป: ' + soupStr,
+         itemsToSend['soup_1'] = {
+            name: '🍲 ซุป: ' + selectedSoups[0],
             price: 0,
             qty: 1,
-            option: 'เสิร์ฟด่วน (เริ่มโต๊ะ)',
+            option: 'เริ่มโต๊ะ',
+            image: '',
+            category: 'น้ำซุป',
+            served: false
+         };
+         itemsToSend['soup_2'] = {
+            name: '🍲 ซุป: ' + selectedSoups[1],
+            price: 0,
+            qty: 1,
+            option: 'เริ่มโต๊ะ',
             image: '',
             category: 'น้ำซุป',
             served: false
@@ -295,7 +322,7 @@
          bootstrap.Modal.getInstance(document.getElementById('soupModal')).hide();
          Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'สั่งน้ำซุปเรียบร้อย เชิญสั่งอาหารต่อได้เลยครับ', showConfirmButton: false, timer: 3000 });
 
-         tableData.soups = soupStr; // อัปเดตตัวแปรไม่ให้เด้งซ้ำอีกเมื่อกดยกเลิกตะกร้า
+         tableData.soups = soupStr;
        } catch (err) {
          Swal.fire('ผิดพลาด', err.message, 'error');
        }
