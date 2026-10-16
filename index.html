@@ -1267,7 +1267,8 @@
         tempCompressedImage = id ? (item.image || "") : "";
         
         let catOptions = '<option value="">-- ไม่กำหนด --</option>';
-        Object.values(window.gInvCategories || {}).forEach(c => {
+        // 🌟 แก้ไขตรงนี้: ลบคำว่า window. ออก เพื่อให้ดึงข้อมูลหมวดหมู่สต๊อกมาได้ครบถ้วน
+        Object.values(gInvCategories || {}).forEach(c => {
             let selected = (item.category === c.name) ? 'selected' : '';
             catOptions += `<option value="${c.name}" ${selected}>${c.name}</option>`;
         });
