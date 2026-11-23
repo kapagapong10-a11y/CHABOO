@@ -1544,15 +1544,22 @@
           titleEl.innerHTML = '<i class="fa-solid fa-burger"></i> จัดการรายการอาหารทั้งหมด'; 
           btnEl.onclick = () => addEditMenuAdmin(); 
           Object.entries(gMenus).forEach(([id, item]) => { 
+             let isAvailable = (item.status !== 'out_of_stock');
+             let statusBadge = isAvailable ? '' : `<span class="badge bg-secondary ms-1">อาหารหมด (ซ่อนอยู่)</span>`;
              let priceText = item.price > 0 ? `<span class="badge bg-danger">+${item.price} ฿</span>` : `<span class="badge bg-success">ฟรีในบุฟเฟ่ต์</span>`; 
              let optText = item.options ? `<br><small class="text-primary fw-bold">ตัวเลือก: ${item.options}</small>` : '';
+             let toggleBtn = isAvailable
+                ? `<button class="btn btn-sm btn-success me-1 fw-bold" onclick="toggleMenuStatus('${id}', 'active')" title="คลิกเพื่อตั้งเป็นอาหารหมด"><i class="fa-solid fa-eye"></i> พร้อมขาย</button>`
+                : `<button class="btn btn-sm btn-secondary me-1 fw-bold" onclick="toggleMenuStatus('${id}', 'out_of_stock')" title="คลิกเพื่อเปิดขายอีกครั้ง"><i class="fa-solid fa-eye-slash"></i> หมด</button>`;
+
              listEl.innerHTML += `
-             <li class="list-group-item d-flex justify-content-between align-items-center">
+             <li class="list-group-item d-flex justify-content-between align-items-center ${isAvailable ? '' : 'bg-light opacity-75'}">
                 <div class="d-flex align-items-center">
-                   ${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:45px; height:45px; object-fit:cover; border-radius:8px; margin-right:10px;" class="shadow-sm">` : `<div style="width:45px; height:45px; background:#f8f9fa; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;" class="border shadow-sm"><i class="fa-solid fa-image text-muted"></i></div>`}
-                   <div><strong>${item.name}</strong><br>${priceText}${optText}</div>
+                   ${item.image && item.image.trim() !== '' ? `<img src="${item.image}" style="width:45px; height:45px; object-fit:cover; border-radius:8px; margin-right:10px; ${isAvailable ? '' : 'filter:grayscale(100%);'}" class="shadow-sm">` : `<div style="width:45px; height:45px; background:#f8f9fa; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;" class="border shadow-sm"><i class="fa-solid fa-image text-muted"></i></div>`}
+                   <div><strong class="${isAvailable ? '' : 'text-decoration-line-through text-muted'}">${item.name}</strong>${statusBadge}<br>${priceText}${optText}</div>
                 </div>
-                <div>
+                <div class="d-flex align-items-center flex-shrink-0">
+                   ${toggleBtn}
                    <button class="btn btn-sm btn-outline-primary me-1" onclick="addEditMenuAdmin('${id}')"><i class="fa-solid fa-pen"></i></button>
                    <button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/menus', '${id}')"><i class="fa-solid fa-trash"></i></button>
                 </div>
@@ -1657,6 +1664,19 @@
       }; 
       reader.readAsDataURL(file);
     }
+
+    window.toggleMenuStatus = (id, currentStatus) => {
+      const newStatus = (currentStatus === 'active') ? 'out_of_stock' : 'active';
+      window.dbUpdate(window.dbRef(window.db, `settings/menus/${id}`), { status: newStatus }).then(() => {
+        if (gMenus[id]) gMenus[id].status = newStatus;
+        Swal.fire({
+          toast: true, position: 'top-end', icon: newStatus === 'active' ? 'success' : 'warning',
+          title: newStatus === 'active' ? 'เปิดขายเมนูแล้ว (แสดงฝั่งลูกค้า)' : 'ตั้งเป็นอาหารหมดแล้ว (ซ่อนฝั่งลูกค้า)',
+          showConfirmButton: false, timer: 1800
+        });
+        openAdminModal('menus');
+      });
+    };
     
     window.addEditMenuAdmin = (id = null) => {
       let item = id ? gMenus[id] : { name: '', category: 'ทั่วไป', price: 0, options: '', image: '' };
@@ -1705,7 +1725,7 @@
           const price = parseFloat(document.getElementById('swal-menu-price').value) || 0;
           const options = document.getElementById('swal-menu-options').value.trim();
           if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อเมนู'); return false; }
-          return { name, category, price, options, image: tempCompressedImage, status: 'active' };
+          return { name, category, price, options, image: tempCompressedImage, status: id ? (item.status || 'active') : 'active' };
         }
       }).then(res => {
         if(res.isConfirmed) {
