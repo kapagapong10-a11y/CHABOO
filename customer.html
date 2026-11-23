@@ -221,17 +221,19 @@
     // ====================================================
     // 🍲 ระบบบังคับเลือกน้ำซุป 2 ช่อง
     // ====================================================
-    // ====================================================
-    // 🍲 ระบบบังคับเลือกน้ำซุป 2 ช่อง
-    // ====================================================
     window.showSoupModal = () => {
       let html = '<div class="text-center text-muted mb-3 small fw-bold">กรุณาเลือกน้ำซุปสำหรับหม้อชาบูของคุณ (บังคับ 2 อย่าง)</div><div class="row g-3 px-2">';
       Object.entries(window.globalSoupsData).forEach(([id, s]) => {
+        let imgHtml = (s.image && s.image.trim() !== '')
+          ? `<img src="${s.image}" class="mb-2 shadow-sm border" style="width: 100%; height: 95px; object-fit: cover; border-radius: 12px;">`
+          : `<div class="mb-2 bg-light border d-flex align-items-center justify-content-center text-muted" style="width: 100%; height: 95px; border-radius: 12px;"><i class="fa-solid fa-mug-hot fs-2"></i></div>`;
+
         html += `
           <div class="col-6">
-            <label class="d-flex flex-column align-items-center justify-content-center p-3 border rounded-4 shadow-sm bg-white text-center" style="cursor: pointer; transition: 0.2s;" for="soup_${id}">
-              <input class="form-check-input soup-cb mb-2 d-none" type="checkbox" value="${s.name}" id="soup_${id}" onchange="checkSoupSelection(this)">
-              <span class="fw-bold text-dark soup-text">${s.name}</span>
+            <label class="d-flex flex-column align-items-center justify-content-between p-2 border rounded-4 shadow-sm bg-white text-center h-100" style="cursor: pointer; transition: 0.2s;" for="soup_${id}">
+              <input class="form-check-input soup-cb d-none" type="checkbox" value="${s.name}" id="soup_${id}" onchange="checkSoupSelection(this)">
+              ${imgHtml}
+              <span class="fw-bold text-dark soup-text py-1">${s.name}</span>
             </label>
           </div>`;
       });
