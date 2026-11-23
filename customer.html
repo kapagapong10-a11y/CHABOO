@@ -520,6 +520,27 @@
       Swal.fire({ title: 'ส่งออเดอร์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       
       try {
+        // 🌟 เช็กสถานะเมนูอาหารล่าสุดก่อนส่งเข้าครัว (เผื่อร้านเพิ่งกดหมดระหว่างลูกค้ากำลังเลือก)
+        const latestMenusSnap = await get(ref(db, 'settings/menus'));
+        const latestMenus = latestMenusSnap.val() || {};
+        let outOfStockNames = [];
+        Object.keys(itemsToSend).forEach(cartKey => {
+          const mId = cart[cartKey].mId;
+          if (!latestMenus[mId] || latestMenus[mId].status !== 'active') {
+            outOfStockNames.push(cart[cartKey].name);
+            delete cart[cartKey];
+          }
+        });
+        if (outOfStockNames.length > 0) {
+          updateCartUI();
+          if (cartModalInstance) cartModalInstance.hide();
+          Swal.fire({
+            icon: 'warning',
+            title: 'ขออภัย รายการอาหารหมดแล้ว',
+            html: `รายการต่อไปนี้หมดชั่วคราวและถูกนำออกจากตะกร้าแล้ว:<br><b class="text-danger">${outOfStockNames.join(', ')}</b>`
+          }).then(() => location.reload());
+          return;
+        }
         const kSnap = await get(ref(db, 'settings/kitchens')); const kitchens = kSnap.val() || {};
         const pSnap = await get(ref(db, 'kitchenPings')); const pings = pSnap.val() || {};
         const now = Date.now();
