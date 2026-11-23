@@ -1531,7 +1531,26 @@
       
       if(mode === 'tables') { titleEl.innerHTML = '<i class="fa-solid fa-chair"></i> จัดการชื่อโต๊ะ'; btnEl.onclick = () => addSimpleData('tables', 'เพิ่มโต๊ะ', 'ชื่อโต๊ะ (เช่น A1)'); Object.entries(gTables).sort((a,b)=>a[1].name.localeCompare(b[1].name, 'th', {numeric:true})).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'tables'); }); } 
       else if(mode === 'custTypes') { titleEl.innerHTML = '<i class="fa-solid fa-users"></i> ประเภทลูกค้า'; btnEl.onclick = () => addSimpleData('settings/customerTypes', 'เพิ่มประเภทลูกค้า', 'เช่น ผู้ใหญ่, เด็ก, VIP'); Object.entries(gCustTypes).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/customerTypes'); }); }
-      else if(mode === 'soups') { titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; btnEl.onclick = () => addSimpleData('settings/soups', 'เพิ่มน้ำซุป', 'เช่น น้ำดำ, ต้มยำ'); Object.entries(gSoups).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/soups'); }); }
+      else if(mode === 'soups') { 
+          titleEl.innerHTML = '<i class="fa-solid fa-mug-hot"></i> ประเภทน้ำซุป'; 
+          btnEl.onclick = () => addEditSoupAdmin(); 
+          Object.entries(gSoups).forEach(([id, item]) => { 
+             let imgHtml = (item.image && item.image.trim() !== '') 
+                ? `<img src="${item.image}" style="width:45px; height:45px; object-fit:cover; border-radius:8px; margin-right:10px;" class="shadow-sm border">` 
+                : `<div style="width:45px; height:45px; background:#f8f9fa; border-radius:8px; margin-right:10px; display:flex; align-items:center; justify-content:center;" class="border shadow-sm"><i class="fa-solid fa-mug-hot text-muted"></i></div>`;
+             listEl.innerHTML += `
+             <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                   ${imgHtml}
+                   <strong>${item.name}</strong>
+                </div>
+                <div>
+                   <button class="btn btn-sm btn-outline-primary me-1" onclick="addEditSoupAdmin('${id}')" title="แก้ไข / อัปโหลดรูปภาพ"><i class="fa-solid fa-pen"></i></button>
+                   <button class="btn btn-sm btn-outline-danger" onclick="deleteData('settings/soups', '${id}')" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+                </div>
+             </li>`; 
+          }); 
+      }
       else if(mode === 'categories') { titleEl.innerHTML = '<i class="fa-solid fa-list"></i> หมวดหมู่อาหาร'; btnEl.onclick = () => addSimpleData('settings/categories', 'เพิ่มหมวดหมู่อาหาร', 'เช่น หมู, เนื้อ, ทะเล, ผัก'); Object.entries(gCategories).forEach(([id, item]) => { listEl.innerHTML += renderListItem(id, item.name, 'settings/categories'); }); }
       else if(mode === 'invCategories') { 
           titleEl.innerHTML = '<i class="fa-solid fa-tags"></i> จัดการหมวดหมู่สต๊อก'; 
@@ -1675,6 +1694,57 @@
           showConfirmButton: false, timer: 1800
         });
         openAdminModal('menus');
+      });
+    };
+
+    window.addEditSoupAdmin = (id = null) => {
+      let item = id ? gSoups[id] : { name: '', image: '' };
+      tempCompressedImage = id ? (item.image || "") : "";
+
+      let previewHtml = (item.image && item.image.trim() !== '')
+        ? `<div class="mb-3 text-center"><img src="${item.image}" style="width:120px; height:120px; object-fit:cover; border-radius:12px;" class="shadow-sm border"></div>`
+        : '';
+
+      let html = `
+        <div class="px-2" style="overflow-x: hidden;">
+            ${previewHtml}
+            <div class="mb-3 text-start">
+               <label class="form-label fw-bold small text-muted mb-1">ชื่อน้ำซุป:</label>
+               <input type="text" id="swal-soup-name" class="form-control" placeholder="เช่น น้ำดำ, ต้มยำ, แจ่วฮ้อน" value="${item.name || ''}">
+            </div>
+            <div class="mb-2 text-start">
+               <label class="form-label fw-bold small text-muted mb-1">รูปภาพน้ำซุป (เลือกใหม่เพื่อเปลี่ยน):</label>
+               <input type="file" accept="image/*" class="form-control" onchange="compressMenuImage(event)">
+               <small class="text-muted mt-1 d-block">ระบบจะย่อขนาดรูปให้อัตโนมัติเพื่อให้ลูกค้าโหลดเร็วที่สุด</small>
+            </div>
+        </div>`;
+
+      Swal.fire({
+        title: id ? '📝 แก้ไขประเภทน้ำซุป' : '🍲 เพิ่มประเภทน้ำซุป',
+        html: html,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกข้อมูล',
+        customClass: { popup: 'rounded-4' },
+        preConfirm: () => {
+          const name = document.getElementById('swal-soup-name').value.trim();
+          if(!name) { Swal.showValidationMessage('กรุณาใส่ชื่อน้ำซุป'); return false; }
+          return { name, image: tempCompressedImage };
+        }
+      }).then(res => {
+        if(res.isConfirmed) {
+          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          if(id) {
+             window.dbUpdate(window.dbRef(window.db, `settings/soups/${id}`), res.value).then(() => {
+                Swal.fire({icon:'success', title:'แก้ไขสำเร็จ', timer: 1500, showConfirmButton:false});
+                openAdminModal('soups');
+             });
+          } else {
+             window.dbSet(window.dbPush(window.dbRef(window.db, 'settings/soups')), res.value).then(() => {
+                Swal.fire({icon:'success', title:'เพิ่มสำเร็จ', timer: 1500, showConfirmButton:false});
+                openAdminModal('soups');
+             });
+          }
+        }
       });
     };
     
