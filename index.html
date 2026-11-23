@@ -49,12 +49,33 @@
     .btn-close:focus { box-shadow: none; }
     
     @media print {
-      body * { visibility: hidden; }
-      body.print-mode-table #print-section, body.print-mode-table #print-section * { visibility: visible; }
-      body.print-mode-receipt #print-receipt-section, body.print-mode-receipt #print-receipt-section * { visibility: visible; }
-      
-      #print-section { position: absolute; left: 0; top: 0; width: 100%; text-align: center; font-family: sans-serif; color: black; }
-      #print-receipt-section { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; color: black; font-family: 'Prompt', sans-serif; }
+      @page { margin: 0; size: auto; }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        background: #ffffff !important;
+        overflow: visible !important;
+      }
+      /* ใช้ display: none ซ่อนส่วนอื่นทั้งหมด เพื่อไม่ให้กินพื้นที่จนเกิดหน้าเปล่า */
+      body.print-mode-table > *:not(#print-section) { display: none !important; }
+      body.print-mode-receipt > *:not(#print-receipt-section) { display: none !important; }
+
+      body.print-mode-table #print-section,
+      body.print-mode-receipt #print-receipt-section {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 80mm !important;
+        margin: 0 auto !important;
+        padding: 4mm 2mm !important;
+        text-align: center;
+        color: #000 !important;
+        font-family: 'Prompt', sans-serif;
+        page-break-inside: avoid;
+        page-break-after: avoid;
+      }
       .no-print { display: none !important; }
     }
     
@@ -2110,13 +2131,32 @@
        });
     }
 
+    // ฟังก์ชันเชื่อมเครื่องพิมพ์ USB ที่เคยจับคู่ไว้อัตโนมัติ (ไม่ต้องกดตั้งค่าใหม่หลังรีเฟรช)
+    async function autoReconnectUSBPrinter() {
+      if (posPrinterDevice && posPrinterDevice.opened) return true;
+      if (!navigator.usb) return false;
+      try {
+        const devices = await navigator.usb.getDevices();
+        if (devices.length > 0) {
+          const device = devices[0];
+          await device.open();
+          if (device.configuration === null) await device.selectConfiguration(1);
+          await device.claimInterface(0);
+          posPrinterDevice = device;
+          return true;
+        }
+      } catch (e) { console.warn('Auto-connect USB skipped:', e); }
+      return false;
+    }
+
     // ==========================================
     // พิมพ์ใบเสร็จ (Receipt)
     // ==========================================
-    function printReceipt() {
-      // ถ้าเชื่อมต่อ USB ไว้ ให้พิมพ์แบบยิงตรง (เงียบ) แล้วจบการทำงาน
+    async function printReceipt() {
+      // ลองเชื่อมเครื่องพิมพ์ USB ที่เคยผูกไว้อัตโนมัติ ถ้าเจอจะพิมพ์ตรงทันทีโดยไม่เด้งหน้าต่าง
+      if (!posPrinterDevice) await autoReconnectUSBPrinter();
       if (posPrinterDevice) {
-         printViaWebUSB();
+         await printViaWebUSB();
          return;
       }
       
@@ -2986,7 +3026,7 @@
                           for (let bit = 0; bit < 8; bit++) {
                               let px = x * 8 + bit;
                               if (px < width) {
-                                  let idx = (y * w + px) * 4;
+                                  let idx = (y * width + px) * 4;
                                   let luminance = (imgData[idx]*0.3 + imgData[idx+1]*0.59 + imgData[idx+2]*0.11);
                                   if (luminance < 128 && imgData[idx+3] > 128) byte |= (1 << (7 - bit));
                               }
